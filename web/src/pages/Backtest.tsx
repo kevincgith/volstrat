@@ -3,6 +3,7 @@ import { Chart, type ChartHandle } from '../charts/Chart';
 import { baseOption, line, num, pct, regimeAreas, timeAxis, valueAxis, zoom } from '../charts/options';
 import { assetColor, colors, entityColor, type Colors } from '../charts/palette';
 import { assetLabel, ParamPanel } from '../components/ParamPanel';
+import { Robustness } from '../components/Robustness';
 import { Card, ErrorBox, Loading, Segmented, Toggle } from '../components/ui';
 import { COMPONENTS } from '../engine/components';
 import type { Metrics } from '../engine/metrics';
@@ -116,7 +117,15 @@ export default function Backtest() {
       tooltip: { ...baseOption(c).tooltip, valueFormatter: (v: number) => (v == null ? '–' : v.toFixed(3)) },
       series: runs.map((r, i) => ({
         ...line(r.label, slice(r.result.nav), entityColor(c, r.id), { z: r.id === 'strategy' ? 5 : 2, lineStyle: { width: 2, color: entityColor(c, r.id), opacity: r.id === 'strategy' ? 1 : 0.85 } }),
-        ...(i === 0 ? { markArea: syntheticAreas(result, data.dates, c) } : {}),
+        ...(i === 0
+          ? {
+              markArea: syntheticAreas(result, data.dates, c),
+              markLine:
+                result.oos > s && result.oos < e
+                  ? { silent: true, symbol: 'none', lineStyle: { color: c.ink2, type: 'dashed', width: 1 }, label: { formatter: 'out-of-sample →', color: c.ink2, position: 'insideStartTop' }, data: [{ xAxis: data.dates[result.oos] }] }
+                  : undefined,
+            }
+          : {}),
       })),
     };
 
@@ -392,6 +401,7 @@ export default function Backtest() {
               <Card title="Monthly returns – strategy" actions={<button className="btn ghost" onClick={() => refs.heat.current?.toPNG('volstrat-monthly')}>PNG</button>}>
                 <Chart ref={refs.heat} option={charts.heat} height={charts.heatHeight} ariaLabel="Heatmap of monthly strategy returns by year" />
               </Card>
+              <Robustness data={data} params={params} />
             </>
           )}
         </div>

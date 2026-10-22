@@ -48,7 +48,7 @@ export function valueAxis(c: Colors, opts: Record<string, unknown> = {}) {
     scale: true,
     axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { color: c.muted },
+    axisLabel: { color: c.muted, formatter: (v: number) => fmtTip(v) },
     splitLine: { lineStyle: { color: c.grid, width: 1 } },
     ...opts,
   };

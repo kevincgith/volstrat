@@ -272,5 +272,47 @@ Full-sample normalisation is never used, because it would leak future informatio
 | Worst month / year | calendar months and years |
 | Up / down capture | geometric mean monthly return in S&P 500 up (down) months ÷ the S&P 500's |
 
-## 9. Robustness and overfitting *(P4)*
+## 9. Robustness and overfitting
+A backtest is one path through history, and every parameter tried on that history is a test
+of a hypothesis. The site has four tools to keep this honest
+(`web/src/engine/robustness.ts`):
+
+1. **In-sample / out-of-sample split.** Set an out-of-sample date and the statistics table
+   shows each period separately, and the equity chart marks the split. The discipline:
+   tune parameters only while viewing the in-sample period, then look at the out-of-sample
+   period once.
+2. **Sensitivity heatmap.** The full backtest is re-run for every combination of two
+   parameters: smoothing, hysteresis, standardisation window, a shift or spread of the
+   regime cut-offs, execution lag, costs, or minimum history. Everything else stays as
+   configured, and all cells share one period. A robust configuration sits on a broad
+   plateau; an isolated peak is a sign of overfitting.
+3. **Walk-forward selection.** History is cut into test windows (6 months to 2 years). At
+   the start of each one, the grid cell with the best objective (Sharpe, Sortino, Calmar or
+   CAGR) over the **preceding** training window (3–10 years) is selected and held for the
+   test window. The stitched series is out-of-sample with respect to the parameter choice,
+   and a switching cost is charged whenever the chosen cell changes. If walk-forward does
+   not beat fixed parameters out of sample, parameter tuning is not adding value.
+   - *Example on 2026-10-22 data:* a 7×5 grid of smoothing × cut-off shift, 5-year training
+     window, 1-year tests. Walk-forward gave Sharpe 0.48 against 0.70 for the fixed default
+     parameters over the same 2012–2026 window, and the grid itself was a plateau (Sharpe
+     0.40–0.67). Interpretation: the signal's value does not depend on fine-tuning, and
+     tuning would have hurt.
+4. **Multiple-testing yardstick.** For N configurations tried over T years, the expected
+   best annualised Sharpe among N skill-less strategies is about
+   E[max Z_N] / √T, with E[max Z_N] ≈ √(2 ln N) − (ln ln N + ln 4π) / (2√(2 ln N)). For
+   35 cells over ~20 years that is about +0.44. Grid cells are correlated, so the effective
+   N is smaller, but every configuration tried anywhere (including on the Compare page)
+   counts. Differences between cells smaller than this are noise. (This is in the spirit of
+   Bailey & López de Prado's deflated Sharpe ratio, simplified.)
+
+Known limitations:
+- **Survivorship and selection.** The asset menu (US equities, Treasuries, gold) is chosen
+  with hindsight about which assets hedged well after 2000.
+- **Proxies.** Pre-inception ETF returns come from indices or mutual funds, flagged on the
+  charts.
+- **Execution.** Trades happen at the close; there is no intraday slippage beyond `costBps`,
+  and no market impact or tax.
+- **Signal history.** The full component set only exists from about 2006, so the
+  out-of-sample evidence contains only a handful of crises (2008, 2011, 2015–16, 2018, 2020,
+  2022).
 ## 10. Behaviour in stress episodes: 2008, 2018, 2020, 2022 *(P5)*
