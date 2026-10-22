@@ -99,11 +99,17 @@ Joined (spliced) segments are flagged in the data and shaded on charts.
 ### 2.5 Rates, credit and financial conditions
 - **US Treasury daily par yield curve** (`home.treasury.gov` CSV, 1990 → today) is the primary
   source for the 3-month bill, 2-year, 10-year and the 10y–2y slope.
-- **FRED** (`fredgraph.csv`, no API key) is used for the ICE BofA HY and IG OAS, NFCI and STLFSI4.
-  It could not be verified from the development machine (connection refused) and will be verified
-  on the first GitHub Actions run. Fallbacks: credit stress from HYG/LQD total return relative to
-  IEF (extended back with VWEHX vs VFITX). NFCI and STLFSI4 are optional and disabled if they're
-  unavailable. Chicago Fed's own NFCI CSV is stale (last observation 2026-04-24).
+- **FRED**, via the official API using the repository secret `FRED_API_KEY` (keyless
+  `fredgraph.csv` is blocked both locally and from GitHub runners). Coverage, verified
+  2026-10-23:
+  - Moody's Baa − 10y (`BAA10Y`): 1986 onwards, daily, 1-business-day lag.
+  - NFCI: weekly, 5-day publication lag.
+  - STLFSI4: weekly from 1994, 6-day lag.
+  - **ICE BofA HY and IG OAS: only about 3 years** (from Oct 2023). FRED shows ICE data on a
+    rolling 3-year window under its licence, which is too short to standardise or backtest.
+    The HY OAS component therefore stays off; Baa − 10y is the long-history credit-spread
+    component.
+  - Fallback if FRED fails: HYG/LQD total return relative to IEF (credit ETF component).
 
 ### 2.5a End-of-day only: no live or provisional prices
 Intraday and provisional values must never reach the signal or the backtest. During US
@@ -630,4 +636,21 @@ volatilitytradingstrategies.com/blog/traders-vrp-a-more-robust-volatility-risk-p
 volatilitytradingstrategies.com/blog/vix-futures-and-expiration-cycles-we-need-to-adjust-m1-m2-contango ·
 [4] VTS, "Volatility Metric: VTS Cash VIX Oscillator",
 volatilitytradingstrategies.com/blog/vts-cash-vix-oscillator-volatility-dashboard-metric
+
+### 14.4 FRED macro-credit components (now available)
+With the API key in place, three FRED components have full history. All are off by default
+under the same rule. Effect of adding each to the default composite at weight 1 (2007–2026,
+data through 2026-10-21):
+
+| Component | Sharpe change | Max drawdown change | Alone: Sharpe / max drawdown |
+|---|---|---|---|
+| Credit: Baa − 10y 3-month change | +0.05 | −2.3 pp | 0.60 / −49.8% |
+| Chicago Fed NFCI | +0.06 | −0.8 pp | 0.67 / −34.1% |
+| St. Louis Fed Financial Stress Index | +0.08 | +0.2 pp | 0.48 / −31.0% |
+
+These are the largest improvements among all the added signals. That is plausible: funding
+and credit conditions carry information that options-implied volatility does not. NFCI and
+STLFSI were in the original specification but not in the default set (slow, weekly,
+published with a lag). The gains are in-sample and modest. Before enabling one, check the
+Optimise tab's train/test split and the bootstrap confidence on the Backtest page.
 

@@ -208,8 +208,25 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Change over 3 months in the ICE BofA US High Yield option-adjusted spread (FRED, published with a 1-day lag).',
       why: 'The OAS is the market’s direct price of default risk. Widening spreads mean tightening financial conditions and usually lead or coincide with equity drawdowns. If FRED is unavailable this component drops out and the credit ETF proxy carries the credit signal.',
-      range: 'Rapid widening over 3 months signals stress; levels are not shown because FRED data is unavailable in this build.',
-      episodes: 'Spreads widened sharply in 2008 and Mar 2020 and more gradually in 2022. Numbers are omitted because they cannot be checked against this dataset.',
+      range: 'Rapid widening over 3 months signals stress.',
+      episodes: 'FRED carries only the last ~3 years of ICE BofA spreads (ICE licensing): data from Oct 2023, too short to standardise or backtest, so keep this off and use the Baa−10y component for long-history credit.',
+    },
+  },
+  {
+    id: 'credit_baa',
+    label: 'Credit: Baa − 10y spread, 3m change',
+    group: 'Credit',
+    inputs: ['BAA10Y'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'pp (63d)',
+    compute: (d) => diff(s(d, 'BAA10Y'), 63),
+    doc: {
+      what: 'Change over 3 months in Moody’s Baa corporate yield minus the 10-year Treasury yield (FRED BAA10Y, 1-day publication lag).',
+      why: 'A long-history measure of credit stress (FRED’s ICE high-yield spreads only go back ~3 years). Investment-grade Baa spreads widen when default and liquidity risk are repriced, typically alongside equity drawdowns.',
+      range: '3-month change 10th/50th/90th percentile −0.33 / −0.03 / +0.36 pp since 1990; spread level median 2.13%.',
+      episodes: 'Widened +2.81 pp in the 3 months to Dec 2008 (level peaked at 6.16% on 5 Dec 2008), +2.35 pp to Mar 2020 (4.31%), +0.60 pp at most in 2022.',
     },
   },
   {
@@ -262,8 +279,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Weekly index of 105 US financial-condition measures (money markets, debt, equity, banking). 0 = average; positive = tighter than average.',
       why: 'A broad, slow-moving measure of financial stress that is good at confirming systemic episodes. It is published weekly with a lag (Friday data on Wednesday), which the pipeline enforces.',
-      range: 'Below 0 = looser than average; above 0 = tighter than average.',
-      episodes: 'Rose sharply in 2008, briefly in Mar 2020 and gradually in 2022. Numbers are omitted because FRED data is unavailable in this build.',
+      range: '10th/50th/90th percentile −0.74 / −0.52 / −0.01 since 1990; above 0 = tighter than average.',
+      episodes: 'Peaks: 3.11 (Dec 2008), 0.31 (Apr 2020); stayed below 0 in Aug–Oct 2011 (−0.09), 2015–16 (−0.30), Q4 2018 (−0.43) and 2022 (−0.09). A slow, systemic gauge.',
     },
   },
   {
@@ -279,8 +296,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Weekly composite of 18 rates, spreads and volatility measures. 0 = normal stress.',
       why: 'Like the NFCI, a systemic-stress confirmation that is slow and published with a lag.',
-      range: '0 = average stress; strongly positive readings = systemic stress.',
-      episodes: 'Spiked in 2008 and Mar 2020. Numbers are omitted because FRED data is unavailable in this build.',
+      range: '10th/50th/90th percentile −0.77 / −0.21 / +0.81 since 1994; 0 = average stress.',
+      episodes: 'Peaks: 9.67 (Oct 2008), 5.63 (Mar 2020), 1.40 (Oct 2011), 1.28 (Feb 2016), 0.56 (Dec 2018), 0.63 (Jul 2022).',
     },
   },
   {
