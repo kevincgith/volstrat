@@ -4,7 +4,7 @@
  * in a Web Worker or in tests.
  */
 
-import { normalise, continuousWeights, type Weights } from './allocation';
+import { continuousWeights, normalise, swapDuration, type Weights } from './allocation';
 import { buildAssets, type AssetSeries } from './assets';
 import { simulate, type BacktestResult } from './backtest';
 import type { MarketData } from './data';
@@ -50,12 +50,59 @@ export function indexOfDate(dates: string[], iso: string, fallback: number): num
   return Math.min(lo, dates.length - 1);
 }
 
-export function strategyTargets(score: Float64Array, reg: Int8Array, p: Params): (Weights | null)[] {
+/**
+ * Trailing Pearson correlation of two daily return series over `n` days
+ * ending at t (inclusive): uses information up to the close of t only.
+ */
+export function rollingCorrelation(a: Float64Array, b: Float64Array, n: number): Float64Array {
+  const out = new Float64Array(a.length).fill(NaN);
+  for (let t = n - 1; t < a.length; t++) {
+    let sa = 0;
+    let sb = 0;
+    let saa = 0;
+    let sbb = 0;
+    let sab = 0;
+    let k = 0;
+    for (let i = t - n + 1; i <= t; i++) {
+      const x = a[i]!;
+      const y = b[i]!;
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      sa += x;
+      sb += y;
+      saa += x * x;
+      sbb += y * y;
+      sab += x * y;
+      k++;
+    }
+    if (k < Math.max(10, n * 0.8)) continue;
+    const cov = sab - (sa * sb) / k;
+    const va = saa - (sa * sa) / k;
+    const vb = sbb - (sb * sb) / k;
+    if (va > 0 && vb > 0) out[t] = cov / Math.sqrt(va * vb);
+  }
+  return out;
+}
+
+export function strategyTargets(
+  score: Float64Array,
+  reg: Int8Array,
+  p: Params,
+  stockBondCorr?: Float64Array,
+): (Weights | null)[] {
   const ports = p.allocation.regimePortfolios.map((w) => normalise(w));
+  const hedge = p.allocation.adaptiveHedge;
+  const swapOn = !!(hedge?.enabled && stockBondCorr);
+  const swapped = swapOn ? ports.map((w) => swapDuration(w, hedge!.replacement)) : ports;
   const out: (Weights | null)[] = new Array(score.length).fill(null);
   for (let t = 0; t < score.length; t++) {
     if (!Number.isFinite(score[t]!) || reg[t]! < 0) continue;
-    out[t] = p.allocation.mode === 'regime' ? ports[reg[t]!]! : continuousWeights(score[t]!, p.allocation.continuous);
+    const swap = swapOn && stockBondCorr![t]! > hedge!.threshold;
+    if (p.allocation.mode === 'regime') {
+      out[t] = (swap ? swapped : ports)[reg[t]!]!;
+    } else {
+      const w = continuousWeights(score[t]!, p.allocation.continuous);
+      out[t] = swap ? swapDuration(w, hedge!.replacement) : w;
+    }
   }
   return out;
 }
@@ -120,8 +167,12 @@ export function run(d: MarketData, p: Params): RunResult {
   const notes: string[] = [];
   const score = computeScore(d, p.score);
   const reg = regimePath(score.score, p.regime);
-  const targets = strategyTargets(score.score, reg, p);
   const assets = cached(d, 'assets' + JSON.stringify(p.assets), () => buildAssets(d, p.assets));
+  const hedge = p.allocation.adaptiveHedge;
+  const sbCorr = hedge?.enabled
+    ? cached(d, `sbcorr${hedge.lookback}`, () => rollingCorrelation(assets.SPX!.returns, assets.IEF!.returns, Math.max(20, Math.round(hedge.lookback))))
+    : undefined;
+  const targets = strategyTargets(score.score, reg, p, sbCorr);
   const benches = cached(d, 'benchT' + JSON.stringify([p.assets, p.benchmarks]), () => benchmarkTargets(d, assets, p));
 
   // Common start: user start, first usable signal (+lag), and every asset used having returns.

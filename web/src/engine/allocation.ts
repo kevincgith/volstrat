@@ -12,8 +12,32 @@ import { LEVERAGE, type AssetKey } from './assets';
 
 export type Weights = Partial<Record<AssetKey, number>>;
 
+export interface AdaptiveHedge {
+  enabled: boolean;
+  /** Trailing window (trading days) for the stock-bond correlation. */
+  lookback: number;
+  /** Swap duration out when the correlation is above this level. */
+  threshold: number;
+  /** Asset that replaces duration (IEF, TLT, AGG) while the swap is on. */
+  replacement: AssetKey;
+}
+
+export const DURATION_ASSETS: AssetKey[] = ['IEF', 'TLT', 'AGG'];
+
+/** Replace duration assets by `to` (weights merged); returns the input when nothing changes. */
+export function swapDuration(w: Weights, to: AssetKey): Weights {
+  if (!DURATION_ASSETS.some((k) => (w[k] ?? 0) > 0)) return w;
+  const out: Weights = {};
+  for (const [k, v] of Object.entries(w)) {
+    const key = (DURATION_ASSETS.includes(k as AssetKey) ? to : k) as AssetKey;
+    out[key] = (out[key] ?? 0) + (v ?? 0);
+  }
+  return out;
+}
+
 export interface AllocationParams {
   mode: 'regime' | 'continuous';
+  adaptiveHedge?: AdaptiveHedge;
   /** Portfolios indexed by regime (0 = Crisis ... 4 = Strong Risk-On). */
   regimePortfolios: [Weights, Weights, Weights, Weights, Weights];
   continuous: {

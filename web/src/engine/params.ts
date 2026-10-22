@@ -39,6 +39,7 @@ export const DEFAULT_PARAMS: Params = {
   regime: { thresholds: [20, 40, 60, 80], hysteresis: 2.5 },
   allocation: {
     mode: 'regime',
+    adaptiveHedge: { enabled: false, lookback: 63, threshold: 0, replacement: 'BIL' },
     regimePortfolios: [
       { BIL: 1 }, // Crisis
       { IEF: 0.5, GLD: 0.25, XLU: 0.25 }, // Risk-Off

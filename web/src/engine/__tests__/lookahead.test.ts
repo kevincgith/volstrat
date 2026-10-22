@@ -21,6 +21,13 @@ const configs: [string, Params][] = [
       backtest: { rebalance: 'daily', lag: 2, band: 0 },
     }),
   ],
+  [
+    'adaptive stock-bond hedge on',
+    merge(DEFAULT_PARAMS, {
+      period: { start: '2010-01-01' },
+      allocation: { adaptiveHedge: { enabled: true, lookback: 63, threshold: -0.2, replacement: 'BIL' } },
+    }),
+  ],
 ];
 
 function same(a: ArrayLike<number>, b: ArrayLike<number>, upto: number) {

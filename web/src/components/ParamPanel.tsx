@@ -279,6 +279,31 @@ export function ParamPanel({
         )}
       </Section>
 
+      <Section title="Adaptive hedge (stock-bond correlation)">
+        <Toggle
+          label="Swap Treasuries out when stocks and bonds move together"
+          checked={!!al.adaptiveHedge?.enabled}
+          onChange={(v) => up((d) => void (d.allocation.adaptiveHedge = { ...(d.allocation.adaptiveHedge ?? DEFAULT_PARAMS.allocation.adaptiveHedge!), enabled: v }))}
+          title="When the trailing correlation of S&P 500 and 7-10y Treasury daily returns is above the threshold, IEF/TLT/AGG in every target portfolio are replaced by the chosen asset."
+        />
+        {al.adaptiveHedge?.enabled && (
+          <div className="row-2" style={{ marginTop: 8 }}>
+            <NumberInput label="Correlation window (days)" value={al.adaptiveHedge.lookback} min={20} step={21} onChange={(v) => up((d) => void (d.allocation.adaptiveHedge!.lookback = Math.max(20, Math.round(v))))} />
+            <NumberInput label="Swap when corr >" value={al.adaptiveHedge.threshold} min={-1} max={1} step={0.1} onChange={(v) => up((d) => void (d.allocation.adaptiveHedge!.threshold = Math.min(1, Math.max(-1, v))))} />
+            <Select
+              label="Replace with"
+              value={al.adaptiveHedge.replacement}
+              onChange={(v) => up((d) => void (d.allocation.adaptiveHedge!.replacement = v))}
+              options={(['BIL', 'SHY', 'GLD'] as const).map((k) => ({ value: k, label: assetLabel(k) }))}
+            />
+          </div>
+        )}
+        <p className="muted small" style={{ margin: '6px 0 0' }}>
+          Treasuries hedge equities when the two are negatively correlated (2008, 2020) but not in inflation or rate shocks (2022). Off by default: the idea
+          was prompted by 2022, so its backtest benefit is partly hindsight.
+        </p>
+      </Section>
+
       <Section title="Execution & costs">
         <div className="row-2">
           <Select

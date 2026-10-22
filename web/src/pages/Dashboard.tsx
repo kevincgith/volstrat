@@ -6,6 +6,7 @@ import { assetColor, colors } from '../charts/palette';
 import { Card, ErrorBox, Loading } from '../components/ui';
 import { COMPONENT_BY_ID } from '../engine/components';
 import { REGIMES } from '../engine/score';
+import { rollingCorrelation } from '../engine/run';
 import { useData } from '../state/data';
 import { useParams } from '../state/params';
 import { useRun } from '../state/useRun';
@@ -49,7 +50,9 @@ export default function Dashboard() {
       .filter(([, v]) => (v ?? 0) > 0)
       .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
     const from = Math.max(0, L - 504);
-    return { L, regime, comps, wsum, weights, from };
+    const hedgeLb = params.allocation.adaptiveHedge?.lookback ?? 63;
+    const sb = rollingCorrelation(result.assets.SPX!.returns, result.assets.IEF!.returns, hedgeLb)[L]!;
+    return { L, regime, comps, wsum, weights, from, sb, hedgeLb };
   }, [data, result, params]);
 
   const option = useMemo(() => {
@@ -161,6 +164,13 @@ export default function Dashboard() {
               </li>
             ))}
           </ul>
+          <p className="small" title="Trailing correlation of daily S&P 500 and 7-10y Treasury returns">
+            Stock–bond correlation ({view.hedgeLb}d): <b>{Number.isFinite(view.sb) ? view.sb.toFixed(2) : '–'}</b>{' '}
+            <span className="muted">
+              {!Number.isFinite(view.sb) ? '' : view.sb < 0 ? '· Treasuries currently diversify equities' : '· Treasuries currently move with equities (weak hedge)'}
+              {params.allocation.adaptiveHedge?.enabled ? ' · adaptive hedge on' : ''}
+            </span>
+          </p>
           <p className="muted small">
             {params.allocation.mode === 'regime' ? 'Regime portfolio' : 'Continuous mapping'} · rebalance{' '}
             {params.backtest.rebalance === 'regime' ? 'on regime change' : params.backtest.rebalance}
