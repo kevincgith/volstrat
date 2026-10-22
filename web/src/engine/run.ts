@@ -10,7 +10,7 @@ import { simulate, type BacktestResult } from './backtest';
 import type { MarketData } from './data';
 import { computeMetrics, type Metrics } from './metrics';
 import type { Params } from './params';
-import { computeScore, regimes as regimePath, REGIMES, type ScoreResult } from './score';
+import { applyRebound, computeScore, regimes as regimePath, REGIMES, type ScoreResult } from './score';
 import { realisedVol } from './stats';
 
 export interface PortfolioRun {
@@ -166,7 +166,19 @@ export function run(d: MarketData, p: Params): RunResult {
   const n = d.dates.length;
   const notes: string[] = [];
   const score = computeScore(d, p.score);
-  const reg = regimePath(score.score, p.regime);
+  const baseReg = regimePath(score.score, p.regime);
+  const rb = p.regime.rebound;
+  const reg = rb?.enabled
+    ? applyRebound(
+        baseReg,
+        cached(d, 'vixterm', () => {
+          const a = d.series.VIX!;
+          const b = d.series.VIX3M!;
+          return a.map((x, i) => (b[i]! > 0 ? x / b[i]! : NaN));
+        }),
+        rb,
+      )
+    : baseReg;
   const assets = cached(d, 'assets' + JSON.stringify(p.assets), () => buildAssets(d, p.assets));
   const hedge = p.allocation.adaptiveHedge;
   const sbCorr = hedge?.enabled

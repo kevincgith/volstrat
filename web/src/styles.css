@@ -1073,3 +1073,10 @@ h3.sub {
 .track-stats b {
   font-size: 18px;
 }
+
+.rebound-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-top: 8px;
+}

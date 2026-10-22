@@ -46,6 +46,49 @@ export interface RegimeParams {
   minHoldDays?: number;
   /** With a minimum hold, still allow moves DOWN (de-risking) immediately. */
   fastDerisk?: boolean;
+  /** Optional contrarian "panic rebound" override (see applyRebound). */
+  rebound?: ReboundParams;
+}
+
+export interface ReboundParams {
+  enabled: boolean;
+  /** VIX/VIX3M must have exceeded this within `lookback` days (a panic inversion). */
+  peak: number;
+  lookback: number;
+  /** Trigger when VIX/VIX3M is back below this (curve normalising). */
+  normal: number;
+  /** Trading days the override lasts. */
+  hold: number;
+  /** Regime whose portfolio is used during the override (default 2 = Neutral). */
+  toRegime: number;
+}
+
+/**
+ * Contrarian overlay: after a panic inversion of the VIX term structure
+ * (VIX/VIX3M above `peak` within the last `lookback` days) that has normalised
+ * (ratio back below `normal`), regimes below `toRegime` are lifted to
+ * `toRegime` for `hold` days. A fresh inversion above `peak` cancels it.
+ * Causal: only uses the ratio up to day t.
+ */
+export function applyRebound(reg: Int8Array, ratio: Float64Array, p: ReboundParams): Int8Array {
+  const out = Int8Array.from(reg);
+  let left = 0;
+  let lastPeak = -Infinity;
+  for (let t = 0; t < reg.length; t++) {
+    const r = ratio[t]!;
+    if (Number.isFinite(r) && r > p.peak) {
+      lastPeak = t;
+      left = 0; // panic still building: cancel any active override
+    } else if (Number.isFinite(r) && r < p.normal && t - lastPeak <= p.lookback && left === 0 && lastPeak > -Infinity) {
+      left = p.hold;
+      lastPeak = -Infinity; // one trigger per panic
+    }
+    if (left > 0) {
+      if (out[t]! >= 0 && out[t]! < p.toRegime) out[t] = p.toRegime;
+      left--;
+    }
+  }
+  return out;
 }
 
 export interface ComponentResult {

@@ -654,3 +654,44 @@ STLFSI were in the original specification but not in the default set (slow, week
 published with a lag). The gains are in-sample and modest. Before enabling one, check the
 Optimise tab's train/test split and the bootstrap confidence on the Backtest page.
 
+## 15. Out-of-sample checks of candidate improvements
+Every candidate is judged on 2017–2026 after being motivated or specified on 2007–2016,
+with a paired bootstrap on the test years (1,000 resamples, 21-day blocks). Data through
+2026-10-21.
+
+### 15.1 FRED macro-credit components: rejected
+| Added to default | Sharpe 2007–2016 | Sharpe 2017–2026 | Test-period bootstrap |
+|---|---|---|---|
+| none (base) | 0.46 | 0.75 | — |
+| Baa − 10y change | 0.67 | 0.63 | worse in 96% of resamples |
+| NFCI | 0.65 | 0.68 | worse in 80% |
+| STLFSI | 0.66 | 0.71 | worse in 70% |
+| all three | 0.69 | 0.67 | worse in 78% |
+
+The in-sample gain (§14.4) came almost entirely from the 2008 credit crisis, and all three
+hurt after 2016. Defaults are unchanged.
+
+### 15.2 Panic-rebound override: passed, kept optional
+- **Hypothesis**, from §11 and §14.3: deep inversions of the VIX term structure precede
+  higher returns, so a strategy that de-risks in panics misses the rebound.
+- **Rule**, specified once on 2026-10-23 and not tuned. If VIX/VIX3M rose above **1.10**
+  within the last **20** trading days and is now back below **1.00**, Crisis or Risk-Off is
+  lifted to **Neutral** for **20** trading days. A new inversion above 1.10 cancels it. The
+  rule uses only the ratio up to day t, and the look-ahead suite covers it.
+
+| Period | Sharpe | CAGR | Max drawdown | Override days |
+|---|---|---|---|---|
+| 2007–2016, base → rebound | 0.46 → 0.51 | 5.1% → 5.8% | −20.1% → −15.2% | 186 |
+| 2017–2026, base → rebound | 0.75 → 0.85 | 9.8% → 10.9% | −21.8% → −21.8% | 133 |
+| Full, base → rebound | 0.60 → 0.67 | 7.4% → 8.3% | unchanged | 319 |
+
+- **Test-period bootstrap:** Sharpe difference +0.09, 5th–95th percentile −0.02 to +0.21,
+  better in 92% of resamples.
+- **Triggers:** 20 in 20 years (e.g. Dec 2008, Aug 2011, Sep 2015, Feb 2018, Jan 2019,
+  Apr 2020, Aug 2024, Apr 2025).
+- **Verdict:** the first change to improve both halves and to beat fixed parameters out of
+  sample. Caveats: the hypothesis came from full-sample statistics (only the rule's settings
+  were fixed blind), 92% is below the conventional 95% bar, and 20 events is a small sample.
+  It stays **off by default**. Enabling it is a portfolio decision. The live track record v1
+  keeps the original rules; adopting the override would start a v2 record.
+

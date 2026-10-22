@@ -259,6 +259,32 @@ export function ParamPanel({
           onChange={(v) => up((d) => void (d.regime.fastDerisk = v))}
           title="With a minimum holding period, still move down (toward risk-off) without waiting."
         />
+        <div className="rebound-box">
+          <Toggle
+            label="Panic-rebound override (contrarian)"
+            checked={!!params.regime.rebound?.enabled}
+            onChange={(v) => up((d) => void (d.regime.rebound = { ...(d.regime.rebound ?? DEFAULT_PARAMS.regime.rebound!), enabled: v }))}
+            title="After VIX/VIX3M inverts above the peak level and then normalises below the normal level, Crisis/Risk-Off is lifted to the chosen regime for a number of days. Rule fixed before testing; see METHODOLOGY 15."
+          />
+          {params.regime.rebound?.enabled && (
+            <div className="row-2" style={{ marginTop: 6 }}>
+              <NumberInput label="Panic: VIX/VIX3M above" value={params.regime.rebound.peak} step={0.05} min={1} onChange={(v) => up((d) => void (d.regime.rebound!.peak = v))} />
+              <NumberInput label="…within (days)" value={params.regime.rebound.lookback} step={5} min={1} onChange={(v) => up((d) => void (d.regime.rebound!.lookback = Math.max(1, Math.round(v))))} />
+              <NumberInput label="Re-enter when below" value={params.regime.rebound.normal} step={0.05} min={0.5} onChange={(v) => up((d) => void (d.regime.rebound!.normal = v))} />
+              <NumberInput label="Hold (days)" value={params.regime.rebound.hold} step={5} min={1} onChange={(v) => up((d) => void (d.regime.rebound!.hold = Math.max(1, Math.round(v))))} />
+              <Select
+                label="Lift to"
+                value={params.regime.rebound.toRegime}
+                onChange={(v) => up((d) => void (d.regime.rebound!.toRegime = v))}
+                options={[1, 2, 3].map((i) => ({ value: i, label: REGIMES[i]! }))}
+              />
+            </div>
+          )}
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Defaults (1.10 / 20 / 1.00 / 20 days / Neutral) were fixed before testing. Out of sample (2017–2026): Sharpe 0.75 → 0.85; changing them now
+            would be fitting.
+          </p>
+        </div>
         <p className="muted small" style={{ margin: '6px 0 0' }}>
           Buffers stop the allocation flip-flopping when the score hovers around a cut-off. Asymmetric buffers let you re-risk quickly but de-risk only
           on a clear drop, or the reverse.

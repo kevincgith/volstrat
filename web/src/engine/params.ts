@@ -36,7 +36,14 @@ export const DEFAULT_PARAMS: Params = {
       COMPONENTS.map((c) => [c.id, { enabled: c.defaultEnabled, weight: c.defaultWeight || 1, invert: false }]),
     ),
   },
-  regime: { thresholds: [20, 40, 60, 80], hysteresis: 2.5, minHoldDays: 0, fastDerisk: true },
+  regime: {
+    thresholds: [20, 40, 60, 80],
+    hysteresis: 2.5,
+    minHoldDays: 0,
+    fastDerisk: true,
+    // rule fixed before testing (2026-10-23): see METHODOLOGY 15
+    rebound: { enabled: false, peak: 1.1, lookback: 20, normal: 1.0, hold: 20, toRegime: 2 },
+  },
   allocation: {
     mode: 'regime',
     adaptiveHedge: { enabled: false, lookback: 63, threshold: 0, replacement: 'BIL' },

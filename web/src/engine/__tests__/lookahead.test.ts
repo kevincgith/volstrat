@@ -36,6 +36,10 @@ const configs: [string, Params][] = [
       backtest: { assetCostBps: { SSO: 20, GLD: 8 } },
     }),
   ],
+  [
+    'rebound overlay on',
+    merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { rebound: { enabled: true, peak: 1.05 } } }),
+  ],
 ];
 
 function same(a: ArrayLike<number>, b: ArrayLike<number>, upto: number) {

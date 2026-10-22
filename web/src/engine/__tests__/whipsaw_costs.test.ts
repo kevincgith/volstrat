@@ -58,3 +58,20 @@ describe('cost sensitivity', () => {
     if (r.breakEven !== null) expect(r.breakEven).toBeGreaterThan(0);
   });
 });
+
+describe('rebound overlay', () => {
+  it('lifts risk-off regimes after a panic inversion normalises, for `hold` days', async () => {
+    const { applyRebound } = await import('../score');
+    const reg = Int8Array.from([1, 0, 0, 0, 0, 0, 1, 1]);
+    const ratio = Float64Array.from([0.9, 1.2, 1.15, 0.98, 0.95, 0.95, 0.95, 0.95]);
+    const out = applyRebound(reg, ratio, { enabled: true, peak: 1.1, lookback: 20, normal: 1.0, hold: 3, toRegime: 2 });
+    expect(Array.from(out)).toEqual([1, 0, 0, 2, 2, 2, 1, 1]);
+  });
+  it('a fresh inversion cancels the override', async () => {
+    const { applyRebound } = await import('../score');
+    const reg = Int8Array.from([0, 0, 0, 0, 0]);
+    const ratio = Float64Array.from([1.2, 0.95, 1.2, 0.95, 0.95]);
+    const out = applyRebound(reg, ratio, { enabled: true, peak: 1.1, lookback: 20, normal: 1.0, hold: 5, toRegime: 2 });
+    expect(Array.from(out)).toEqual([0, 2, 0, 2, 2]);
+  });
+});
