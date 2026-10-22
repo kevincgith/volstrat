@@ -315,4 +315,44 @@ Known limitations:
 - **Signal history.** The full component set only exists from about 2006, so the
   out-of-sample evidence contains only a handful of crises (2008, 2011, 2015–16, 2018, 2020,
   2022).
-## 10. Behaviour in stress episodes: 2008, 2018, 2020, 2022 *(P5)*
+## 10. Behaviour in stress episodes: 2008, 2018, 2020, 2022
+The in-app Methodology page computes these tables live for the current parameters. The
+snapshot below uses the **default (Balanced)** parameters and data through 2026-10-21.
+
+| Episode window | S&P 500 | Strategy | Lowest score | First Crisis / Risk-Off day | Days in Crisis / Risk-Off |
+|---|---|---|---|---|---|
+| 2008 GFC (1 Sep 08 – 31 Mar 09) | −36.6% | −2.9% | 2.5 (23 Oct 08) | 2 Sep 08 | 100% |
+| Volmageddon (26 Jan – 30 Apr 18) | −7.3% | −4.2% | 20.5 (9 Apr 18) | 9 Feb 18 | 85% |
+| Covid crash (19 Feb – 30 Apr 20) | −13.6% | −1.9% | 4.4 (27 Mar 20) | 25 Feb 20 | 92% |
+| 2022 rate shock (3 Jan – 31 Oct 22) | −18.2% | −19.3% | 21.0 (12 May 22) | 21 Jan 22 | 77% |
+
+The most stressed reading of each input within the window:
+
+| Input | 2008 | 2018 | 2020 | 2022 |
+|---|---|---|---|---|
+| VIX | 80.9 (20 Nov) | 37.3 (5 Feb) | 82.7 (16 Mar) | 36.5 (7 Mar) |
+| VIX / VIX3M | 1.43 (24 Oct) | 1.33 (5 Feb) | 1.34 (28 Feb) | 1.02 (1 Mar) |
+| VX CM30 / CM60 | 1.30 (17 Oct) | 1.15 (5 Feb) | 1.26 (16 Mar) | 1.05 (7 Mar) |
+| VVIX | 135 (27 Oct) | 181 (8 Feb) | 208 (16 Mar) | 154 (24 Jan) |
+| Equity P/C, 10-day average | 0.98 (21 Nov) | 0.72 (15 Feb) | 0.99 (19 Mar) | 0.79 (3 Oct) |
+| VRP (VIX − 21d realised) | −35.8 (4 Nov) | −10.5 (26 Feb) | −52.3 (6 Apr) | −8.2 (27 May) |
+| HY − IEF, 3-month return | −41.4% (11 Dec) | 0.0% | −33.0% (23 Mar) | −7.0% (6 Jul) |
+| S&P vs 200-day average | −39.6% (20 Nov) | −0.3% (2 Apr) | −26.3% (23 Mar) | −17.1% (16 Jun) |
+
+**What these show:**
+- **2008, 2018, 2020: volatility-driven sell-offs.** The term-structure and VRP components
+  hit extremes within days, and the defensive portfolio (Treasuries, gold, utilities,
+  T-bills) rallied or held its value. The strategy kept losses to −2% to −4%.
+- **2018: vol components lead, trend lags.** The trend filter barely registered (−0.3%),
+  while VIX/VIX3M inverted on 5 Feb. This is why the composite mixes fast volatility signals
+  with slower confirmation.
+- **2022: right signal, wrong hedge.** The score flagged stress by 21 January, but this was
+  an inflation and rate shock, so the usual hedges fell too. Over the window: IEF −16.1%,
+  gold −9.8%, SHY −4.5%, utilities −3.7%, T-bills +0.7%.
+  - Hedge variants helped only a little: the Conservative preset lost −16.4% and a T-bill/SHY
+    Risk-Off portfolio −16.6%, against −19.3% for the default.
+  - Much of the loss came from the bond leg of the Neutral 60/40 and from rallies spent in
+    Risk-On.
+  - The T-bill variant also *lowers* the full 2007–2026 Sharpe (0.53 vs 0.60), because
+    Treasuries hedged well in 2008 and 2020.
+  - Choosing the hedge after seeing 2022 would itself be overfitting.

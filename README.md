@@ -5,6 +5,9 @@ A research dashboard that turns public volatility and risk-sentiment data into a
 allocation, which is backtested against standard benchmarks. Scoring and backtesting run in the
 browser, so the results update as soon as you change a parameter.
 
+**Live site:** https://app.kevinlhc.com/volstrat/ (data refreshed every US trading day by a
+GitHub Action).
+
 > **Disclaimer.** This is a personal research project. All results are hypothetical and backtested.
 > They don't reflect actual trading and they benefit from hindsight in the model design. This is
 > not investment advice.
@@ -18,7 +21,7 @@ browser, so the results update as soon as you change a parameter.
 | P2 | TypeScript scoring and backtest engine with look-ahead tests | ✅ |
 | P3 | Dashboard, Signals, Backtest pages; URL-encoded parameters | ✅ |
 | P4 | Robustness (IS/OOS, walk-forward, sensitivity), Compare, exports | ✅ |
-| P5 | Methodology content and polish | ⏳ |
+| P5 | Methodology content and polish | ✅ |
 
 ## Architecture
 

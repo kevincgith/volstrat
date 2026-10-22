@@ -49,8 +49,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'The market’s 30-day implied volatility for the S&P 500, derived from SPX option prices.',
       why: 'It is the price of portfolio insurance. A high VIX means investors pay up for protection and expect large moves; volatility clusters, so high-vol regimes tend to persist and carry worse risk-adjusted equity returns.',
-      range: 'Calm 11–15; normal 15–20; stressed 25–35; crisis 40+ (record close 82.7 on 16 Mar 2020).',
-      episodes: '2008: rose from ~20 to 80.9 in Nov. Feb 2018: jumped from 17 to 37 in two days (Volmageddon). 2020: 82.7 in March. 2022: mostly 20–35, a grinding bear market with no panic spike.',
+      range: 'Calm 11–15; normal 15–20; stressed 25–35; crisis 40+ (record close 82.69 on 16 Mar 2020).',
+      episodes: '2008: from 20.7 (end Aug) to a close of 80.86 on 20 Nov. Feb 2018 (Volmageddon): 17.3 to 37.3 in one trading day (2→5 Feb). 2020: 82.69 on 16 Mar. 2022: mostly 20–33, peak 36.5 (7 Mar), a grinding bear market without a panic spike.',
     },
   },
   {
@@ -66,8 +66,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Ratio of 30-day to 3-month implied volatility.',
       why: 'Normally the curve slopes upward (ratio < 1, "contango"): near-term risk is priced below longer-term uncertainty. When the ratio goes above 1 ("inversion" or "backwardation"), investors are paying more for immediate protection, which is a hallmark of acute stress.',
-      range: 'Typical 0.80–0.92; above 1.0 = inverted (stress); above 1.2 = panic.',
-      episodes: '2008: inverted for most of Sep–Dec. Feb 2018: spiked to ~1.25. Mar 2020: ~1.35. 2022: brief inversions only, which is consistent with an orderly sell-off.',
+      range: 'Typical 0.81–0.99 (10th–90th percentile since 2010); above 1.0 = inverted (stress); above 1.2 = panic.',
+      episodes: '2008: inverted on 81% of days in Sep–Dec, peak 1.43 (24 Oct). Feb 2018: 1.33 (5 Feb). 2020: 1.34 (28 Feb). 2022: inverted on only 6% of days (max 1.02), consistent with an orderly sell-off.',
     },
   },
   {
@@ -83,8 +83,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Ratio of 30-day to 60-day constant-maturity VIX futures prices, interpolated from listed contracts.',
       why: 'The same idea as VIX/VIX3M, but measured on traded futures. Constant-maturity interpolation removes the saw-tooth jumps that VX1/VX2 shows at each monthly roll. Backwardation (ratio > 1) means hedgers are bidding up near-dated volatility.',
-      range: 'Typical 0.90–0.97 (contango); above 1.0 = backwardation.',
-      episodes: 'Backwardated through late 2008, in Feb 2018 and Mar 2020; only briefly in 2022.',
+      range: 'Median 0.95; 10th–90th percentile 0.91–1.02 since 2004; above 1.0 = backwardation.',
+      episodes: 'Backwardated on 89% of days in Sep–Dec 2008, and in the Feb 2018 and Mar 2020 shocks; on about a quarter of days in 2022.',
     },
   },
   {
@@ -100,7 +100,7 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Ratio of the front-month to the second-month VIX future.',
       why: 'The classic contango/backwardation measure that VIX ETP roll yield is based on. It is noisier than the constant-maturity slope because the maturities shrink through each month and reset at expiry.',
-      range: 'Typical 0.88–0.96; above 1.0 = backwardation.',
+      range: 'Median 0.94; 10th–90th percentile 0.88–1.02 since 2004; above 1.0 = backwardation.',
       episodes: 'Moves with the CM slope but jumps at contract rolls.',
     },
   },
@@ -117,8 +117,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Implied volatility of VIX options: how violently the market expects VIX itself to move.',
       why: 'VVIX rises when traders scramble for VIX calls as tail hedges. It often moves before or with VIX spikes, and a high VVIX with a low VIX can flag fragile calm.',
-      range: 'Typical 80–100; stressed 120+; extremes 150–200.',
-      episodes: 'Aug 2015: ~212. Feb 2018: ~180. Mar 2020: ~207. 2022: mostly 90–120, unusually subdued for a bear market.',
+      range: 'Typical 85–104 (interquartile range since 2010); stressed 120+; extremes 160–210.',
+      episodes: 'Aug 2015: 168.8 (24 Aug). Feb 2018: 180.6 (8 Feb). Mar 2020: 207.6 (16 Mar). 2022: mostly 80–133, subdued for a bear market. Series starts 2007.',
     },
   },
   {
@@ -134,8 +134,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Price of far out-of-the-money S&P puts relative to at-the-money options, i.e. the implied probability of a crash-sized move.',
       why: 'High SKEW means heavy demand for crash protection. Its signal is ambiguous: SKEW is often high in calm, hedged markets and falls during crashes as at-the-money vol catches up. That is why its default weight is low.',
-      range: '100 = normal distribution; typical 115–145; record highs ~170 (2021).',
-      episodes: 'Not a reliable crash predictor: it fell during the 2008 and 2020 crashes and was elevated in the calm of 2017 and 2021.',
+      range: '100 = no extra tail pricing; 10th–90th percentile 118–148 since 2010; record close 183.1 (18 Feb 2025).',
+      episodes: 'Not a reliable crash predictor: it fell during the 2020 crash (Jan average 131 → Mar average 121), barely moved in 2008 (Jul 112 → Oct 116), and was high in the calm years 2017 (average 135) and 2021 (average 146).',
     },
   },
   {
@@ -151,8 +151,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Cboe single-stock put volume divided by call volume, averaged over 10 days.',
       why: 'Puts are mostly bought for protection and calls for upside, so a rising ratio means growing fear or hedging demand. At extremes it is often read as contrarian (peak fear near lows); here it is used as a stress gauge. Flip the direction to test the contrarian reading.',
-      range: 'Typical 0.55–0.75; above 0.9 = fear; below 0.5 = speculative call buying (2020–21).',
-      episodes: '2008: ~0.9–1.0 at the lows. 2020–21: record lows (~0.40) from retail call buying, a structural break. 2022: elevated, ~0.8–1.0.',
+      range: '10-day average: interquartile 0.60–0.67 in 2010–19; above 0.9 = fear; below 0.5 = speculative call buying.',
+      episodes: '2008: 10-day average peaked at 0.98 (21 Nov). 2020–21: fell to 0.38 (26 Jan 2021) on retail call buying, a structural break. 2022: 0.55–0.81, only moderately elevated.',
     },
   },
   {
@@ -168,8 +168,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Implied volatility (VIX) minus the S&P 500’s realised volatility over the past 21 trading days.',
       why: 'Implied vol normally trades above realised (a positive premium paid to insurance sellers). When realised vol overtakes implied (negative VRP), the market is moving more than options priced, which typically happens during disorderly sell-offs. A healthy positive premium is risk-on.',
-      range: 'Typical +2 to +6 pts; below 0 = realised exceeds implied (stress).',
-      episodes: 'Deeply negative in Oct 2008, Aug 2011, Feb 2018 and Mar 2020, when realised vol briefly exceeded 80. Mostly positive in 2022.',
+      range: 'Median +4.2 pts, interquartile +1.7 to +6.3 since 2010; below 0 = realised exceeds implied (stress).',
+      episodes: 'Lows: −35.8 (4 Nov 2008), −17.1 (31 Aug 2011), −10.5 (26 Feb 2018), −52.3 (6 Apr 2020). 21-day realised vol peaked at 85 (Oct 2008) and 98 (Apr 2020). Positive on two-thirds of days in 2022.',
     },
   },
   {
@@ -191,8 +191,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Total return of high-yield bonds (HYG; Vanguard High-Yield fund before 2007) minus 7–10y Treasuries (IEF) over the past 3 months.',
       why: 'Credit spreads widen before and during equity stress as default risk is repriced. Using a total-return spread between tradeable funds needs no FRED data, so it works back to 1990. Weak relative performance is risk-off.',
-      range: 'Typical −2% to +3% over 3 months; below −5% = credit stress.',
-      episodes: '2008: about −25% at the worst. 2020: about −15% in March. 2022: small, because HY and Treasuries fell together as rates rose.',
+      range: '10th–90th percentile −4.1% to +5.3% over 3 months since 2010; below −5% = credit stress.',
+      episodes: '2008: −41% (11 Dec). 2020: −33% (23 Mar). 2022: worst −7% (6 Jul), because HY bonds and Treasuries fell together as rates rose.',
     },
   },
   {
@@ -208,8 +208,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Change over 3 months in the ICE BofA US High Yield option-adjusted spread (FRED, published with a 1-day lag).',
       why: 'The OAS is the market’s direct price of default risk. Widening spreads mean tightening financial conditions and usually lead or coincide with equity drawdowns. If FRED is unavailable this component drops out and the credit ETF proxy carries the credit signal.',
-      range: 'Level typically 3–5%; a widening of more than 1.5 pp in 3 months = stress.',
-      episodes: '2008: from ~5% to ~20%. 2020: from ~3.5% to ~10.9% in March. 2022: from ~3% to ~6%.',
+      range: 'Rapid widening over 3 months signals stress; levels are not shown because FRED data is unavailable in this build.',
+      episodes: 'Spreads widened sharply in 2008 and Mar 2020 and more gradually in 2022. Numbers are omitted because they cannot be checked against this dataset.',
     },
   },
   {
@@ -228,8 +228,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Percentage distance of the S&P 500 from its 200-day moving average.',
       why: 'A price trend filter. Volatility signals are fast but noisy; trend is slow but confirms whether stress is turning into a bear market. Below the 200-day average, historical equity returns have been lower and much more volatile.',
-      range: 'Typical −5% to +10%; below −10% = bear market.',
-      episodes: 'Below its 200-day average from early 2008 to mid-2009, briefly in early 2018, from Mar to Jun 2020, and for most of 2022.',
+      range: 'Typically −5% to +10%; below −10% = bear market (low: −39.7% on 20 Nov 2008).',
+      episodes: 'Below the average from Nov 2007 to Jun 2009 (95% of days in 2008–H1 2009). It barely touched it in Feb–Apr 2018 (2% of days), so the trend filter missed Volmageddon; the vol components caught it. Below on 71% of days in Mar–Jun 2020 and 85% of 2022.',
     },
   },
   {
@@ -245,8 +245,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'ICE BofA MOVE index: implied volatility of US Treasury yields (the "VIX of bonds").',
       why: 'Rate volatility tightens financial conditions and undermines bonds as a hedge, as in 2022. The data comes from Yahoo only, with occasional gaps, so it is off by default.',
-      range: 'Typical 60–100; stressed 130+.',
-      episodes: '2008: ~260. 2020: ~160 briefly. 2022: 120–160 for months. Mar 2023 (SVB): ~200.',
+      range: 'Interquartile 58–84 in 2010–19; stressed 130+.',
+      episodes: '2008: 264.6 (10 Oct). 2020: 163.7 (9 Mar). 2022: mostly 87–148. Mar 2023 (SVB): 182.6 (20 Mar).',
     },
   },
   {
@@ -262,8 +262,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Weekly index of 105 US financial-condition measures (money markets, debt, equity, banking). 0 = average; positive = tighter than average.',
       why: 'A broad, slow-moving measure of financial stress that is good at confirming systemic episodes. It is published weekly with a lag (Friday data on Wednesday), which the pipeline enforces.',
-      range: 'Typically −0.7 to 0; above 0 = tighter than average.',
-      episodes: '2008: ~+2.9 (highest since the 1980s). 2020: ~+0.2. 2022: rose but stayed below 0.',
+      range: 'Below 0 = looser than average; above 0 = tighter than average.',
+      episodes: 'Rose sharply in 2008, briefly in Mar 2020 and gradually in 2022. Numbers are omitted because FRED data is unavailable in this build.',
     },
   },
   {
@@ -279,8 +279,8 @@ export const COMPONENTS: ComponentDef[] = [
     doc: {
       what: 'Weekly composite of 18 rates, spreads and volatility measures. 0 = normal stress.',
       why: 'Like the NFCI, a systemic-stress confirmation that is slow and published with a lag.',
-      range: 'Typically −1 to +1; above +2 = significant stress.',
-      episodes: '2008: ~+5. 2020: ~+5 briefly. 2022: around 0.',
+      range: '0 = average stress; strongly positive readings = systemic stress.',
+      episodes: 'Spiked in 2008 and Mar 2020. Numbers are omitted because FRED data is unavailable in this build.',
     },
   },
   {
@@ -297,7 +297,7 @@ export const COMPONENTS: ComponentDef[] = [
       what: 'Spread between 10-year and 2-year Treasury yields.',
       why: 'Inversion (negative) has preceded most US recessions, but with long and variable lags (6–24 months), so it is a poor timing signal. It is included for exploration and off by default.',
       range: 'Typical 0 to +2.5 pp; negative = inverted.',
-      episodes: 'Inverted in 2006–07 (before 2008), briefly in 2019, and from Jul 2022 to 2024, without an immediate equity crash.',
+      episodes: 'Inverted on about half of days in 2006–07 (before 2008), for 3 days in 2019, and almost continuously from Jul 2022 to Sep 2024, which was followed by an equity rally rather than a crash.',
     },
   },
 ];
