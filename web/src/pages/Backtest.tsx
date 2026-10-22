@@ -81,6 +81,8 @@ export default function Backtest() {
   const [bench, setBench] = useState<string[]>(DEFAULT_BENCH);
   const [split, setSplit] = useState<'full' | 'is' | 'oos'>('full');
   const [copied, setCopied] = useState(false);
+  // on narrow screens the parameter panel starts collapsed so results come first
+  const [showParams, setShowParams] = useState(() => typeof window === 'undefined' || window.innerWidth > 1080);
   const refs = {
     equity: useRef<ChartHandle>(null),
     dd: useRef<ChartHandle>(null),
@@ -279,7 +281,10 @@ export default function Backtest() {
         <p className="muted">Hypothetical simulation of the score-driven allocation. Every change re-runs instantly; the URL keeps the configuration, so it can be bookmarked or shared.</p>
       </div>
       <div className="bt-layout">
-        <aside className="bt-side">
+        <button className="btn params-toggle" onClick={() => setShowParams(!showParams)} aria-expanded={showParams}>
+          {showParams ? 'Hide parameters' : 'Show parameters'}
+        </button>
+        <aside className={`bt-side ${showParams ? '' : 'collapsed'}`}>
           <ParamPanel params={params} setParams={setParams} regimeColors={c.regime} availability={availability} />
         </aside>
         <div className="bt-main">

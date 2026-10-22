@@ -110,3 +110,36 @@ def safe_write(df: pd.DataFrame, path: Path, **stable_kwargs) -> None:
     out.index.name = "date"
     out.to_csv(tmp, float_format="%.10g")
     tmp.replace(path)
+
+
+def stabilise_adjusted(
+    old: pd.DataFrame | None,
+    new: pd.DataFrame,
+    *,
+    adj_col: str = "adj_close",
+    raw_col: str = "close",
+    split_tol: float = 1e-3,
+) -> pd.DataFrame:
+    """Keep stored history byte-identical and chain only new rows onto it.
+
+    Yahoo re-rounds its dividend-adjusted prices on every download, which would
+    rewrite every line of every cache daily. Since only returns are used
+    downstream, the stored adjusted series is kept and new rows are rescaled so
+    that their returns match Yahoo's. If unadjusted closes disagree on the
+    overlap (a split restated history), the new download is used as-is.
+    """
+    if old is None or old.empty:
+        return new
+    common = old.index.intersection(new.index)
+    if len(common) == 0:
+        return new
+    ratio = (new.loc[common, raw_col] / old.loc[common, raw_col]).dropna()
+    if len(ratio) and (ratio - 1).abs().max() > split_tol:
+        return new  # split or other restatement of raw prices
+    last = common[-1]
+    fresh = new[new.index > last].copy()
+    if fresh.empty:
+        return old
+    scale = old.at[last, adj_col] / new.at[last, adj_col]
+    fresh[adj_col] = fresh[adj_col] * scale
+    return pd.concat([old, fresh])

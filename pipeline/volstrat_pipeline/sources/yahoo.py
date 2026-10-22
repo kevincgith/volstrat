@@ -14,7 +14,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from ..storage import DataGuardError, read_cache, safe_write
+from ..storage import (
+    DataGuardError,
+    check_history_stable,
+    read_cache,
+    safe_write,
+    stabilise_adjusted,
+)
 from .base import SourceStatus
 
 log = logging.getLogger(__name__)
@@ -104,8 +110,12 @@ def update(raw_dir: Path) -> list[SourceStatus]:
         try:
             df = drop_incomplete_today(fetch(t.symbol))
             path = raw_dir / cache_name(t.symbol)
-            # Adjusted history is rescaled on dividends: compare returns, loosely.
-            safe_write(df, path, columns=["adj_close"], returns=True, max_changed_frac=0.02)
+            cached = read_cache(path)
+            # Adjusted history is rescaled on dividends: compare returns, loosely...
+            check_history_stable(cached, df, ["adj_close"], returns=True, max_changed_frac=0.02)
+            # ...then keep the stored history and append only new days (no daily churn).
+            df = stabilise_adjusted(cached, df)
+            safe_write(df, path)
             st.ok, st.rows, st.last_date = True, len(df), df.index[-1].date().isoformat()
         except (DataGuardError, RuntimeError) as e:
             st.message = str(e)

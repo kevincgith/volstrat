@@ -1,13 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Loading } from './components/ui';
+
+// pages load on demand: the first visit only downloads what it shows
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Signals = lazy(() => import('./pages/Signals'));
+const Backtest = lazy(() => import('./pages/Backtest'));
+const Diagnostics = lazy(() => import('./pages/Diagnostics'));
+const Optimise = lazy(() => import('./pages/Optimise'));
+const Compare = lazy(() => import('./pages/Compare'));
+const Methodology = lazy(() => import('./pages/Methodology'));
 import { ThemeToggle } from './components/ThemeToggle';
 import { Disclaimer } from './components/Disclaimer';
-import Dashboard from './pages/Dashboard';
-import Signals from './pages/Signals';
-import Backtest from './pages/Backtest';
-import Compare from './pages/Compare';
-import Diagnostics from './pages/Diagnostics';
-import Optimise from './pages/Optimise';
-import Methodology from './pages/Methodology';
 
 const TABS = [
   { path: '/dashboard', label: 'Dashboard' },
@@ -40,6 +44,7 @@ export default function App() {
         <ThemeToggle />
       </header>
       <main className="content">
+        <Suspense fallback={<Loading label="Loading page…" />}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -51,6 +56,7 @@ export default function App() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </Suspense>
       </main>
       <Disclaimer />
     </div>

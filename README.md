@@ -94,6 +94,11 @@ npm run dev      # http://localhost:5173/volstrat/
 npm test
 ```
 
+**Troubleshooting (macOS):** if `volstrat` or `pytest` raises `ModuleNotFoundError:
+volstrat_pipeline`, macOS has set the "hidden" flag on the editable-install `.pth` file, and
+Python 3.13 skips hidden `.pth` files. Fix it with
+`chflags nohidden .venv/lib/python3*/site-packages/*.pth`.
+
 ## Deployment
 
 - `ci.yml` runs lint, tests, typecheck and build on every PR and every push to `main`.

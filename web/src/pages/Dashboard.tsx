@@ -310,8 +310,46 @@ export default function Dashboard() {
             </span>
           )}
         </p>
+        {(() => {
+          const checks = data.meta.checks ?? [];
+          const bad = checks.filter((x) => !x.ok);
+          return checks.length ? (
+            <p className="small">
+              Cross-source checks:{' '}
+              {bad.length === 0 ? (
+                <span className="ok">all {checks.length} passed</span>
+              ) : (
+                <span className="warn">
+                  {bad.length} of {checks.length} flagged: {bad.map((x) => `${x.name} (${x.detail})`).join('; ')}
+                </span>
+              )}
+            </p>
+          ) : null;
+        })()}
         <details>
-          <summary className="small">Per-source detail</summary>
+          <summary className="small">Per-source detail and checks</summary>
+          {(data.meta.checks ?? []).length > 0 && (
+            <div className="table-wrap">
+              <table className="data compact">
+                <thead>
+                  <tr>
+                    <th>Cross-source check</th>
+                    <th>Status</th>
+                    <th>Detail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.meta.checks!.map((x) => (
+                    <tr key={x.name}>
+                      <td>{x.name}</td>
+                      <td>{x.ok ? <span className="ok">✓ OK</span> : <span className="warn">! check</span>}</td>
+                      <td className="muted small">{x.detail}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="table-wrap">
             <table className="data compact">
               <thead>

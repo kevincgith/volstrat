@@ -80,18 +80,30 @@ jobs:
           TITLE: ${{ steps.signal.outputs.title }}
           BODY: ${{ steps.signal.outputs.body }}
         run: |
-          gh issue create --title "$TITLE" --body "$BODY" --label regime-change \
-            || gh issue create --title "$TITLE" --body "$BODY"
+          gh issue create --title "$TITLE" --body "$BODY" --label regime-change
 
       - name: Report failure
         if: always() && (steps.run.outputs.failed == '1' || failure())
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          title="Data update failed $(date -u +%Y-%m-%d)"
           body=$(printf 'Run: %s/%s/actions/runs/%s\n\n```\n%s\n```' \
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
-            "$(grep -E '^\[|^ +!|failed' update.log | tail -40)")
-          gh issue create --title "$title" --body "$body" --label data-failure \
-            || gh issue create --title "$title" --body "$body"
+            "$(grep -E '^\[|^ +!|failed' update.log 2>/dev/null | tail -40)")
+          # one open issue per outage: comment on it instead of opening duplicates
+          open=$(gh issue list --label data-failure --state open --json number -q '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "Still failing $(date -u +%Y-%m-%dT%H:%MZ). $body"
+          else
+            gh issue create --title "Data update failing since $(date -u +%Y-%m-%d)" --body "$body" --label data-failure
+          fi
           exit 1
+
+      - name: Close resolved failure issue
+        if: success() && steps.run.outputs.failed == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for n in $(gh issue list --label data-failure --state open --json number -q '.[].number'); do
+            gh issue close "$n" --comment "Resolved by run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          done

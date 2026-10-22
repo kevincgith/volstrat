@@ -994,3 +994,71 @@ h3.sub {
   margin-top: 16px;
   padding-top: 12px;
 }
+
+/* ---------------------------------------------------------------- narrow screens */
+.params-toggle {
+  display: none;
+}
+@media (max-width: 1080px) {
+  .params-toggle {
+    display: block;
+    justify-self: start;
+  }
+  .bt-side.collapsed {
+    display: none;
+  }
+}
+@media (max-width: 860px) {
+  .topbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: 8px;
+    row-gap: 0;
+  }
+  .brand {
+    flex: 1;
+  }
+  .tabs {
+    order: 3;
+    flex-basis: 100%;
+    margin: 0 -16px;
+    padding: 0 8px;
+    scroll-snap-type: x proximity;
+    -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
+    mask-image: linear-gradient(90deg, #000 85%, transparent);
+  }
+  .tab {
+    padding: 10px 10px 9px;
+    scroll-snap-align: start;
+  }
+  .bt-side {
+    top: auto;
+  }
+  .card-actions .field {
+    min-width: 0;
+    flex: 1 1 160px;
+  }
+  .robust-results,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 860px) {
+  table.data th,
+  table.data td {
+    padding: 5px 6px;
+  }
+  table.stats tbody th {
+    white-space: normal;
+    min-width: 96px;
+    max-width: 120px;
+  }
+  /* keep the metric names visible while the numbers scroll */
+  table.stats thead th:first-child,
+  table.stats tbody th {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
+}

@@ -138,6 +138,19 @@ and expense ratio can be set as parameters.
 - Values outside plausible ranges are removed and reported. If too many are, the source
   fails, since that usually means the file format changed.
 - Any intraday Yahoo bar is dropped before 16:30 ET.
+- **Stable caches:** Yahoo re-rounds adjusted prices on every download (moves of up to 3e-6
+  in past returns). The stored history is kept unchanged and only new days are chained on,
+  rescaled so their returns match Yahoo's. This keeps daily commits to a few lines instead
+  of about 112,000. A stock split, which restates unadjusted closes, replaces the history.
+- **Cross-source checks** run on every build. Results go in `meta.json` and on the Dashboard:
+  - the trading calendar is up to date with Cboe;
+  - VIX3M and VVIX agree between Cboe and Yahoo (median gap < 1%);
+  - SPY returns track the S&P 500 TR index (60-day correlation > 0.99, median gap < 10 bp);
+  - VX1/VIX is within 0.6–1.8;
+  - key series are no more than 3 business days stale;
+  - no asset has an implausible daily move.
+- **Alerts:** a failing required source opens one `data-failure` issue per outage. Later
+  failures comment on it, and it closes automatically once a run succeeds.
 - Required sources (Cboe indices, VX, Treasury, core Yahoo tickers) fail the daily job and
   open a GitHub issue. Optional ones (put/call, FRED, proxies) fall back to cached data and
   are flagged in `meta.json`.

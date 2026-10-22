@@ -42,7 +42,12 @@ export interface MarketData {
   series: Record<string, Float64Array>;
   seriesMeta: Record<string, SeriesMeta>;
   assets: Record<string, AssetData>;
-  meta: { generated_at: string; last_date: string; sources: Record<string, SourceStatus> };
+  meta: {
+    generated_at: string;
+    last_date: string;
+    sources: Record<string, SourceStatus>;
+    checks?: { name: string; ok: boolean; detail: string }[];
+  };
 }
 
 export interface VxCurves {

@@ -7,6 +7,7 @@ from volstrat_pipeline.storage import (
     check_replacement,
     read_cache,
     safe_write,
+    stabilise_adjusted,
 )
 
 
@@ -76,3 +77,28 @@ def test_rounding_noise_in_adjusted_returns_passes():
     bad.iloc[::5, 0] *= 1.001  # 10bp restatements on 20% of days
     with pytest.raises(DataGuardError):
         check_history_stable(old, bad, ["close"], returns=True)
+
+
+def adj_frame(start: str, n: int, scale: float = 1.0) -> pd.DataFrame:
+    idx = pd.bdate_range(start, periods=n)
+    close = pd.Series([100.0 + i for i in range(n)], index=idx)
+    return pd.DataFrame({"close": close, "adj_close": close * 0.9 * scale})
+
+
+def test_stabilise_keeps_history_and_chains_new_rows():
+    old = adj_frame("2024-01-01", 5)
+    new = adj_frame("2024-01-01", 7, scale=0.97)  # re-adjusted after a dividend + 2 new days
+    out = stabilise_adjusted(old, new)
+    pd.testing.assert_frame_equal(out.iloc[:5], old)  # history untouched
+    # new rows keep Yahoo's returns
+    r_new = new["adj_close"].pct_change().iloc[5:]
+    r_out = out["adj_close"].pct_change().iloc[5:]
+    assert (r_new - r_out).abs().max() < 1e-12
+
+
+def test_stabilise_takes_new_history_after_a_split():
+    old = adj_frame("2024-01-01", 5)
+    new = adj_frame("2024-01-01", 6)
+    new[["close", "adj_close"]] /= 2  # 2-for-1 split restates history
+    out = stabilise_adjusted(old, new)
+    pd.testing.assert_frame_equal(out, new)

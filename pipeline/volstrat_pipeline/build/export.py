@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ..checks import crosscheck as cc
 from ..sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, yahoo
 from ..sources.fetch_status import load_status
 from .align import as_of, master_calendar
@@ -262,6 +263,21 @@ def build_all(raw: Path, site: Path) -> None:
             site / "vx_curve.json",
         )
 
+    # cross-source sanity checks (warnings shown on the Dashboard)
+    cb = cboe_indices.load(raw)
+    ys = {k: _close(raw, k) for k in ("^VIX3M", "^VVIX")}
+    checks = [
+        cc.calendar_vs_cboe(cal[-1], cb["VIX"].dropna().index[-1]),
+        *cc.vol_index_agreement(cb, ys),
+        cc.spy_vs_index(_close(raw, "SPY", "adj_close"), _close(raw, "^SP500TR")),
+        cc.futures_vs_spot(sig),
+        *cc.staleness(sig, ["VIX", "VIX3M", "VVIX", "VX1", "PC_EQUITY", "Y3M", "SPX"]),
+        *cc.jumps({k: v["tr"] for k, v in assets.items()}),
+    ]
+    for c in checks:
+        if not c.ok:
+            log.warning("check failed: %s - %s", c.name, c.detail)
+
     status = load_status(raw)
     _write_json(
         {
@@ -269,6 +285,7 @@ def build_all(raw: Path, site: Path) -> None:
             "generated_at": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"),
             "last_date": dates[-1],
             "sources": status,
+            "checks": [c.to_dict() for c in checks],
         },
         site / "meta.json",
     )
