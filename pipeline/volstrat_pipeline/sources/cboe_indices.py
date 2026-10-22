@@ -25,6 +25,7 @@ SYMBOLS: dict[str, tuple[str, tuple[float, float]]] = {
     "VIX9D": ("CLOSE", (3, 250)),
     "VIX3M": ("CLOSE", (5, 120)),
     "VIX6M": ("CLOSE", (5, 100)),
+    "VIX1Y": ("CLOSE", (5, 100)),
     "VVIX": ("VVIX", (40, 300)),
     "SKEW": ("SKEW", (90, 200)),
 }

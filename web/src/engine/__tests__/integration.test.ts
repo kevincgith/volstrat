@@ -58,3 +58,18 @@ describe.skipIf(!have)('real data', () => {
     expect(Math.abs(annualGap)).toBeLessThan(0.015);
   });
 });
+
+describe.skipIf(!have)('component correlations on real data', () => {
+  it('finds the documented near-duplicates and is symmetric', async () => {
+    const { componentCorrelations } = await import('../diagnostics');
+    const data = assemble(load('signals.json'), load('assets.json'), load('meta.json'));
+    const m = componentCorrelations(data, DEFAULT_PARAMS.score);
+    const at = (a: string, b: string) => m.corr[m.ids.indexOf(a)]![m.ids.indexOf(b)]!;
+    expect(m.ids.length).toBeGreaterThanOrEqual(20);
+    expect(at('vix', 'vix')).toBeCloseTo(1, 10);
+    expect(at('vix_term', 'vts_vx30_roll')).toBe(at('vts_vx30_roll', 'vix_term'));
+    expect(at('vx_slope', 'vts_adj_m1m2')).toBeGreaterThan(0.9); // METHODOLOGY 14.3: 0.97
+    expect(at('vix', 'vx30_level')).toBeGreaterThan(0.9); // 0.96
+    expect(at('vrp', 'vts_traders_vrp')).toBeLessThan(0.6); // 0.44
+  });
+});

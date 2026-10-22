@@ -6,8 +6,8 @@ import { assetLabel } from '../components/ParamPanel';
 import { Card, ErrorBox, Loading, Segmented, Select } from '../components/ui';
 import type { Attribution } from '../engine/attribution';
 import { STRATEGY_ASSETS } from '../engine/assets';
-import { COMPONENT_BY_ID } from '../engine/components';
-import { conditionalReturns, informationCoefficient, scoreBuckets } from '../engine/diagnostics';
+import { COMPONENTS, COMPONENT_BY_ID } from '../engine/components';
+import { componentCorrelations, conditionalReturns, informationCoefficient, scoreBuckets } from '../engine/diagnostics';
 import { REGIMES } from '../engine/score';
 import { downloadText, toCsv } from '../lib/csv';
 import { useData } from '../state/data';
@@ -220,6 +220,7 @@ export default function Diagnostics() {
         </p>
       </Card>
 
+      <CorrelationCard />
       <AttributionCard />
     </section>
   );
@@ -378,6 +379,79 @@ function AttributionCard() {
           </p>
         </>
       )}
+    </Card>
+  );
+}
+
+/** Spearman correlation of every component's oriented 0-100 score (pairwise complete days). */
+function CorrelationCard() {
+  const { data } = useData();
+  const [params] = useParams();
+  const { theme } = useTheme();
+  const c = colors(theme);
+  const [scope, setScope] = useState<'enabled' | 'all'>('all');
+  const ref = useRef<ChartHandle>(null);
+
+  const mat = useMemo(() => {
+    if (!data) return null;
+    const defs = COMPONENTS.filter((def) => (scope === 'all' ? true : params.score.components[def.id]?.enabled));
+    const m = componentCorrelations(data, params.score, defs);
+    return { ...m, labels: m.labels.map((l) => l.replace(/ \(.*\)$/, '')) };
+  }, [data, params.score, scope]);
+
+  const option = useMemo(() => {
+    if (!mat) return null;
+    const n = mat.labels.length;
+    const cells: [number, number, number][] = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) cells.push([j, n - 1 - i, mat.corr[i]![j]!]);
+    return {
+      ...baseOption(c),
+      legend: { show: false },
+      tooltip: {
+        ...baseOption(c).tooltip,
+        trigger: 'item',
+        formatter: (p: { value: [number, number, number] }) => `${mat.labels[n - 1 - p.value[1]]}<br/>${mat.labels[p.value[0]]}<br/>correlation <b>${num(p.value[2])}</b>`,
+      },
+      grid: { left: 200, right: 16, top: 8, bottom: 150 },
+      xAxis: { type: 'category', data: mat.labels, axisLabel: { color: c.muted, rotate: 50, fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
+      yAxis: { type: 'category', data: [...mat.labels].reverse(), axisLabel: { color: c.ink2, fontSize: 10 }, axisLine: { show: false }, axisTick: { show: false } },
+      visualMap: { type: 'continuous', min: -1, max: 1, dimension: 2, orient: 'horizontal', left: 'center', bottom: 0, itemHeight: 160, itemWidth: 10, inRange: { color: [c.neg, c.neutral, c.pos] }, textStyle: { color: c.muted } },
+      series: [
+        {
+          type: 'heatmap',
+          data: cells,
+          itemStyle: { borderColor: c.surface, borderWidth: 1 },
+          label: { show: n <= 16, color: c.ink, fontSize: 9, formatter: (p: { value: [number, number, number] }) => (Number.isFinite(p.value[2]) ? p.value[2].toFixed(1) : '') },
+        },
+      ],
+    };
+  }, [mat, c]);
+
+  return (
+    <Card
+      title="Component redundancy (rank correlation of scores)"
+      actions={
+        <>
+          <Segmented
+            ariaLabel="Components"
+            value={scope}
+            onChange={setScope}
+            options={[
+              { value: 'all', label: 'All components' },
+              { value: 'enabled', label: 'Enabled only' },
+            ]}
+          />
+          <button className="btn ghost" onClick={() => ref.current?.toPNG('volstrat-component-correlation')}>
+            PNG
+          </button>
+        </>
+      }
+    >
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Correlation between components' oriented scores (100 = risk-on) over the days both exist, with current standardisation settings. Two components
+        correlated above ~0.8 carry largely the same information: adding both mostly double-weights that information rather than diversifying the signal.
+      </p>
+      {option && mat && <Chart ref={ref} option={option} height={Math.max(360, mat.labels.length * 22 + 170)} ariaLabel="Heatmap of correlations between component scores" />}
     </Card>
   );
 }

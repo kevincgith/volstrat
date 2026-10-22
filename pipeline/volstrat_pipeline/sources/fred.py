@@ -54,7 +54,11 @@ def parse_graph_csv(text: str) -> pd.Series:
 def fetch(sid: str) -> pd.Series:
     key = os.environ.get("FRED_API_KEY")
     if key:
-        obs = get(API_URL.format(sid=sid, key=key), timeout=60).json()["observations"]
+        # error messages carry the URL and end up in the public meta.json
+        try:
+            obs = get(API_URL.format(sid=sid, key=key), timeout=60).json()["observations"]
+        except FetchError as e:
+            raise FetchError(str(e).replace(key, "REDACTED")) from None
         s = pd.Series(
             pd.to_numeric([o["value"] for o in obs], errors="coerce"),
             index=pd.to_datetime([o["date"] for o in obs]),

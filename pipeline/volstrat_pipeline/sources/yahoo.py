@@ -66,6 +66,7 @@ TICKERS: list[Ticker] = [
     Ticker("^VIX3M", "VIX3M (pre-2009 history missing from the Cboe file)", False),
     Ticker("^VVIX", "VVIX fallback", False),
     Ticker("^MOVE", "ICE BofA MOVE index (Treasury implied vol)", False),
+    Ticker("^VOLI", "Nations VolDex: ATM SPY implied vol (VIX - VOLI residual)", False),
     Ticker("^IRX", "13-week T-bill discount rate (cash fallback)", False),
 ]
 

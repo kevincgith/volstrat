@@ -187,3 +187,63 @@ export function zip2(a: Float64Array, b: Float64Array, f: (x: number, y: number)
   for (let i = 0; i < a.length; i++) out[i] = f(a[i]!, b[i]!);
   return out;
 }
+
+/** Weighted moving average with linear weights 1..n (most recent = n); NaN if any value missing. */
+export function wma(x: Float64Array, n: number): Float64Array {
+  const out = new Float64Array(x.length).fill(NaN);
+  const denom = (n * (n + 1)) / 2;
+  for (let t = n - 1; t < x.length; t++) {
+    let acc = 0;
+    let ok = true;
+    for (let k = 0; k < n; k++) {
+      const v = x[t - k]!;
+      if (!Number.isFinite(v)) {
+        ok = false;
+        break;
+      }
+      acc += (n - k) * v;
+    }
+    if (ok) out[t] = acc / denom;
+  }
+  return out;
+}
+
+/**
+ * Residual of y on x from an OLS fitted over the trailing `window`
+ * observations ending at t (inclusive): y[t] - (a + b * x[t]). Causal.
+ */
+export function rollingResidual(y: Float64Array, x: Float64Array, window: number, minPeriods: number): Float64Array {
+  const out = new Float64Array(y.length).fill(NaN);
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let sxy = 0;
+  let n = 0;
+  const ok = (i: number) => Number.isFinite(x[i]!) && Number.isFinite(y[i]!);
+  for (let t = 0; t < y.length; t++) {
+    if (ok(t)) {
+      sx += x[t]!;
+      sy += y[t]!;
+      sxx += x[t]! * x[t]!;
+      sxy += x[t]! * y[t]!;
+      n++;
+    }
+    const o = t - window;
+    if (o >= 0 && ok(o)) {
+      sx -= x[o]!;
+      sy -= y[o]!;
+      sxx -= x[o]! * x[o]!;
+      sxy -= x[o]! * y[o]!;
+      n--;
+    }
+    if (n >= minPeriods && ok(t)) {
+      const vx = sxx - (sx * sx) / n;
+      if (vx > 0) {
+        const b = (sxy - (sx * sy) / n) / vx;
+        const a = (sy - b * sx) / n;
+        out[t] = y[t]! - (a + b * x[t]!);
+      }
+    }
+  }
+  return out;
+}

@@ -7,6 +7,10 @@
  * whether the signal itself separates good from bad environments.
  */
 
+import { COMPONENTS, type ComponentDef } from './components';
+import type { MarketData } from './data';
+import { rawFeature, standardise, type ScoreParams } from './score';
+
 const DAYS = 252;
 
 export interface GroupStats {
@@ -189,4 +193,60 @@ export function informationCoefficient(
   if (n < 10) return { ic: NaN, tStat: NaN, n, horizon };
   const ic = pearson(ranks(s), ranks(f));
   return { ic, tStat: ic * Math.sqrt((n - 2) / Math.max(1e-12, 1 - ic * ic)), n, horizon };
+}
+
+export interface CorrelationMatrix {
+  ids: string[];
+  labels: string[];
+  corr: number[][];
+}
+
+/**
+ * Pairwise correlation of components' oriented 0-100 scores (percentile ranks,
+ * so a rank correlation for the percentile method), over the days both exist.
+ * Every `step`-th day is used (default 5) for speed.
+ */
+export function componentCorrelations(d: MarketData, p: ScoreParams, defs: ComponentDef[] = COMPONENTS, step = 5): CorrelationMatrix {
+  const series = defs
+    .map((def) => {
+      const pct = standardise(rawFeature(d, def), p);
+      const inv = def.riskOffWhenHigh !== (p.components[def.id]?.invert ?? false);
+      return { def, x: inv ? pct.map((v) => 100 - v) : pct };
+    })
+    .filter((x) => x.x.some(Number.isFinite));
+  const n = series.length;
+  const corr: number[][] = Array.from({ length: n }, () => new Array<number>(n).fill(NaN));
+  for (let i = 0; i < n; i++) {
+    for (let j = i; j < n; j++) {
+      const xi = series[i]!.x;
+      const xj = series[j]!.x;
+      let c = 0;
+      let sa = 0;
+      let sb = 0;
+      let saa = 0;
+      let sbb = 0;
+      let k = 0;
+      for (let t = 0; t < xi.length; t += step) {
+        const a = xi[t]!;
+        const b = xj[t]!;
+        if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
+        sa += a;
+        sb += b;
+        saa += a * a;
+        sbb += b * b;
+        c += a * b;
+        k++;
+      }
+      let r = NaN;
+      if (k > 50) {
+        const cov = c - (sa * sb) / k;
+        const va = saa - (sa * sa) / k;
+        const vb = sbb - (sb * sb) / k;
+        if (va > 0 && vb > 0) r = cov / Math.sqrt(va * vb);
+      }
+      corr[i]![j] = r;
+      corr[j]![i] = r;
+    }
+  }
+  return { ids: series.map((x) => x.def.id), labels: series.map((x) => x.def.label), corr };
 }

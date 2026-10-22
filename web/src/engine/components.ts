@@ -7,9 +7,9 @@
  */
 
 import type { MarketData } from './data';
-import { diff, realisedVol, sma, zip2 } from './stats';
+import { diff, realisedVol, rollingResidual, sma, wma, zip2 } from './stats';
 
-export type ComponentGroup = 'Volatility' | 'Term structure' | 'Sentiment' | 'Credit' | 'Macro' | 'Trend';
+export type ComponentGroup = 'Volatility' | 'Term structure' | 'Sentiment' | 'Credit' | 'Macro' | 'Trend' | 'VTS-style';
 
 export interface ComponentDef {
   id: string;
@@ -298,6 +298,172 @@ export const COMPONENTS: ComponentDef[] = [
       why: 'Inversion (negative) has preceded most US recessions, but with long and variable lags (6–24 months), so it is a poor timing signal. It is included for exploration and off by default.',
       range: 'Typical 0 to +2.5 pp; negative = inverted.',
       episodes: 'Inverted on about half of days in 2006–07 (before 2008), for 3 days in 2019, and almost continuously from Jul 2022 to Sep 2024, which was followed by an equity rally rather than a crash.',
+    },
+  },
+  // ---------------------------------------------------------------- VTS-style dashboard metrics
+  // Definitions follow Volatility Trading Strategies' published descriptions where they exist
+  // (VX30, VX30:VIX, Traders VRP, Adjusted M1:M2, Cash VIX Oscillator - the last reconstructed and
+  // matched to VTS's published extremes). All off by default: they were added after the
+  // default set was fixed, so turning them on is a modelling choice to test, not a given.
+  {
+    id: 'vts_cvo',
+    label: 'Cash VIX Oscillator (VTS)',
+    group: 'VTS-style',
+    inputs: ['VIX9D', 'VIX', 'VIX3M', 'VIX6M'],
+    riskOffWhenHigh: false,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'vol pts',
+    compute: (d) => {
+      const a = s(d, 'VIX3M');
+      const b = s(d, 'VIX6M');
+      const c = s(d, 'VIX9D');
+      const v = s(d, 'VIX');
+      const out = new Float64Array(d.dates.length);
+      for (let i = 0; i < out.length; i++) out[i] = a[i]! + b[i]! - (c[i]! + v[i]!);
+      return out;
+    },
+    doc: {
+      what: '(VIX3M + VIX6M) − (VIX9D + VIX): the long end of the cash VIX curve minus the short end, in vol points.',
+      why: 'Summarises the whole cash term structure in one number. Positive = normal upward slope (calm); deeply negative = the front of the curve has spiked above the back (panic). VTS publishes no formula; this reconstruction reproduces both of its published extremes exactly (15.28 on 16 Mar 2012, −43.98 on 5 Feb 2018).',
+      range: '10th/50th/90th percentile +0.3 / +6.8 / +11.4 (2011–2026); below 0 = inverted cash curve.',
+      episodes: 'Lows: −42.90 (8 Aug 2011), −36.85 (24 Aug 2015), −43.98 (5 Feb 2018), −23.27 (24 Dec 2018), −73.98 (12 Mar 2020); only −6.37 in 2022 (26 Jan). Series starts 2011 (VIX9D).',
+    },
+  },
+  {
+    id: 'vts_vx30_roll',
+    label: 'VX30:VIX roll yield (VTS)',
+    group: 'VTS-style',
+    inputs: ['VX30', 'VIX'],
+    riskOffWhenHigh: false,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: '%',
+    compute: (d) => zip2(s(d, 'VX30'), s(d, 'VIX'), (f, v) => (v > 0 ? 100 * (f / v - 1) : NaN)),
+    doc: {
+      what: '(VX30 − VIX) / VIX, where VX30 is a 1-month constant-maturity VIX future rolled from M1 into M2 over each expiry cycle in trading days (VTS definition).',
+      why: 'The basis between futures and spot: futures converge to spot at expiry, so a positive basis is the roll yield short-volatility products earn and long-volatility products pay. A negative basis (futures below spot) means the market expects today’s fear to fade — typical of acute stress.',
+      range: '10th/50th/90th percentile −4.1% / +8.6% / +18.5% (2004–2026); negative = futures below spot.',
+      episodes: 'Lows: −36.8% (10 Oct 2008), −32.5% (8 Aug 2011), −39.4% (24 Aug 2015), −31.4% (8 Feb 2018), −37.3% (28 Feb 2020); negative on 31% of 2022 days (low −10.8%).',
+    },
+  },
+  {
+    id: 'vts_traders_vrp',
+    label: 'Traders VRP (VTS)',
+    group: 'VTS-style',
+    inputs: ['VX30', 'SPX'],
+    riskOffWhenHigh: false,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'vol pts',
+    compute: (d) => wma(zip2(s(d, 'VX30'), realisedVol(s(d, 'SPX'), 5), (f, h) => f - h), 5),
+    doc: {
+      what: '5-day linearly weighted moving average of (VX30 − 5-day S&P 500 historical volatility) (VTS definition).',
+      why: 'A faster, tradeable version of the variance risk premium: VX30 is what volatility futures actually charge, and 5-day realised volatility reacts within days. Negative = recent realised moves exceed what futures price.',
+      range: '10th/50th/90th percentile −1.2 / +6.2 / +11.9 pts; negative on 12.3% of days since 2004 (VTS reports ~13%) and 23.9% of days in 2018 (VTS: "nearly 25%").',
+      episodes: 'Lows: −73.3 (17 Oct 2008), −48.3 (12 Aug 2011), −21.6 (28 Aug 2015), −18.0 (12 Feb 2018), −20.4 (31 Dec 2018), −83.3 (18 Mar 2020); negative on 20% of 2022 days.',
+    },
+  },
+  {
+    id: 'vts_adj_m1m2',
+    label: 'Adjusted M1:M2 contango (VTS)',
+    group: 'VTS-style',
+    inputs: ['VX30', 'VX_ADJ_M2'],
+    riskOffWhenHigh: false,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: '%',
+    compute: (d) => zip2(s(d, 'VX_ADJ_M2'), s(d, 'VX30'), (b, a) => (a > 0 ? 100 * (b / a - 1) : NaN)),
+    doc: {
+      what: 'Contango between the roll-adjusted first and second months: adjusted M1 = VX30 (M1→M2 roll), adjusted M2 = the same roll applied to M2→M3 (VTS definition).',
+      why: 'The raw M1:M2 spread jumps at every expiry because the front contract’s maturity shrinks to zero; rolling both legs through the cycle gives a smooth, comparable contango measure. Conceptually the same as the CM30/CM60 slope already in the model, so expect high correlation.',
+      range: '10th/50th/90th percentile −1.6% / +5.3% / +9.7%; negative = backwardation.',
+      episodes: 'Lows: −22.3% (27 Oct 2008), −10.1% (19 Aug 2011), −9.8% (25 Aug 2015), −13.3% (5 Feb 2018), −23.5% (16 Mar 2020), −4.7% (7 Mar 2022).',
+    },
+  },
+  {
+    id: 'vts_m4m7',
+    label: 'M4–M7 VIX futures contango',
+    group: 'VTS-style',
+    inputs: ['VX4', 'VX7'],
+    riskOffWhenHigh: false,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: '%',
+    compute: (d) => zip2(s(d, 'VX7'), s(d, 'VX4'), (a, b) => (b > 0 ? 100 * (a / b - 1) : NaN)),
+    doc: {
+      what: '(M7 − M4) / M4: slope of the middle of the VIX futures curve (4th to 7th listed monthly contracts). VTS lists the metric without a formula; this is the natural reading.',
+      why: 'The front of the curve reacts to today’s fear; the 4–7 month segment reflects how long the market expects elevated volatility to last. A flat or inverted mid-curve signals persistent, not transient, stress.',
+      range: '10th/50th/90th percentile −2.0% / +4.2% / +10.7% (2006–2026); negative = mid-curve inverted.',
+      episodes: 'Deeply inverted only in prolonged crises: −16.3% (18 Nov 2008), −25.8% (17 Mar 2020); −5.6% in Feb 2018 and −6.2% in May 2022; barely negative in Aug 2015 (−0.9%). A 7th contract exists from Apr 2006.',
+    },
+  },
+  {
+    id: 'vix9d_fast',
+    label: 'VIX9D:VIX fast crossover',
+    group: 'VTS-style',
+    inputs: ['VIX9D', 'VIX'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'ratio',
+    compute: (d) => ratio(s(d, 'VIX9D'), s(d, 'VIX')),
+    doc: {
+      what: 'VIX9D / VIX: 9-day vs 30-day implied volatility. A "crossover" is the ratio moving above 1.',
+      why: 'The fastest term-structure signal: the 9-day horizon reacts to imminent events within hours. Noisy (event days, Fed meetings, earnings), so best combined with slower measures.',
+      range: '10th/50th/90th percentile 0.83 / 0.94 / 1.06 (2011–2026); above 1 = near-term stress.',
+      episodes: 'Peaks: 1.42 (8 Aug 2011), 1.39 (21 Aug 2015), 1.59 (5 Feb 2018), 1.26 (24 Oct 2018), 1.40 (27 Feb 2020), 1.20 (24 Jan 2022). Series starts 2011.',
+    },
+  },
+  {
+    id: 'vix6m_slow',
+    label: 'VIX:VIX6M slow crossover',
+    group: 'VTS-style',
+    inputs: ['VIX', 'VIX6M'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'ratio',
+    compute: (d) => ratio(s(d, 'VIX'), s(d, 'VIX6M')),
+    doc: {
+      what: 'VIX / VIX6M: 30-day vs 6-month implied volatility. A "crossover" is the ratio moving above 1.',
+      why: 'The slow term-structure signal: only crosses 1 when stress is deep enough to invert the curve out to six months, so fewer false alarms than VIX:VIX3M but later.',
+      range: '10th/50th/90th percentile 0.72 / 0.82 / 0.99 (2008–2026); above 1 = deep inversion.',
+      episodes: 'Peaks: 1.56 (7 Oct 2008), 1.37 (8 Aug 2011), 1.49 (24 Aug 2015), 1.52 (5 Feb 2018), 1.58 (12 Mar 2020); only 1.06 in 2022 (7 Mar). Series starts 2008.',
+    },
+  },
+  {
+    id: 'vx30_level',
+    label: 'VX30 level (constant-maturity VIX future)',
+    group: 'VTS-style',
+    inputs: ['VX30'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'vol pts',
+    compute: (d) => s(d, 'VX30'),
+    doc: {
+      what: 'Level of the 1-month constant-maturity VIX future (VTS VX30).',
+      why: 'The price of 1-month volatility in the futures market. Moves almost one-for-one with spot VIX, so it adds little beyond the VIX component; included for completeness.',
+      range: 'VX30 − VIX: 10th/50th/90th percentile −0.9 / +1.4 / +2.9 pts.',
+      episodes: 'Peaks far below spot in crises because futures price mean reversion: 25.8 pts below VIX on 10 Oct 2008, 27.2 pts below on 12 Mar 2020.',
+    },
+  },
+  {
+    id: 'vix_voli_resid',
+    label: 'VIX − VOLI residual',
+    group: 'VTS-style',
+    inputs: ['VIX', 'VOLI'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'vol pts',
+    compute: (d) => rollingResidual(s(d, 'VIX'), s(d, 'VOLI'), 252, 126),
+    doc: {
+      what: 'VIX minus the value predicted from VOLI (at-the-money SPY implied vol) by a regression fitted on the trailing year. VTS lists the metric without a formula; this is a transparent version.',
+      why: 'VIX prices the whole option strip, including out-of-the-money puts; VOLI prices only at-the-money options. What VIX shows beyond VOLI is the premium for crash protection (skew). A rising residual = hedging demand building beneath the surface. Direction is debatable (high skew can coincide with calm, well-hedged markets), so test both ways.',
+      range: '5th/95th percentile −1.5 / +1.6 pts (std 1.0); centred near 0 by construction.',
+      episodes: 'Spikes: +6.3 pts in Feb 2018, +11.1 pts in Mar 2020, +1.4 pts at most in 2022. VOLI starts June 2013, so the residual starts Dec 2013.',
     },
   },
 ];

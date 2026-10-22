@@ -559,3 +559,75 @@ in every evaluation.
   keep simple, economically motivated weights, and use the optimiser to learn how fragile an
   apparent improvement is.
 
+## 14. VTS-style dashboard signals: definitions, validation and evaluation
+Volatility Trading Strategies (VTS) publishes a daily volatility dashboard. Its metrics were
+researched from VTS's own blog posts and added as components (group *VTS-style*), **all off
+by default**. They were added after the default set was fixed, so enabling them is a choice to
+test, not a default.
+
+### 14.1 Definitions
+Exact where VTS publishes a formula; otherwise a transparent reconstruction, labelled as such.
+
+| Metric | Definition used | Basis |
+|---|---|---|
+| VX30 | w·M1 + (1−w)·M2, with w = trading days left to M1 expiry ÷ trading days in the expiry cycle (exchange holidays excluded) | VTS formula [1] |
+| VX30:VIX roll yield | (VX30 − VIX) / VIX | VTS formula [1] |
+| Traders VRP | 5-day linearly weighted moving average of (VX30 − 5-day S&P 500 historical vol) | VTS formula [2] |
+| Adjusted M1:M2 | (adj M2 − adj M1) / adj M1; adj M1 = VX30, adj M2 = the same roll applied to M2/M3 | VTS formula [3] |
+| Cash VIX Oscillator | (VIX3M + VIX6M) − (VIX9D + VIX) | Reconstructed; reproduces both published extremes exactly [4] |
+| M4–M7 | (M7 − M4) / M4 | Inferred; VTS gives no formula |
+| VIX9D:VIX fast / VIX:VIX6M slow crossover | the ratios themselves; "crossover" = ratio above 1 | VTS gives no formula; continuous ratio used |
+| VIX − VOLI residual | VIX minus the fit from a trailing 252-day OLS of VIX on VOLI (Nations ATM SPY implied vol, Yahoo `^VOLI`, from Jun 2013) | VTS gives no formula; transparent version |
+| VX30 level | VX30 | — |
+| Simple VRP | VIX − 20-day historical vol | Already in the model as `vrp` (21 days) |
+| M1:M2 | (M2 − M1) / M1 | Already in the model as `vx_roll` |
+| VIX:VIX3M medium crossover | VIX / VIX3M | Already in the model as `vix_term` |
+| VTS Volatility Barometer | proprietary composite, no published method | Not replicated; the composite score plays this role |
+
+### 14.2 Validation against VTS's published figures
+- **VX30 vs this model's interpolated CM30:** correlation 0.9996, median gap 0.07 pts.
+- **Traders VRP:** negative on 12.3% of days since 2004 (VTS: its filter excluded about 13%
+  of days), and on 23.9% of days in 2018 (VTS: "nearly 25%").
+- **Cash VIX Oscillator:** over 2011–2019 the reconstruction peaks at **15.28 on 2012-03-16**
+  and bottoms at **−43.98 on 2018-02-05**, both exactly as published. Full-sample median
+  6.83 and 5th percentile −3.07, vs 6.66 and −3.58 on VTS's dashboard at a later date.
+
+### 14.3 Evaluation
+Default parameters, 2007–2026, data through 2026-10-21:
+
+| Metric | Max correlation with a default component | Alone: Sharpe | Added at weight 1: Sharpe change | IC vs next-month S&P return |
+|---|---|---|---|---|
+| Cash VIX Oscillator | 0.90 (VIX/VIX3M) | 0.38 | −0.03 | −0.28 (t −3.8) |
+| VX30:VIX roll yield | 0.95 (VIX/VIX3M) | 0.23 | −0.02 | −0.17 (t −2.7) |
+| Traders VRP | 0.44 (VRP) | 0.19 | −0.01 | 0.00 |
+| Adjusted M1:M2 | 0.97 (VX futures slope) | 0.50 | −0.04 | −0.08 |
+| M4–M7 | 0.77 (VIX) | 0.28 | −0.01 | −0.05 |
+| VIX9D:VIX fast | 0.66 (VIX/VIX3M) | 0.23 | +0.02 | −0.27 (t −3.7) |
+| VIX:VIX6M slow | 0.96 (VIX/VIX3M) | 0.48 | −0.02 | −0.20 (t −3.0) |
+| VX30 level | 0.96 (VIX) | 0.40 | +0.01 | −0.06 |
+| VIX − VOLI residual | 0.59 (SKEW) | 0.09 | −0.09 | −0.02 |
+| All except VX30 level, together | — | — | 0.60 → 0.47 (turnover 6.1× → 8.4×) | — |
+
+Conclusions:
+1. **Redundancy.** Five of the nine are near-duplicates (correlation ≥ 0.9) of term-structure
+   or level signals already in the model. The Diagnostics tab shows the full correlation matrix.
+2. **No material improvement.** No single addition changes the composite's Sharpe by more
+   than noise (±0.04), and adding them all lowers it, because the term structure ends up
+   over-weighted.
+3. **Strong contrarian information.** The term-structure metrics have significantly
+   *negative* ICs: deep inversion has preceded *higher* next-month S&P returns (the panic
+   rebound). That is the §11 finding (the score sorts risk, not return) in sharper form. As
+   de-risking signals they reduce drawdowns but miss rebounds. A contrarian re-entry rule at
+   extreme inversion is a promising research lead (each component's ⇅ toggle inverts it). It
+   is not adopted, because choosing it after seeing these statistics would be fitting.
+
+Sources (definitions only; no performance claims from them are used):
+[1] VTS, "Volatility Metric: VX30:VIX roll yield – Constant maturity VIX contract",
+volatilitytradingstrategies.com/blog/vts-volatility-dashboard-part-6-vx30-vix-adjusted-roll-yield ·
+[2] VTS, "Volatility Metric: VTS Traders VRP",
+volatilitytradingstrategies.com/blog/traders-vrp-a-more-robust-volatility-risk-premium-metric ·
+[3] VTS, "Volatility Metric: VTS Adjusted M1:M2 VIX Futures",
+volatilitytradingstrategies.com/blog/vix-futures-and-expiration-cycles-we-need-to-adjust-m1-m2-contango ·
+[4] VTS, "Volatility Metric: VTS Cash VIX Oscillator",
+volatilitytradingstrategies.com/blog/vts-cash-vix-oscillator-volatility-dashboard-metric
+

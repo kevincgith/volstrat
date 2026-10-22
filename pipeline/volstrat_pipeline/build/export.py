@@ -46,12 +46,23 @@ SIGNAL_META: dict[str, dict] = {
     "VIX9D": dict(label="VIX9D (9d implied vol)", unit="vol pts", source="Cboe"),
     "VIX3M": dict(label="VIX3M (3m implied vol)", unit="vol pts", source="Cboe; Yahoo pre-2009-09"),
     "VIX6M": dict(label="VIX6M (6m implied vol)", unit="vol pts", source="Cboe"),
+    "VIX1Y": dict(label="VIX1Y (1y implied vol)", unit="vol pts", source="Cboe"),
+    "VOLI": dict(label="VOLI (ATM SPY implied vol)", unit="vol pts", source="Yahoo ^VOLI"),
     "VVIX": dict(label="VVIX (vol of VIX)", unit="vol pts", source="Cboe; Yahoo gaps"),
     "SKEW": dict(label="Cboe SKEW index", unit="index", source="Cboe"),
     "MOVE": dict(label="MOVE (Treasury implied vol)", unit="bp", source="Yahoo ^MOVE"),
     "VX1": dict(label="VIX future, 1st contract", unit="vol pts", source="CFE"),
     "VX2": dict(label="VIX future, 2nd contract", unit="vol pts", source="CFE"),
     "VX1_DTE": dict(label="VX1 days to expiry", unit="days", source="CFE"),
+    "VX3": dict(label="VIX future, 3rd contract", unit="vol pts", source="CFE"),
+    "VX4": dict(label="VIX future, 4th contract", unit="vol pts", source="CFE"),
+    "VX5": dict(label="VIX future, 5th contract", unit="vol pts", source="CFE"),
+    "VX6": dict(label="VIX future, 6th contract", unit="vol pts", source="CFE"),
+    "VX7": dict(label="VIX future, 7th contract", unit="vol pts", source="CFE"),
+    "VX30": dict(label="VX30: 1m constant-maturity VIX future (VTS trading-day roll)",
+                 unit="vol pts", source="CFE"),
+    "VX_ADJ_M2": dict(label="Adjusted M2 (VTS roll applied to M2/M3)", unit="vol pts",
+                      source="CFE"),
     "VX_CM30": dict(label="VIX futures, 30d constant maturity", unit="vol pts", source="CFE"),
     "VX_CM60": dict(label="VIX futures, 60d constant maturity", unit="vol pts", source="CFE"),
     "VX_CM90": dict(label="VIX futures, 90d constant maturity", unit="vol pts", source="CFE"),
@@ -80,8 +91,10 @@ def _close(raw: Path, sym: str, col: str = "close") -> pd.Series:
 def build_signals(raw: Path, cal: pd.DatetimeIndex) -> pd.DataFrame:
     cb = cboe_indices.load(raw)
     s: dict[str, pd.Series] = {"SPX": _close(raw, "^GSPC")}
-    for k in ("VIX", "VIX9D", "VIX6M", "SKEW"):
-        s[k] = cb[k]
+    for k in ("VIX", "VIX9D", "VIX6M", "VIX1Y", "SKEW"):
+        if k in cb:
+            s[k] = cb[k]
+    s["VOLI"] = _close(raw, "^VOLI")
     # VIX3M: Cboe file starts 2009-09-18; Yahoo carries the series back to 2006.
     s["VIX3M"] = cb["VIX3M"].combine_first(_close(raw, "^VIX3M"))
     s["VVIX"] = cb["VVIX"].combine_first(_close(raw, "^VVIX")[lambda x: x.index >= "2007-01-03"])
@@ -89,8 +102,12 @@ def build_signals(raw: Path, cal: pd.DatetimeIndex) -> pd.DataFrame:
 
     vx = cfe_vx.load(raw)
     if vx is not None:
-        f = features(vx, cb["VIX"])
-        for k in ("VX1", "VX2", "VX1_DTE", "VX_CM30", "VX_CM60", "VX_CM90"):
+        # exchange holidays = weekdays missing from the trading calendar
+        wk = pd.bdate_range(cal[0], cal[-1])
+        holidays = list(wk.difference(cal))
+        f = features(vx, cb["VIX"], holidays)
+        for k in ("VX1", "VX2", "VX3", "VX4", "VX5", "VX6", "VX7", "VX1_DTE", "VX_CM30",
+                  "VX_CM60", "VX_CM90", "VX30", "VX_ADJ_M2"):  # fmt: skip
             s[k] = f[k]
 
     pc = cboe_putcall.load(raw)
