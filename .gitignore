@@ -21,3 +21,10 @@ web/coverage/
 # Local tooling
 .claude/
 dist-node/
+
+# iCloud sync-conflict copies ("file 2.csv") - never commit
+* [0-9].csv
+* [0-9].json
+* [0-9].ts
+* [0-9].tsx
+* [0-9].py

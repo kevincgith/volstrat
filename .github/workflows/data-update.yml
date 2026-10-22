@@ -30,6 +30,8 @@ jobs:
 
       - name: Fetch and build
         id: run
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           set -o pipefail
           if volstrat update 2>&1 | tee update.log; then
