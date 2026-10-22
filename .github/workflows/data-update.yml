@@ -1,0 +1,72 @@
+name: Data update
+
+on:
+  schedule:
+    # Mon-Fri after the US close (22:30 UTC = 17:30/18:30 ET), plus a morning
+    # catch-up run for files Cboe/Yahoo publish late.
+    - cron: "30 22 * * 1-5"
+    - cron: "15 11 * * 2-6"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e .
+
+      - name: Fetch and build
+        id: run
+        run: |
+          set -o pipefail
+          if volstrat update 2>&1 | tee update.log; then
+            echo "failed=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "failed=1" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo '### Source status'
+            echo '```'
+            grep -E '^\[|^ +!' update.log || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Every file written has passed the storage guards, so partial updates are
+      # safe to commit even when a required source failed.
+      - name: Commit data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "No data changes."
+          else
+            git commit -m "data: update $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Report failure
+        if: steps.run.outputs.failed == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Data update failed $(date -u +%Y-%m-%d)"
+          body=$(printf 'Run: %s/%s/actions/runs/%s\n\n```\n%s\n```' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
+            "$(grep -E '^\[|^ +!|failed' update.log | tail -40)")
+          gh issue create --title "$title" --body "$body" --label data-failure \
+            || gh issue create --title "$title" --body "$body"
+          exit 1

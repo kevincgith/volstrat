@@ -46,10 +46,23 @@ Assembled coverage runs from **2004-03-26** to today. Known issues that the pipe
 4. **Sparse early ladder.** 2004–05 has only about 4 listed contracts, so constant-maturity
    interpolation spans wider gaps there.
 
-*(P1)* Construction of VX1/VX2, the roll rule and the 30/60/90-day constant-maturity interpolation.
+**Construction** (`pipeline/volstrat_pipeline/build/vx.py`). All calculations use daily
+settlement prices and calendar days to expiry (DTE).
+- **Live contracts on date t:** monthly contracts with expiry strictly after t. On its expiry
+  date a contract settles to the special opening quotation (SOQ) and is no longer part of the
+  curve.
+- **VX1 / VX2:** the first and second live contracts. They therefore roll on each expiry date.
+- **Constant maturity CM(T), T ∈ {30, 60, 90}:** linear interpolation in DTE between the two
+  points bracketing T. Spot VIX is used as the 0-DTE point, so CM30 is defined even when VX1
+  has less than 30 days left. There is no extrapolation beyond the last listed contract.
+- **Curve snapshots:** up to 9 live contracts per day (DTE, settle) are exported for the
+  term-structure chart.
+- **Check:** VX1/VIX has a median of 1.00–1.10 in every year from 2004 to 2026, with no
+  break at the 2007 rescaling.
 
 ### 2.3 Put/call ratios (Cboe)
-Four files are joined into a continuous equity/index/total series from **2003-10-17**:
+Four files are joined: equity and total from **2003-10-17** (total from 1995), index from
+**2006-11-01**. Where files overlap, the newer one wins.
 
 | File | Coverage |
 |---|---|
@@ -57,6 +70,12 @@ Four files are joined into a continuous equity/index/total series from **2003-10
 | `{equity,index,total}pcarchive.csv` | 2003-10-17 → 2012-06-07 |
 | `{equity,index,total}pc.csv` | 2006-11-01 → 2019-10-04 |
 | `https://cdn.cboe.com/data/us/options/market_statistics/daily/{date}_daily_options` (JSON) | 2019-10-07 → today |
+
+**Index P/C starts in 2006.** Over 2006–2012 the older `indexpcarchive.csv` runs about 0.1
+higher than `indexpc.csv`, with a daily correlation of only 0.72, which points to a different
+product universe. Joining them would create an artificial level shift, so the index ratio uses
+only the newer file and the daily JSON. Equity and total ratios agree closely across files
+(99th-percentile absolute difference about 0.07, consistent with preliminary vs cleared volume).
 
 Caveats: these are Cboe-only volumes, and there are structural breaks (retail call buying in
 2020–21; 0DTE SPX options since 2022). Rolling percentiles therefore matter more here than levels.
@@ -86,7 +105,44 @@ Joined (spliced) segments are flagged in the data and shaded on charts.
   IEF (extended back with VWEHX vs VFITX). NFCI and STLFSI4 are optional and disabled if they're
   unavailable. Chicago Fed's own NFCI CSV is stale (last observation 2026-04-24).
 
-### 2.6 Effective sample
+### 2.6 Point-in-time alignment (no look-ahead in the data)
+Each series is placed on the trading calendar (NYSE days, taken from `^GSPC`) on the date its
+value became **available**, not the date it describes
+(`pipeline/volstrat_pipeline/build/align.py`):
+
+| Series | Availability lag | Why |
+|---|---|---|
+| Cboe indices, VX settlements, put/call, S&P 500, MOVE | same day | Published by the close or the same evening; trades happen at the next close or later |
+| Treasury yields | +1 business day | Published late in the afternoon; lagged to be conservative |
+| ICE BofA OAS, Baa–10y | +1 business day | FRED publishes them the next morning |
+| NFCI | +5 calendar days | Friday-dated, released the following Wednesday |
+| STLFSI4 | +6 calendar days | Friday-dated, released the following Thursday |
+
+A value is treated as missing once it is more than 7 calendar days stale (14 days for the
+weekly series). Tests check that no value is ever visible before its availability date.
+
+### 2.7 Asset total-return chains
+Each asset is a priority list of sources (`build/assets.py`). The ETF is used from its first
+return onwards. Each extension only fills dates **before** the higher-priority source starts,
+and it never fills isolated gaps afterwards. Daily returns are chained into an index starting
+at 1.0, so history doesn't shift when Yahoo re-adjusts prices for a new dividend. The cash
+leg accrues the previous day's 3-month bill yield × calendar days / 360. Every proxy segment
+is flagged `synthetic` and shaded on charts. Leveraged ETFs are shipped only from inception;
+the browser engine builds the synthetic pre-inception history so that the financing spread
+and expense ratio can be set as parameters.
+
+### 2.8 Pipeline guards
+- A cache is never replaced by data that is empty, has fewer rows or ends earlier.
+- History that should be immutable must not change by more than 1% of values. For
+  dividend-adjusted prices this is checked on returns, not levels.
+- Values outside plausible ranges are removed and reported. If too many are, the source
+  fails, since that usually means the file format changed.
+- Any intraday Yahoo bar is dropped before 16:30 ET.
+- Required sources (Cboe indices, VX, Treasury, core Yahoo tickers) fail the daily job and
+  open a GitHub issue. Optional ones (put/call, FRED, proxies) fall back to cached data and
+  are flagged in `meta.json`.
+
+### 2.9 Effective sample
 - **Full signal set:** from mid-2006, limited by VVIX and VIX3M. After a one-year standardisation
   warm-up, the default backtest starts around mid-2007 and includes 2008.
 - **Long history:** from 1990 with a reduced component set. Components without data on a given

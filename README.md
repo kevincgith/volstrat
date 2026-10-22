@@ -54,6 +54,7 @@ Requirements: Python 3.11+ and Node 22+.
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
+.venv/bin/volstrat update      # fetch new data + rebuild data/site/*.json
 
 # website
 cd web
@@ -72,11 +73,21 @@ npm test
 
 ## Adding a data source or indicator
 
-This section is filled in during Phase 1, once the source interface exists. In short:
-1. Add a fetcher in `pipeline/volstrat_pipeline/sources/` that returns a date-indexed DataFrame.
-2. Register its schema and range checks.
-3. Add the feature to the site export.
-4. Register the component, with its direction and description, in the web engine's component list.
+1. **Fetcher:** add a module in `pipeline/volstrat_pipeline/sources/` with an
+   `update(raw_dir) -> SourceStatus` function (or a list of them) that downloads the data,
+   cleans it with `drop_bad` range checks, and saves it with `storage.safe_write`. Then add it
+   to the `steps` dict in `pipeline/volstrat_pipeline/fetch.py`. For a new Yahoo ticker, just
+   add a `Ticker(...)` to `sources/yahoo.py`.
+2. **Signal input:** add an entry to `SIGNAL_META` in `build/export.py`, with label, unit,
+   source and **availability lag**, and load the series in `build_signals`. It then appears in
+   `data/site/signals.json`.
+3. **Tradeable asset:** add an `AssetSpec` to `ASSETS` in `build/export.py` with its source
+   chain (ETF first, then proxies flagged `synthetic=True`).
+4. **Score component:** register the component, with its direction, transform and
+   description, in the web engine's component registry (`web/src/engine/components.ts`, from
+   Phase 2).
+5. **Tests:** add pytest cases for parsing and any construction logic, then run
+   `volstrat fetch --only <source>` followed by `volstrat build`.
 
 ## Data sources
 

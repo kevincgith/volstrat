@@ -25,6 +25,7 @@ where = ["pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/pipeline"]
+pythonpath = ["pipeline"]
 
 [tool.ruff]
 line-length = 100
