@@ -22,7 +22,7 @@ type Range = (typeof RANGES)[number]['value'];
 export default function Signals() {
   const { data, error } = useData();
   const [params] = useParams();
-  const { result } = useRun(data, params);
+  const { result, error: runErr } = useRun(data, params);
   const { theme } = useTheme();
   const c = colors(theme);
   const [compId, setCompId] = useState('vix_term');
@@ -77,6 +77,7 @@ export default function Signals() {
   }, [data, result, compSeries, comp, c, range, params.regime.thresholds]);
 
   if (error) return <ErrorBox message={error} />;
+  if (runErr) return <ErrorBox message={`Engine error: ${runErr}`} />;
   if (!data || !result) return <Loading />;
 
   const meta = comp.inputs.map((k) => data.seriesMeta[k]).filter(Boolean);

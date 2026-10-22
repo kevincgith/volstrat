@@ -224,6 +224,26 @@ Full-sample normalisation is never used, because it would leak future informatio
   - *Aggressive:* faster signal, 2× in Risk-On and 3× in Strong Risk-On.
   - *Continuous:* continuous mode.
 
+### 6.1 Adaptive hedge (optional, off by default)
+Treasuries hedge equities only when stock and bond returns are negatively correlated, as in
+2008 and 2020. In an inflation or rate shock such as 2022 they fall together. When enabled,
+the engine computes the trailing correlation of daily S&P 500 and IEF returns (default
+63 days, using data up to the decision day only). While that correlation is above the
+threshold (default 0), IEF, TLT and AGG in every target portfolio are replaced by T-bills,
+or by SHY or gold if chosen.
+
+Measured effect with default settings, data through 2026-10-21:
+
+| | Default | Adaptive hedge |
+|---|---|---|
+| 2022 window return | −19.3% | −17.5% |
+| Max drawdown | −21.8% | −20.1% |
+| Sharpe | 0.60 | 0.60 |
+
+2008 and 2020 are unchanged, and the result is insensitive to the threshold (0 or 0.2) and
+to the replacement (T-bills or SHY). It stays off by default because the idea was prompted
+by 2022, so its backtest benefit is partly hindsight.
+
 ## 7. Backtest assumptions
 - **Timing:** the target is decided at the close of day *d* using data available by then
   (§2.6). It is traded at the **close of d + lag** (default lag 1, i.e. the next close), and the
@@ -305,6 +325,15 @@ of a hypothesis. The site has four tools to keep this honest
    counts. Differences between cells smaller than this are noise. (This is in the spirit of
    Bailey & López de Prado's deflated Sharpe ratio, simplified.)
 
+5. **Bootstrap confidence.** A paired stationary block bootstrap (Politis & Romano;
+   geometric blocks, mean 21 days; 1,000 resamples, seeded) resamples the strategy and
+   benchmark on the *same* days. That keeps their correlation and the volatility clustering,
+   and gives percentiles for the Sharpe and CAGR differences and both max drawdowns.
+   - *Example on 2026-10-22 data, default parameters vs the S&P 500:* the strategy had the
+     higher Sharpe in only 57% of resamples (Sharpe difference 5th–95th percentile −0.27 to
+     +0.36), which is indistinguishable from luck. Its 5th-percentile max drawdown was −29%
+     against −59% for the S&P 500, a robust risk reduction.
+
 Known limitations:
 - **Survivorship and selection.** The asset menu (US equities, Treasuries, gold) is chosen
   with hindsight about which assets hedged well after 2000.
@@ -356,3 +385,56 @@ The most stressed reading of each input within the window:
   - The T-bill variant also *lowers* the full 2007–2026 Sharpe (0.53 vs 0.60), because
     Treasuries hedged well in 2008 and 2020.
   - Choosing the hedge after seeing 2022 would itself be overfitting.
+
+## 11. Signal diagnostics and attribution
+The **Diagnostics** tab measures the signal independently of the portfolio attached to it
+(`web/src/engine/diagnostics.ts`, `attribution.ts`).
+
+- **Conditional returns.** The regime (or 20-point score bucket) known at the close of t is
+  paired with the asset's return on t + lag + 1, the first return a trade could earn. For each
+  state it shows annualised return, volatility, Sharpe, share of up days, worst day, and the
+  mean and tail odds (loss worse than −10%) of the forward 1-, 3- or 6-month return.
+  Forward windows overlap, which is noted on the page.
+- **Information coefficient.** Spearman rank correlation between the score and the next 1- or
+  3-month return, on non-overlapping samples, with t-statistic.
+- **Leave-one-out attribution.** The backtest is re-run without each enabled component (the
+  remaining weights rescale) and with each component alone, over the same period.
+
+Findings on 2026-10-22 data, default parameters, S&P 500, 1993–2026:
+
+| Regime | Share of days | Ann. return | Volatility | Sharpe | P(next 3M < −10%) |
+|---|---|---|---|---|---|
+| Crisis | 6.4% | 24.6% | 37.2% | 0.66 | 10.4% |
+| Risk-Off | 21.2% | 16.9% | 23.5% | 0.72 | 7.0% |
+| Neutral | 41.1% | 10.4% | 14.8% | 0.70 | 5.5% |
+| Risk-On | 29.7% | 8.4% | 12.4% | 0.68 | 3.4% |
+| Strong Risk-On | 1.6% | 5.4% | 11.9% | 0.46 | 5.1% |
+
+**The score sorts risk, not return.** Volatility after Crisis days was about 3× that after
+calm days, and the odds of a 10% drawdown over the next quarter were 3× higher. But Sharpe
+ratios are similar across states, and the IC against future returns is slightly negative
+and insignificant (−0.06, t = −1.2, 1-month horizon). High-volatility states have
+historically been followed by *higher* average returns, consistent with the literature on
+volatility timing (e.g. Moreira & Muir, 2017). The strategy earns its keep by cutting
+exposure when risk is high, which is why its result resembles the volatility-targeting
+benchmark. It does not forecast returns.
+
+Leave-one-out (Sharpe 0.60 with all components):
+- The VRP contributes the most: Sharpe 0.51 without it.
+- Removing VIX/VIX3M *raises* the Sharpe to 0.68.
+- No single component alone matches the composite; the best is put/call at 0.51.
+
+This supports combining signals, but pruning components on these figures would be another
+round of fitting to the same history.
+
+## 12. Daily signal snapshot and alerts
+After the pipeline runs, the daily Action executes the same TypeScript engine in Node
+(`web/scripts/signal.ts`) with the **default (Balanced)** parameters and writes:
+- `data/site/latest.json`: date, score, regime, allocation and components.
+- `data/site/regime_history.json`: every regime change since the score begins.
+- `data/site/feed.xml`: an RSS feed of the last 30 regime changes.
+
+If the regime differs from the previous day's `latest.json`, the Action opens a GitHub
+issue labelled `regime-change` with the new regime, allocation and component table.
+GitHub emails the repository's watchers.
+

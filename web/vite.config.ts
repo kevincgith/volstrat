@@ -15,7 +15,7 @@ function siteData(): Plugin {
       server.middlewares.use(`${BASE}data/`, (req, res, next) => {
         const file = resolve(SITE_DATA, (req.url ?? '').split('?')[0]!.replace(/^\//, ''));
         if (!file.startsWith(SITE_DATA) || !existsSync(file)) return next();
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Type', file.endsWith('.xml') ? 'application/rss+xml' : 'application/json');
         res.end(readFileSync(file));
       });
     },

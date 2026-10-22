@@ -201,7 +201,7 @@ function EpisodeTables({ data, result }: { data: MarketData; result: WireResult 
 export default function Methodology() {
   const { data, error } = useData();
   const [params] = useParams();
-  const { result } = useRun(data, params);
+  const { result, error: runErr } = useRun(data, params);
   const { theme } = useTheme();
   const c = colors(theme);
 
@@ -280,7 +280,7 @@ export default function Methodology() {
         </div>
       </Card>
 
-      {error ? <ErrorBox message={error} /> : !data || !result ? <Loading label="Computing episode statistics…" /> : <EpisodeTables data={data} result={result} />}
+      {error || runErr ? <ErrorBox message={error ?? `Engine error: ${runErr}`} /> : !data || !result ? <Loading label="Computing episode statistics…" /> : <EpisodeTables data={data} result={result} />}
 
       <Card title="Score, regimes and allocation">
         <dl className="defs">

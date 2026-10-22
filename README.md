@@ -23,6 +23,27 @@ GitHub Action).
 | P4 | Robustness (IS/OOS, walk-forward, sensitivity), Compare, exports | ✅ |
 | P5 | Methodology content and polish | ✅ |
 
+## Features
+
+- **Dashboard:** today's score, regime, recommended allocation, component breakdown,
+  stock–bond correlation, recent regime changes, data status.
+- **Signals:** every component's history over the S&P 500 with regime shading; animated VIX
+  futures term structure.
+- **Backtest:**
+  - every parameter is editable and recomputes instantly in a Web Worker; settings live in
+    the URL;
+  - statistics against six benchmarks, plus bootstrap confidence intervals;
+  - equity, drawdown, allocation, rolling and monthly charts;
+  - sensitivity heatmap, walk-forward test and multiple-testing check;
+  - CSV/PNG export.
+- **Diagnostics:** asset behaviour after each regime or score bucket, information
+  coefficient, and leave-one-out component attribution.
+- **Compare:** saved parameter profiles side by side.
+- **Methodology:** plain-English documentation with stress-episode tables computed from the
+  data.
+- **Alerts:** an RSS feed (`/data/feed.xml`) and a GitHub issue when the default profile's
+  regime changes. Watch the repository to get these by email.
+
 ## Architecture
 
 ```

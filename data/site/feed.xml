@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>VolStrat regime changes</title>
+  <link>https://app.kevinlhc.com/volstrat/</link>
+  <description>Regime changes of the VolStrat risk-appetite score (default parameters). Personal research project, not investment advice.</description>
+  <lastBuildDate>Thu, 22 Oct 2026 15:14:14 GMT</lastBuildDate>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 56.8)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-09-10-Neutral</guid>
+    <pubDate>Thu, 10 Sep 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-09-10: Risk-On → Neutral. Composite score 56.8. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.1)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-08-11-Risk-On</guid>
+    <pubDate>Tue, 11 Aug 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-08-11: Neutral → Risk-On. Composite score 63.1. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 52.5)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-06-10-Neutral</guid>
+    <pubDate>Wed, 10 Jun 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-06-10: Risk-On → Neutral. Composite score 52.5. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.7)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-05-14-Risk-On</guid>
+    <pubDate>Thu, 14 May 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-05-14: Neutral → Risk-On. Composite score 63.7. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Neutral (score 43)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-04-29-Neutral</guid>
+    <pubDate>Wed, 29 Apr 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-04-29: Risk-Off → Neutral. Composite score 43. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 36.6)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-02-17-Risk-Off</guid>
+    <pubDate>Tue, 17 Feb 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-02-17: Neutral → Risk-Off. Composite score 36.6. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 55.1)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-01-20-Neutral</guid>
+    <pubDate>Tue, 20 Jan 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-01-20: Risk-On → Neutral. Composite score 55.1. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 64.6)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-12-23-Risk-On</guid>
+    <pubDate>Tue, 23 Dec 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-12-23: Neutral → Risk-On. Composite score 64.6. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 57.4)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-12-17-Neutral</guid>
+    <pubDate>Wed, 17 Dec 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-12-17: Risk-On → Neutral. Composite score 57.4. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 62.7)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-12-11-Risk-On</guid>
+    <pubDate>Thu, 11 Dec 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-12-11: Neutral → Risk-On. Composite score 62.7. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Neutral (score 46)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-11-28-Neutral</guid>
+    <pubDate>Fri, 28 Nov 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-11-28: Risk-Off → Neutral. Composite score 46. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 34.7)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-11-20-Risk-Off</guid>
+    <pubDate>Thu, 20 Nov 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-11-20: Neutral → Risk-Off. Composite score 34.7. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 55.4)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-10-10-Neutral</guid>
+    <pubDate>Fri, 10 Oct 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-10-10: Risk-On → Neutral. Composite score 55.4. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.1)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-07-02-Risk-On</guid>
+    <pubDate>Wed, 02 Jul 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-07-02: Neutral → Risk-On. Composite score 63.1. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Neutral (score 43.3)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-05-28-Neutral</guid>
+    <pubDate>Wed, 28 May 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-05-28: Risk-Off → Neutral. Composite score 43.3. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Crisis → Risk-Off (score 24.3)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-05-09-Risk-Off</guid>
+    <pubDate>Fri, 09 May 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-05-09: Crisis → Risk-Off. Composite score 24.3. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Crisis (score 15.3)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-04-09-Crisis</guid>
+    <pubDate>Wed, 09 Apr 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-04-09: Risk-Off → Crisis. Composite score 15.3. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 36.6)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2025-03-03-Risk-Off</guid>
+    <pubDate>Mon, 03 Mar 2025 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2025-03-03: Neutral → Risk-Off. Composite score 36.6. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 56.7)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-12-19-Neutral</guid>
+    <pubDate>Thu, 19 Dec 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-12-19: Risk-On → Neutral. Composite score 56.7. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.4)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-11-27-Risk-On</guid>
+    <pubDate>Wed, 27 Nov 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-11-27: Neutral → Risk-On. Composite score 63.4. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 56.9)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-11-20-Neutral</guid>
+    <pubDate>Wed, 20 Nov 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-11-20: Risk-On → Neutral. Composite score 56.9. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 62.9)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-11-13-Risk-On</guid>
+    <pubDate>Wed, 13 Nov 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-11-13: Neutral → Risk-On. Composite score 62.9. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Neutral (score 43.4)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-09-20-Neutral</guid>
+    <pubDate>Fri, 20 Sep 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-09-20: Risk-Off → Neutral. Composite score 43.4. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 36.2)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-09-05-Risk-Off</guid>
+    <pubDate>Thu, 05 Sep 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-09-05: Neutral → Risk-Off. Composite score 36.2. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-Off → Neutral (score 45.3)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-08-16-Neutral</guid>
+    <pubDate>Fri, 16 Aug 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-08-16: Risk-Off → Neutral. Composite score 45.3. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 33)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-08-05-Risk-Off</guid>
+    <pubDate>Mon, 05 Aug 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-08-05: Neutral → Risk-Off. Composite score 33. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 53.2)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-07-24-Neutral</guid>
+    <pubDate>Wed, 24 Jul 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-07-24: Risk-On → Neutral. Composite score 53.2. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.5)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-05-20-Risk-On</guid>
+    <pubDate>Mon, 20 May 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-05-20: Neutral → Risk-On. Composite score 63.5. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Risk-On → Neutral (score 56.8)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-04-12-Neutral</guid>
+    <pubDate>Fri, 12 Apr 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-04-12: Risk-On → Neutral. Composite score 56.8. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-On (score 63.3)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2024-03-20-Risk-On</guid>
+    <pubDate>Wed, 20 Mar 2024 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2024-03-20: Neutral → Risk-On. Composite score 63.3. Default (Balanced) profile; hypothetical research signal, not investment advice.</description>
+  </item>
+</channel>
+</rss>

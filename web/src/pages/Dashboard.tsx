@@ -26,7 +26,7 @@ function fmtRaw(v: number, unit: string) {
 export default function Dashboard() {
   const { data, error } = useData();
   const [params] = useParams();
-  const { result } = useRun(data, params);
+  const { result, error: runErr } = useRun(data, params);
   const { theme } = useTheme();
   const c = colors(theme);
   const [search] = useSearchParams();
@@ -52,7 +52,27 @@ export default function Dashboard() {
     const from = Math.max(0, L - 504);
     const hedgeLb = params.allocation.adaptiveHedge?.lookback ?? 63;
     const sb = rollingCorrelation(result.assets.SPX!.returns, result.assets.IEF!.returns, hedgeLb)[L]!;
-    return { L, regime, comps, wsum, weights, from, sb, hedgeLb };
+    // regime changes, most recent first, with the S&P 500 move during each spell
+    const spells: { start: number; end: number; regime: number }[] = [];
+    for (let t = 0; t <= L; t++) {
+      const g = result.regimes[t]!;
+      if (g < 0) continue;
+      const last = spells.at(-1);
+      if (last && last.regime === g && last.end === t - 1) last.end = t;
+      else spells.push({ start: t, end: t, regime: g });
+    }
+    const spx = data.series.SPX!;
+    const history = spells
+      .slice(-12)
+      .reverse()
+      .map((sp, i, arr) => ({
+        ...sp,
+        from: arr[i + 1]?.regime ?? -1,
+        score: result.score.score[sp.start]!,
+        days: sp.end - sp.start + 1,
+        spx: spx[sp.end]! / spx[sp.start]! - 1,
+      }));
+    return { L, regime, comps, wsum, weights, from, sb, hedgeLb, history };
   }, [data, result, params]);
 
   const option = useMemo(() => {
@@ -84,6 +104,7 @@ export default function Dashboard() {
   }, [data, result, view, c, params.regime.thresholds]);
 
   if (error) return <ErrorBox message={error} />;
+  if (runErr) return <ErrorBox message={`Engine error: ${runErr}`} />;
   if (!data || !result) return <Loading />;
   if (!view) return <Loading label="Computing score…" />;
 
@@ -225,6 +246,57 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
+      </Card>
+
+      <Card
+        title="Recent regime changes"
+        actions={
+          <span className="small">
+            <a href={`${import.meta.env.BASE_URL}data/feed.xml`} title="RSS feed of regime changes for the default (Balanced) profile">
+              RSS feed
+            </a>{' '}
+            · <a href={`${import.meta.env.BASE_URL}data/regime_history.json`}>full history (JSON)</a>
+          </span>
+        }
+      >
+        <div className="table-wrap">
+          <table className="data compact">
+            <thead>
+              <tr>
+                <th>Signal date</th>
+                <th>Change</th>
+                <th className="num">Score</th>
+                <th className="num">Trading days</th>
+                <th className="num">S&amp;P 500 during spell</th>
+              </tr>
+            </thead>
+            <tbody>
+              {view.history.map((h) => (
+                <tr key={h.start}>
+                  <td>{data.dates[h.start]}</td>
+                  <td>
+                    {h.from >= 0 && (
+                      <>
+                        <span className="dot" style={{ background: c.regime[h.from] }} aria-hidden="true" />
+                        {REGIMES[h.from]} →{' '}
+                      </>
+                    )}
+                    <span className="dot" style={{ background: c.regime[h.regime] }} aria-hidden="true" />
+                    <strong>{REGIMES[h.regime]}</strong>
+                    {h.end === view.L && <span className="muted small"> (current)</span>}
+                  </td>
+                  <td className="num">{h.score.toFixed(1)}</td>
+                  <td className="num">{h.days}</td>
+                  <td className="num">{`${(100 * h.spx).toFixed(1)}%`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="muted small">
+          Uses the parameters shown on this page. The RSS feed and the GitHub issue alerts track the default (Balanced) profile: watch the repository on
+          GitHub to be emailed when the daily update detects a regime change.
+        </p>
       </Card>
 
       <Card title="Data status">

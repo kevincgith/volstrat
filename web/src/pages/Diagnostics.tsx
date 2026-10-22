@@ -20,7 +20,7 @@ const BUCKETS = ['0–20', '20–40', '40–60', '60–80', '80–100'];
 export default function Diagnostics() {
   const { data, error } = useData();
   const [params] = useParams();
-  const { result } = useRun(data, params);
+  const { result, error: runErr } = useRun(data, params);
   const { theme } = useTheme();
   const c = colors(theme);
   const [asset, setAsset] = useState<string>('SPX');
@@ -76,6 +76,7 @@ export default function Diagnostics() {
   }, [diag, c, names, horizon]);
 
   if (error) return <ErrorBox message={error} />;
+  if (runErr) return <ErrorBox message={`Engine error: ${runErr}`} />;
   if (!data || !result || !diag || !charts) return <Loading />;
 
   const ic = (x: typeof diag.ic21) =>

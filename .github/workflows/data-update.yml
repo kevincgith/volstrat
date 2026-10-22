@@ -44,6 +44,20 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # Same TypeScript engine as the site: latest.json, regime_history.json, feed.xml
+      - name: Daily signal snapshot
+        id: signal
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          npm run signal
+
       # Every file written has passed the storage guards, so partial updates are
       # safe to commit even when a required source failed.
       - name: Commit data
@@ -58,6 +72,16 @@ jobs:
             git pull --rebase origin main
             git push
           fi
+
+      - name: Notify regime change
+        if: steps.signal.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.signal.outputs.title }}
+          BODY: ${{ steps.signal.outputs.body }}
+        run: |
+          gh issue create --title "$TITLE" --body "$BODY" --label regime-change \
+            || gh issue create --title "$TITLE" --body "$BODY"
 
       - name: Report failure
         if: always() && (steps.run.outputs.failed == '1' || failure())
