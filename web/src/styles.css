@@ -96,10 +96,9 @@ body {
 }
 .brand-mark {
   align-self: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: var(--accent-2);
+  width: 28px;
+  height: 28px;
+  display: block;
 }
 .brand-name {
   font-weight: 700;

@@ -20,7 +20,7 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark" aria-hidden="true" />
+          <img className="brand-mark" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" aria-hidden="true" />
           <span className="brand-name">VolStrat</span>
           <span className="brand-sub">Volatility-regime allocator</span>
         </div>
