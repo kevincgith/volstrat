@@ -13,8 +13,8 @@ from pathlib import Path
 import pandas as pd
 
 from ..http import get
-from ..storage import read_cache, safe_write
-from .base import SourceStatus, drop_bad
+from ..storage import RECONCILE_BDAYS, read_cache, reconcile, safe_write
+from .base import SourceStatus, cut, drop_bad, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -47,11 +47,12 @@ def parse(text: str, value_col: str) -> pd.Series:
     return s[~s.index.duplicated(keep="last")].sort_index()
 
 
-def update(raw_dir: Path) -> SourceStatus:
+def update(raw_dir: Path, cutoff: pd.Timestamp | None = None) -> SourceStatus:
     st = SourceStatus("cboe_indices", required=True)
+    cutoff = cutoff if cutoff is not None else eod_cutoff()
     cols = {}
     for sym, (col, (lo, hi)) in SYMBOLS.items():
-        s = parse(get(URL.format(sym=sym)).text, col)
+        s = cut(parse(get(URL.format(sym=sym)).text, col), cutoff)
         if sym in START:
             s = s[s.index >= START[sym]]
         s, nbad = drop_bad(s, lo, hi, sym)
@@ -60,6 +61,9 @@ def update(raw_dir: Path) -> SourceStatus:
         cols[sym] = s
     df = pd.DataFrame(cols).sort_index()
     path = raw_dir / CACHE
+    cached = read_cache(path)
+    st.revisions = reconcile(cached, df, list(SYMBOLS))
+    st.reconciled_days = RECONCILE_BDAYS if cached is not None else 0
     safe_write(df, path, columns=list(SYMBOLS), rtol=1e-3)
     st.ok, st.rows, st.last_date = True, len(df), df.index[-1].date().isoformat()
     return st

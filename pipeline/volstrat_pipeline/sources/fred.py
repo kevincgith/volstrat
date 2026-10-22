@@ -23,7 +23,7 @@ import pandas as pd
 
 from ..http import FetchError, get
 from ..storage import DataGuardError, read_cache, safe_write
-from .base import SourceStatus
+from .base import SourceStatus, cut, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -63,7 +63,8 @@ def fetch(sid: str) -> pd.Series:
     return parse_graph_csv(get(GRAPH_URL.format(sid=sid), timeout=20, retries=1).text)
 
 
-def update(raw_dir: Path) -> list[SourceStatus]:
+def update(raw_dir: Path, cutoff: pd.Timestamp | None = None) -> list[SourceStatus]:
+    cutoff = cutoff if cutoff is not None else eod_cutoff()
     path = raw_dir / CACHE
     cached = read_cache(path)
     cols, statuses = {}, []
@@ -73,7 +74,7 @@ def update(raw_dir: Path) -> list[SourceStatus]:
         try:
             if tripped:
                 raise FetchError("skipped: FRED unreachable earlier in this run")
-            s = fetch(sid)
+            s = cut(fetch(sid), cutoff)
             if s.empty:
                 raise FetchError("empty series")
             cols[sid] = s

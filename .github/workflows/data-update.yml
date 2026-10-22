@@ -2,9 +2,9 @@ name: Data update
 
 on:
   schedule:
-    # Mon-Fri after the US close (22:30 UTC = 17:30/18:30 ET), plus a morning
-    # catch-up run for files Cboe/Yahoo publish late.
-    - cron: "30 22 * * 1-5"
+    # Mon-Fri at 23:30 UTC = 19:30 EDT / 18:30 EST, i.e. after the 18:00 New York
+    # end-of-day cutoff the pipeline enforces; plus a morning catch-up run.
+    - cron: "30 23 * * 1-5"
     - cron: "15 11 * * 2-6"
   workflow_dispatch:
 

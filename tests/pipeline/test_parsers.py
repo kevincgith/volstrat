@@ -1,6 +1,6 @@
 import pandas as pd
 
-from volstrat_pipeline.sources import cboe_indices, cboe_putcall, fred, treasury, yahoo
+from volstrat_pipeline.sources import cboe_indices, cboe_putcall, fred, treasury
 
 
 def test_cboe_index_parse_drops_zero_placeholders():
@@ -39,10 +39,20 @@ def test_fred_parse_drops_missing_markers():
     assert len(s) == 1 and s.iloc[0] == 3.5
 
 
-def test_yahoo_drops_intraday_bar():
-    idx = pd.to_datetime(["2024-01-02", "2024-01-03"])
-    df = pd.DataFrame({"close": [1.0, 2.0]}, index=idx)
-    during = pd.Timestamp("2024-01-03 14:00", tz="America/New_York")
-    after = pd.Timestamp("2024-01-03 17:00", tz="America/New_York")
-    assert len(yahoo.drop_incomplete_today(df, during)) == 1
-    assert len(yahoo.drop_incomplete_today(df, after)) == 2
+def test_eod_cutoff_excludes_live_and_provisional_days():
+    from volstrat_pipeline.sources.base import cut, eod_cutoff
+
+    ny = "America/New_York"
+    # Wednesday 21 Oct 2026, market open: the 21st is live -> cutoff is the 20th
+    assert eod_cutoff(pd.Timestamp("2026-10-21 11:00", tz=ny)) == pd.Timestamp("2026-10-20")
+    # 16:30: closed but still provisional
+    assert eod_cutoff(pd.Timestamp("2026-10-21 16:30", tz=ny)) == pd.Timestamp("2026-10-20")
+    # 18:05: end-of-day confirmed
+    assert eod_cutoff(pd.Timestamp("2026-10-21 18:05", tz=ny)) == pd.Timestamp("2026-10-21")
+    # Monday morning -> previous Friday; Saturday -> Friday
+    assert eod_cutoff(pd.Timestamp("2026-10-26 09:00", tz=ny)) == pd.Timestamp("2026-10-23")
+    assert eod_cutoff(pd.Timestamp("2026-10-24 12:00", tz=ny)) == pd.Timestamp("2026-10-23")
+    # UTC input is converted (23:30 UTC = 19:30 EDT)
+    assert eod_cutoff(pd.Timestamp("2026-10-21 23:30", tz="UTC")) == pd.Timestamp("2026-10-21")
+    s = pd.Series([1.0, 2.0], index=pd.to_datetime(["2026-10-20", "2026-10-21"]))
+    assert len(cut(s, pd.Timestamp("2026-10-20"))) == 1

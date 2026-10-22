@@ -35,6 +35,9 @@ export interface SourceStatus {
   message: string;
   warnings: string[];
   checked_at?: string;
+  /** Past-week values that changed between the stored copy and the latest download. */
+  revisions?: { date: string; column: string; old: number; new: number | null }[];
+  reconciled_days?: number;
 }
 
 export interface MarketData {
@@ -47,6 +50,8 @@ export interface MarketData {
     last_date: string;
     sources: Record<string, SourceStatus>;
     checks?: { name: string; ok: boolean; detail: string }[];
+    /** Latest date accepted as final end-of-day data at fetch time. */
+    eod_cutoff?: string;
   };
 }
 

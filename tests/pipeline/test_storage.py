@@ -86,19 +86,53 @@ def adj_frame(start: str, n: int, scale: float = 1.0) -> pd.DataFrame:
 
 
 def test_stabilise_keeps_history_and_chains_new_rows():
-    old = adj_frame("2024-01-01", 5)
-    new = adj_frame("2024-01-01", 7, scale=0.97)  # re-adjusted after a dividend + 2 new days
-    out = stabilise_adjusted(old, new)
-    pd.testing.assert_frame_equal(out.iloc[:5], old)  # history untouched
-    # new rows keep Yahoo's returns
-    r_new = new["adj_close"].pct_change().iloc[5:]
-    r_out = out["adj_close"].pct_change().iloc[5:]
+    old = adj_frame("2024-01-01", 20)
+    new = adj_frame("2024-01-01", 22, scale=0.97)  # re-adjusted after a dividend + 2 new days
+    out = stabilise_adjusted(old, new, refresh_tail=5)
+    pd.testing.assert_frame_equal(out.iloc[:15], old.iloc[:15])  # frozen history untouched
+    # refreshed tail and new rows keep Yahoo's returns
+    r_new = new["adj_close"].pct_change().iloc[15:]
+    r_out = out["adj_close"].pct_change().iloc[15:]
     assert (r_new - r_out).abs().max() < 1e-12
+    assert len(out) == 22
+
+
+def test_stabilise_picks_up_corrections_in_recent_days():
+    old = adj_frame("2024-01-01", 20)
+    new = adj_frame("2024-01-01", 20)
+    new.iloc[-1, :] *= 1.0005  # yesterday's provisional close was corrected
+    out = stabilise_adjusted(old, new, refresh_tail=5)
+    assert out["close"].iloc[-1] == new["close"].iloc[-1]
 
 
 def test_stabilise_takes_new_history_after_a_split():
-    old = adj_frame("2024-01-01", 5)
-    new = adj_frame("2024-01-01", 6)
+    old = adj_frame("2024-01-01", 20)
+    new = adj_frame("2024-01-01", 21)
     new[["close", "adj_close"]] /= 2  # 2-for-1 split restates history
     out = stabilise_adjusted(old, new)
     pd.testing.assert_frame_equal(out, new)
+
+
+def test_stabilise_keeps_stored_day_missing_from_download():
+    old = adj_frame("2024-01-01", 20)
+    new = adj_frame("2024-01-01", 20).iloc[:-1]  # vendor returned a blank for the last stored day
+    out = stabilise_adjusted(old, new, refresh_tail=5)
+    assert len(out) == 20
+    assert out.index[-1] == old.index[-1]
+    assert out["close"].iloc[-1] == old["close"].iloc[-1]
+
+
+def test_reconcile_reports_past_week_revisions_only():
+    from volstrat_pipeline.storage import reconcile
+
+    old = adj_frame("2024-01-01", 20)
+    new = old.copy()
+    new.iloc[2, 0] += 1.0  # revision 18 days back: outside the 5-day window, not reported
+    new.iloc[-2, 0] += 0.5  # revision yesterday-1: reported
+    new = new.drop(new.index[-1])  # latest stored day missing from the download: reported
+    revs = reconcile(old, new, ["close"], bdays=5)
+    dates = {r["date"]: r for r in revs}
+    assert len(revs) == 2
+    assert dates[str(old.index[-2].date())]["new"] == old["close"].iloc[-2] + 0.5
+    assert dates[str(old.index[-1].date())]["new"] is None
+    assert reconcile(old, old, ["close"]) == []

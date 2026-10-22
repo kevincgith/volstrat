@@ -105,6 +105,31 @@ Joined (spliced) segments are flagged in the data and shaded on charts.
   IEF (extended back with VWEHX vs VFITX). NFCI and STLFSI4 are optional and disabled if they're
   unavailable. Chicago Fed's own NFCI CSV is stale (last observation 2026-04-24).
 
+### 2.5a End-of-day only: no live or provisional prices
+Intraday and provisional values must never reach the signal or the backtest. During US
+trading hours Yahoo's bar for today is a live price, and right after the close vendors
+still revise closing-auction prints and settlements. Rules (`sources/base.py`, `eod_cutoff`):
+
+1. **Cutoff.** Data dated D is accepted only once New York time has passed **18:00 on D**.
+   Before that, the latest accepted date is the previous business day (weekends roll back to
+   Friday). Every source (Cboe, CFE, put/call, Treasury, Yahoo, FRED) drops rows after the
+   cutoff, and the put/call fetcher never requests a day beyond it.
+2. **Re-confirmation.** The last 5 days are re-downloaded and replaced on every run (Yahoo
+   tail refresh, put/call daily files, live VX contracts, current-year Treasury file, full Cboe
+   index files), so a late correction overwrites the stored value. Only older history is
+   frozen.
+3. **Timing.** The evening run is at 23:30 UTC (19:30 EDT / 18:30 EST), after the cutoff.
+   The morning catch-up (11:15 UTC) uses the previous day.
+4. **Disclosure.** The cutoff of the last fetch is published in `meta.json` and on the
+   Dashboard.
+5. **Past-week reconciliation.** Every run compares the freshly downloaded values for the
+   last 5 business days with the stored ones, for each source: Cboe index closes, VX
+   settlements per contract, put/call ratios, Treasury yields, Yahoo unadjusted closes.
+   - Changed values are recorded with their old and new values (`revisions` in each
+     source's status), printed in the Action log and shown on the Dashboard.
+   - A day that is stored but missing from the new download (seen with Yahoo during US
+     trading hours) is reported separately, and the stored end-of-day value is kept.
+
 ### 2.6 Point-in-time alignment (no look-ahead in the data)
 Each series is placed on the trading calendar (NYSE days, taken from `^GSPC`) on the date its
 value became **available**, not the date it describes
@@ -137,7 +162,7 @@ and expense ratio can be set as parameters.
   dividend-adjusted prices this is checked on returns, not levels.
 - Values outside plausible ranges are removed and reported. If too many are, the source
   fails, since that usually means the file format changed.
-- Any intraday Yahoo bar is dropped before 16:30 ET.
+- Any value dated after the end-of-day cutoff (§2.5a) is dropped from every source.
 - **Stable caches:** Yahoo re-rounds adjusted prices on every download (moves of up to 3e-6
   in past returns). The stored history is kept unchanged and only new days are chained on,
   rescaled so their returns match Yahoo's. This keeps daily commits to a few lines instead

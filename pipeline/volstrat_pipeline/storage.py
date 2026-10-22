@@ -119,6 +119,7 @@ def stabilise_adjusted(
     adj_col: str = "adj_close",
     raw_col: str = "close",
     split_tol: float = 1e-3,
+    refresh_tail: int = 5,
 ) -> pd.DataFrame:
     """Keep stored history byte-identical and chain only new rows onto it.
 
@@ -127,6 +128,8 @@ def stabilise_adjusted(
     downstream, the stored adjusted series is kept and new rows are rescaled so
     that their returns match Yahoo's. If unadjusted closes disagree on the
     overlap (a split restated history), the new download is used as-is.
+    The last `refresh_tail` stored days are always replaced by the new download
+    so that late corrections to recent closes are picked up.
     """
     if old is None or old.empty:
         return new
@@ -136,10 +139,56 @@ def stabilise_adjusted(
     ratio = (new.loc[common, raw_col] / old.loc[common, raw_col]).dropna()
     if len(ratio) and (ratio - 1).abs().max() > split_tol:
         return new  # split or other restatement of raw prices
-    last = common[-1]
-    fresh = new[new.index > last].copy()
-    if fresh.empty:
-        return old
-    scale = old.at[last, adj_col] / new.at[last, adj_col]
+    if len(common) <= refresh_tail:
+        return new
+    anchor = common[-(refresh_tail + 1)]  # last frozen day
+    fresh = new[new.index > anchor].copy()
+    scale = old.at[anchor, adj_col] / new.at[anchor, adj_col]
     fresh[adj_col] = fresh[adj_col] * scale
-    return pd.concat([old, fresh])
+    # a day already stored (end-of-day) but missing from this download is a
+    # vendor gap, not a deletion: keep the stored value
+    kept = old[(old.index > anchor) & ~old.index.isin(fresh.index)]
+    return pd.concat([old[old.index <= anchor], fresh, kept]).sort_index()
+
+
+RECONCILE_BDAYS = 5  # "past week" re-checked on every run
+
+
+def reconcile(
+    old: pd.DataFrame | None,
+    new: pd.DataFrame,
+    columns: list[str],
+    *,
+    bdays: int = RECONCILE_BDAYS,
+    rtol: float = 1e-6,
+    atol: float = 1e-9,
+) -> list[dict]:
+    """Compare the last `bdays` stored days against a fresh download.
+
+    Returns one record per changed value: {date, column, old, new}. Days the
+    download lacks are reported with new = None. Used to surface vendor
+    revisions of recent end-of-day values.
+    """
+    if old is None or old.empty or new.empty:
+        return []
+    last = old.index.max()
+    start = last - pd.tseries.offsets.BDay(bdays - 1)
+    out = []
+    for d in old.index[old.index >= start]:
+        for c in columns:
+            if c not in old:
+                continue
+            a = old.at[d, c]
+            if pd.isna(a):
+                continue
+            if d not in new.index or c not in new or pd.isna(new.at[d, c]):
+                out.append(
+                    {"date": d.date().isoformat(), "column": c, "old": float(a), "new": None}
+                )
+                continue
+            b = new.at[d, c]
+            if not np.isclose(float(a), float(b), rtol=rtol, atol=atol):
+                out.append(
+                    {"date": d.date().isoformat(), "column": c, "old": float(a), "new": float(b)}
+                )
+    return out

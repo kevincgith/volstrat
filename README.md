@@ -96,8 +96,9 @@ npm test
 
 **Troubleshooting (macOS):** if `volstrat` or `pytest` raises `ModuleNotFoundError:
 volstrat_pipeline`, macOS has set the "hidden" flag on the editable-install `.pth` file, and
-Python 3.13 skips hidden `.pth` files. Fix it with
-`chflags nohidden .venv/lib/python3*/site-packages/*.pth`.
+Python 3.13 skips hidden `.pth` files. Inside iCloud-synced folders such as Documents the flag
+keeps coming back, so set the path explicitly: `export PYTHONPATH=$PWD/pipeline`. `pytest`
+already does this through `pyproject.toml`.
 
 ## Deployment
 

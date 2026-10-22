@@ -301,7 +301,14 @@ export default function Dashboard() {
 
       <Card title="Data status">
         <p className="small">
-          Data through <strong>{data.meta.last_date}</strong> · built {data.meta.generated_at?.replace('T', ' ').slice(0, 16)} UTC ·{' '}
+          Data through <strong>{data.meta.last_date}</strong>
+          {data.meta.eod_cutoff && (
+            <span title="Prices dated after 18:00 New York time on the same day are treated as provisional and excluded">
+              {' '}
+              (end-of-day confirmed; cutoff {data.meta.eod_cutoff})
+            </span>
+          )}{' '}
+          · built {data.meta.generated_at?.replace('T', ' ').slice(0, 16)} UTC ·{' '}
           {failing.length === 0 ? (
             <span className="ok">all sources OK</span>
           ) : (
@@ -310,6 +317,44 @@ export default function Dashboard() {
             </span>
           )}
         </p>
+        {(() => {
+          const rec = sources.filter((x) => (x.reconciled_days ?? 0) > 0);
+          const revs = sources.flatMap((x) => (x.revisions ?? []).map((r) => ({ ...r, source: x.name })));
+          return rec.length ? (
+            <p className="small">
+              Past-week reconciliation: last {rec[0]!.reconciled_days} business days re-downloaded from {rec.length} sources and compared with stored
+              values —{' '}
+              {(() => {
+                const changed = revs.filter((r) => r.new !== null);
+                const missing = revs.filter((r) => r.new === null);
+                if (!revs.length) return <span className="ok">all matched</span>;
+                return (
+                  <>
+                    {changed.length === 0 ? (
+                      <span className="ok">no stored value changed</span>
+                    ) : (
+                      <span className="warn">
+                        {changed.length} value{changed.length > 1 ? 's' : ''} revised:{' '}
+                        {changed
+                          .slice(0, 6)
+                          .map((r) => `${r.source} ${r.column} ${r.date}: ${r.old} → ${r.new}`)
+                          .join('; ')}
+                        {changed.length > 6 ? ' …' : ''}
+                      </span>
+                    )}
+                    {missing.length > 0 && (
+                      <span className="muted">
+                        {' '}
+                        · {missing.length} stored day{missing.length > 1 ? 's' : ''} absent from the latest download (vendor gap; stored end-of-day
+                        values kept)
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+            </p>
+          ) : null;
+        })()}
         {(() => {
           const checks = data.meta.checks ?? [];
           const bad = checks.filter((x) => !x.ok);

@@ -23,8 +23,8 @@ from pathlib import Path
 import pandas as pd
 
 from ..http import get
-from ..storage import read_cache, safe_write
-from .base import SourceStatus, drop_bad
+from ..storage import RECONCILE_BDAYS, read_cache, reconcile, safe_write
+from .base import SourceStatus, drop_bad, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -106,11 +106,11 @@ def stitch(frames: list[tuple[str, pd.DataFrame]]) -> pd.DataFrame:
     return out.sort_index()
 
 
-def update(raw_dir: Path, workers: int = 6, today: pd.Timestamp | None = None) -> SourceStatus:
+def update(raw_dir: Path, workers: int = 6, cutoff: pd.Timestamp | None = None) -> SourceStatus:
     st = SourceStatus("cboe_putcall", required=False)
     path = raw_dir / CACHE
     cached = read_cache(path)
-    today = (today or pd.Timestamp.now(tz="America/New_York")).tz_localize(None).normalize()
+    today = cutoff if cutoff is not None else eod_cutoff()  # never ask for a provisional day
 
     if cached is None:
         base = stitch(_static_frames())
@@ -118,13 +118,21 @@ def update(raw_dir: Path, workers: int = 6, today: pd.Timestamp | None = None) -
     else:
         base = cached
         daily_rows = cached[cached["src"] == "daily"]
-        start = daily_rows.index.max() + pd.Timedelta(days=1) if len(daily_rows) else DAILY_START
+        # re-fetch the last 5 business days so late corrections replace stored values
+        start = (
+            max(DAILY_START, daily_rows.index.max() - pd.tseries.offsets.BDay(5))
+            if len(daily_rows)
+            else DAILY_START
+        )
 
     days = pd.bdate_range(start, today)
     with ThreadPoolExecutor(workers) as ex:
         rows = [r for r in ex.map(_daily, days) if r is not None]
     if rows:
         new = pd.DataFrame(rows).set_index("date")
+        if cached is not None:
+            st.revisions = reconcile(cached, new, ["equity", "index", "total"])
+            st.reconciled_days = RECONCILE_BDAYS
         new["src"] = "daily"
         base = new.combine_first(base) if not base.empty else new
         base.loc[new.index, "src"] = "daily"

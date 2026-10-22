@@ -34,6 +34,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[{flag}] {s.name:28s} last={s.last_date} rows={s.rows} {s.message}")
             for w in s.warnings:
                 print(f"       ! {w}")
+            for r in s.revisions[:10]:
+                print(f"       ~ revised {r['date']} {r['column']}: {r['old']} -> {r['new']}")
             if s.required and not s.ok:
                 failed_required.append(s.name)
     if args.command in ("build", "update"):

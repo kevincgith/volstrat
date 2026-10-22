@@ -14,8 +14,8 @@ from pathlib import Path
 import pandas as pd
 
 from ..http import get
-from ..storage import read_cache, safe_write
-from .base import SourceStatus, drop_bad
+from ..storage import RECONCILE_BDAYS, read_cache, reconcile, safe_write
+from .base import SourceStatus, cut, drop_bad, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -41,15 +41,18 @@ def parse(text: str) -> pd.DataFrame:
     return out.sort_index()
 
 
-def update(raw_dir: Path, today: pd.Timestamp | None = None) -> SourceStatus:
+def update(raw_dir: Path, cutoff: pd.Timestamp | None = None) -> SourceStatus:
     st = SourceStatus("treasury_curve", required=True)
+    cutoff = cutoff if cutoff is not None else eod_cutoff()
     path = raw_dir / CACHE
     cached = read_cache(path)
-    year = (today or pd.Timestamp.now()).year
+    year = cutoff.year
     years = range(FIRST_YEAR, year + 1) if cached is None else range(year - 1, year + 1)
     frames = [parse(get(URL.format(y=y), timeout=90).text) for y in years]
-    new = pd.concat(frames)
+    new = cut(pd.concat(frames), cutoff)
     if cached is not None:
+        st.revisions = reconcile(cached, new, ["y3m", "y2y", "y10y"])
+        st.reconciled_days = RECONCILE_BDAYS
         new = new.combine_first(cached)
     new = new[~new.index.duplicated(keep="first")].sort_index()
     for c in KEEP.values():

@@ -25,7 +25,7 @@ import pandas as pd
 
 from ..http import get
 from ..storage import DataGuardError
-from .base import SourceStatus
+from .base import SourceStatus, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -117,8 +117,9 @@ def load(raw_dir: Path) -> pd.DataFrame | None:
     return pd.read_csv(path, parse_dates=["date", "expiry"])
 
 
-def update(raw_dir: Path, workers: int = 8) -> SourceStatus:
+def update(raw_dir: Path, workers: int = 8, cutoff: pd.Timestamp | None = None) -> SourceStatus:
     st = SourceStatus("cfe_vx", required=True)
+    cutoff = cutoff if cutoff is not None else eod_cutoff()
     cached = load(raw_dir)
     have = set() if cached is None else set(cached["expiry"].dt.date)
     last_cached = None if cached is None else cached["date"].max()
@@ -151,6 +152,26 @@ def update(raw_dir: Path, workers: int = 8) -> SourceStatus:
         frames = [f for f in ex.map(run, jobs) if f is not None]
 
     fresh = pd.concat(frames) if frames else pd.DataFrame(columns=["date", *COLUMNS])
+    # settlements dated after the end-of-day cutoff may be provisional
+    if len(fresh):
+        fresh = fresh[fresh["date"] <= cutoff]
+    if cached is not None and len(fresh):
+        # reconcile the past week's settlements, contract by contract
+        lo = cached["date"].max() - pd.tseries.offsets.BDay(4)
+        a = cached[cached["date"] >= lo].set_index(["date", "expiry"])["settle"]
+        b = fresh.set_index(["date", "expiry"])["settle"]
+        both = a.index.intersection(b.index)
+        changed = [(d, e) for (d, e) in both if abs(a[(d, e)] - b[(d, e)]) > 1e-9]
+        st.revisions = [
+            {
+                "date": d.date().isoformat(),
+                "column": f"VX settle exp {e.date()}",
+                "old": float(a[(d, e)]),
+                "new": float(b[(d, e)]),
+            }
+            for (d, e) in changed
+        ]
+        st.reconciled_days = 5
     if cached is not None:
         refreshed = set(fresh["expiry"].dt.date) if len(fresh) else set()
         keep = cached[~cached["expiry"].dt.date.isin(refreshed)]

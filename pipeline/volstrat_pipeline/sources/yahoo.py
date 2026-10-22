@@ -15,13 +15,15 @@ from pathlib import Path
 import pandas as pd
 
 from ..storage import (
+    RECONCILE_BDAYS,
     DataGuardError,
     check_history_stable,
     read_cache,
+    reconcile,
     safe_write,
     stabilise_adjusted,
 )
-from .base import SourceStatus
+from .base import SourceStatus, cut, eod_cutoff
 
 log = logging.getLogger(__name__)
 
@@ -94,26 +96,29 @@ def fetch(symbol: str, retries: int = 3) -> pd.DataFrame:
     raise RuntimeError(f"{symbol}: {last}")
 
 
-def drop_incomplete_today(df: pd.DataFrame, now: pd.Timestamp | None = None) -> pd.DataFrame:
-    """Remove a bar for today if the US session may not be closed yet (before 16:30 ET)."""
-    now = now or pd.Timestamp.now(tz="America/New_York")
-    today = now.tz_localize(None).normalize()
-    if len(df) and df.index[-1] == today and now.hour * 60 + now.minute < 16 * 60 + 30:
-        return df.iloc[:-1]
-    return df
-
-
-def update(raw_dir: Path) -> list[SourceStatus]:
+def update(raw_dir: Path, cutoff: pd.Timestamp | None = None) -> list[SourceStatus]:
+    cutoff = cutoff if cutoff is not None else eod_cutoff()
     out = []
     for t in TICKERS:
         st = SourceStatus(f"yahoo:{t.symbol}", required=t.required)
         try:
-            df = drop_incomplete_today(fetch(t.symbol))
+            # bars after the end-of-day cutoff may be live / provisional
+            df = cut(fetch(t.symbol), cutoff)
             path = raw_dir / cache_name(t.symbol)
             cached = read_cache(path)
+            st.revisions = reconcile(cached, df, ["close"], rtol=1e-6)
+            st.reconciled_days = RECONCILE_BDAYS if cached is not None else 0
             # Adjusted history is rescaled on dividends: compare returns, loosely...
             check_history_stable(cached, df, ["adj_close"], returns=True, max_changed_frac=0.02)
             # ...then keep the stored history and append only new days (no daily churn).
+            if cached is not None:
+                gaps = cached.index[
+                    (cached.index > df.index[-1] - pd.Timedelta(days=10))
+                    & ~cached.index.isin(df.index)
+                ]
+                if len(gaps):
+                    days = ", ".join(str(g.date()) for g in gaps)
+                    st.warnings.append(f"download missing stored day(s) {days}; kept stored values")
             df = stabilise_adjusted(cached, df)
             safe_write(df, path)
             st.ok, st.rows, st.last_date = True, len(df), df.index[-1].date().isoformat()

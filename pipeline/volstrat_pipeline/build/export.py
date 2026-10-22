@@ -212,6 +212,11 @@ def _write_json(obj, path: Path) -> None:
     tmp.replace(path)
 
 
+def _fetch_meta(raw: Path) -> dict:
+    p = raw / "_fetch_meta.json"
+    return json.loads(p.read_text()) if p.exists() else {}
+
+
 def build_all(raw: Path, site: Path) -> None:
     gspc = yahoo.load(raw, "^GSPC")
     if gspc is None:
@@ -286,6 +291,7 @@ def build_all(raw: Path, site: Path) -> None:
             "last_date": dates[-1],
             "sources": status,
             "checks": [c.to_dict() for c in checks],
+            "eod_cutoff": _fetch_meta(raw).get("eod_cutoff"),
         },
         site / "meta.json",
     )
