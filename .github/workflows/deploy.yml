@@ -1,0 +1,56 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "data/site/**", ".github/workflows/deploy.yml"]
+  workflow_run:
+    workflows: ["Data update"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      # Set the repository variable VITE_BASE to "/" when a custom domain is configured.
+      VITE_BASE: ${{ vars.VITE_BASE || '/volstrat/' }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - name: Bundle site data
+        run: mkdir -p web/dist/data && cp -r data/site/. web/dist/data/ && rm -f web/dist/data/.gitkeep
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

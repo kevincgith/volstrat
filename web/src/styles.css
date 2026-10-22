@@ -1,0 +1,209 @@
+/* Design tokens. Light is the default; dark applies via system preference
+   unless the user picked a theme (data-theme on <html>). */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #d9dee6;
+  --text: #14202e;
+  --text-muted: #5b6878;
+  --accent: #1f5fa8;
+  --accent-2: #c77d12;
+  --pos: #1e7d4f;
+  --neg: #b3261e;
+  --topbar: #0f2742;
+  --topbar-text: #e8eef6;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --radius: 6px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0b1119;
+    --surface: #121a25;
+    --surface-2: #182230;
+    --border: #253244;
+    --text: #e3e9f1;
+    --text-muted: #8b99ab;
+    --accent: #5b9be6;
+    --accent-2: #f0a43a;
+    --pos: #3fbf7f;
+    --neg: #f0645a;
+    --topbar: #070c13;
+    --topbar-text: #e3e9f1;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0b1119;
+  --surface: #121a25;
+  --surface-2: #182230;
+  --border: #253244;
+  --text: #e3e9f1;
+  --text-muted: #8b99ab;
+  --accent: #5b9be6;
+  --accent-2: #f0a43a;
+  --pos: #3fbf7f;
+  --neg: #f0645a;
+  --topbar: #070c13;
+  --topbar-text: #e3e9f1;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--topbar);
+  color: var(--topbar-text);
+  border-bottom: 2px solid var(--accent-2);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+.brand-mark {
+  align-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent-2);
+}
+.brand-name {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 16px;
+}
+.brand-sub {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab {
+  color: inherit;
+  text-decoration: none;
+  padding: 15px 12px 13px;
+  font-weight: 500;
+  font-size: 13px;
+  opacity: 0.72;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.tab:hover {
+  opacity: 1;
+}
+.tab.active {
+  opacity: 1;
+  border-bottom-color: var(--topbar-text);
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: inherit;
+  border-radius: var(--radius);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+.page h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.placeholder {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: var(--text-muted);
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.disclaimer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 20px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    gap: 12px;
+    padding: 0 16px;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .content {
+    padding: 16px;
+  }
+}
