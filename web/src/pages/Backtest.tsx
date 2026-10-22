@@ -3,6 +3,7 @@ import { Chart, type ChartHandle } from '../charts/Chart';
 import { baseOption, line, num, pct, regimeAreas, timeAxis, valueAxis, zoom } from '../charts/options';
 import { assetColor, colors, entityColor, type Colors } from '../charts/palette';
 import { assetLabel, ParamPanel } from '../components/ParamPanel';
+import { BootstrapCard } from '../components/BootstrapCard';
 import { Robustness } from '../components/Robustness';
 import { Card, ErrorBox, Loading, Segmented, Toggle } from '../components/ui';
 import { COMPONENTS } from '../engine/components';
@@ -355,7 +356,7 @@ export default function Backtest() {
                             const m = metricsOf(r);
                             return (
                               <td key={r.id} className={`num ${r.id === 'strategy' ? 'strong' : ''}`}>
-                                {m ? row.fmt(m[row.key] as number) : '–'}
+                                {m && !(r.id === 'spx' && row.key === 'hitRate') ? row.fmt(m[row.key] as number) : '–'}
                               </td>
                             );
                           })}
@@ -384,6 +385,8 @@ export default function Backtest() {
                   <span className="small muted">· avg regime spell {result.avgRegimeDays.toFixed(0)} trading days · {result.strategy.result.trades} trades</span>
                 </div>
               </Card>
+
+              <BootstrapCard result={result} paramsKey={JSON.stringify(params)} />
 
               <Card title="Growth of $1 (log scale)" actions={<button className="btn ghost" onClick={() => refs.equity.current?.toPNG('volstrat-equity')}>PNG</button>}>
                 <Chart ref={refs.equity} option={charts.equity} height={380} group="bt" ariaLabel="Equity curves of the strategy and benchmarks, log scale" />
