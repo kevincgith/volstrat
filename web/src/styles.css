@@ -1062,3 +1062,14 @@ h3.sub {
     background: var(--surface);
   }
 }
+
+/* live track record */
+.track-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.track-stats b {
+  font-size: 18px;
+}

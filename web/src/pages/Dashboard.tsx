@@ -7,6 +7,7 @@ import { Card, ErrorBox, Loading } from '../components/ui';
 import { COMPONENT_BY_ID } from '../engine/components';
 import { REGIMES } from '../engine/score';
 import { rollingCorrelation } from '../engine/run';
+import { TrackRecord } from '../components/TrackRecord';
 import { useData } from '../state/data';
 import { useParams } from '../state/params';
 import { useRun } from '../state/useRun';
@@ -247,6 +248,8 @@ export default function Dashboard() {
           </table>
         </div>
       </Card>
+
+      <TrackRecord data={data} />
 
       <Card
         title="Recent regime changes"
