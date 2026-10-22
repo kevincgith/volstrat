@@ -28,6 +28,14 @@ const configs: [string, Params][] = [
       allocation: { adaptiveHedge: { enabled: true, lookback: 63, threshold: -0.2, replacement: 'BIL' } },
     }),
   ],
+  [
+    'asymmetric buffers, min hold, per-asset costs',
+    merge(DEFAULT_PARAMS, {
+      period: { start: '2010-01-01' },
+      regime: { bufferUp: 0, bufferDown: 5, minHoldDays: 10, fastDerisk: false },
+      backtest: { assetCostBps: { SSO: 20, GLD: 8 } },
+    }),
+  ],
 ];
 
 function same(a: ArrayLike<number>, b: ArrayLike<number>, upto: number) {

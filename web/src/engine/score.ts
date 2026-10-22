@@ -36,8 +36,16 @@ export type RegimeName = (typeof REGIMES)[number];
 export interface RegimeParams {
   /** Four ascending cut-offs on the 0-100 score separating the five regimes. */
   thresholds: [number, number, number, number];
-  /** Score must cross a cut-off by this many points to change regime. */
+  /** Score must cross a cut-off by this many points to change regime (both directions). */
   hysteresis: number;
+  /** Optional override of `hysteresis` for moves UP (toward risk-on). */
+  bufferUp?: number;
+  /** Optional override of `hysteresis` for moves DOWN (toward risk-off). */
+  bufferDown?: number;
+  /** Minimum trading days to stay in a regime before switching again (0 = none). */
+  minHoldDays?: number;
+  /** With a minimum hold, still allow moves DOWN (de-risking) immediately. */
+  fastDerisk?: boolean;
 }
 
 export interface ComponentResult {
@@ -147,8 +155,12 @@ export function rawRegime(score: number, th: RegimeParams['thresholds']): number
 export function regimes(score: Float64Array, p: RegimeParams): Int8Array {
   const out = new Int8Array(score.length).fill(-1);
   const th = p.thresholds;
-  const h = Math.max(0, p.hysteresis);
+  const up = Math.max(0, p.bufferUp ?? p.hysteresis);
+  const down = Math.max(0, p.bufferDown ?? p.hysteresis);
+  const hold = Math.max(0, Math.floor(p.minHoldDays ?? 0));
+  const fastDerisk = p.fastDerisk ?? true;
   let cur = -1;
+  let since = 0; // days spent in the current regime
   for (let t = 0; t < score.length; t++) {
     const s = score[t]!;
     if (!Number.isFinite(s)) {
@@ -156,17 +168,24 @@ export function regimes(score: Float64Array, p: RegimeParams): Int8Array {
       continue;
     }
     const raw = rawRegime(s, th);
-    if (cur < 0) cur = raw;
-    else if (raw > cur) {
-      // move up only past the regime's upper cut-off + h; land on the highest regime cleared
-      let r = cur;
-      while (r < 4 && s >= th[r]! + h) r++;
-      cur = r;
-    } else if (raw < cur) {
-      let r = cur;
-      while (r > 0 && s < th[r - 1]! - h) r--;
-      cur = r;
+    if (cur < 0) {
+      cur = raw;
+      since = 0;
+    } else {
+      let next = cur;
+      if (raw > cur) {
+        // move up only past the regime's upper cut-off + buffer; land on the highest regime cleared
+        while (next < 4 && s >= th[next]! + up) next++;
+      } else if (raw < cur) {
+        while (next > 0 && s < th[next - 1]! - down) next--;
+      }
+      const held = since >= hold;
+      if (next !== cur && (held || (next < cur && fastDerisk))) {
+        cur = next;
+        since = 0;
+      }
     }
+    since++;
     out[t] = cur;
   }
   return out;

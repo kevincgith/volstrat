@@ -21,6 +21,8 @@ export interface BacktestParams {
   /** Daily/weekly/monthly: skip trades when no weight is off target by more than this. */
   band: number;
   costBps: number;
+  /** Optional per-asset cost (bp per side) overriding `costBps`, e.g. wider spreads on leveraged ETFs. */
+  assetCostBps?: Partial<Record<string, number>>;
 }
 
 export interface BacktestResult {
@@ -69,6 +71,7 @@ export function simulate(
   const K = keys.length;
   const idx = new Map(keys.map((k, i) => [k, i]));
   const R = keys.map((k) => assets[k]!.returns);
+  const costPer = keys.map((k) => (p.assetCostBps?.[k] ?? p.costBps) / 10_000);
   const nav = new Float64Array(n).fill(NaN);
   const rets = new Float64Array(n).fill(NaN);
   const turnover = new Float64Array(n).fill(0);
@@ -167,14 +170,15 @@ export function simulate(
       const tv = vec(target);
       let traded = 0;
       let maxDev = 0;
+      let c = 0;
       for (let i = 0; i < K; i++) {
         const dev = Math.abs(tv[i]! - w[i]!);
         traded += dev;
+        c += dev * costPer[i]!;
         if (dev > maxDev) maxDev = dev;
       }
       const banded = p.rebalance !== 'regime' && maxDev <= p.band;
       if (traded > 1e-12 && !banded) {
-        const c = (traded * p.costBps) / 10_000;
         value *= 1 - c;
         costs[t] = c;
         turnover[t] = traded / 2;

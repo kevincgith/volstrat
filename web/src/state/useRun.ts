@@ -100,6 +100,24 @@ export function runAttribution(
   });
 }
 
+/** Generic one-off worker job; resolves with the response of the matching type. */
+export function runJob<T extends WorkerResponse['type']>(
+  data: MarketData,
+  req: WorkerRequest & { id?: number },
+  expect: T,
+  onProgress?: (done: number, total: number) => void,
+): Promise<Extract<WorkerResponse, { type: T }>> {
+  return new Promise((resolve, reject) => {
+    const id = nextId++;
+    if (onProgress) progress.set(id, onProgress);
+    listeners.set(id, (r) => {
+      if (r.type === expect) resolve(r as Extract<WorkerResponse, { type: T }>);
+      else if (r.type === 'error') reject(new Error(r.message));
+    });
+    getWorker(data).postMessage({ ...req, id } as WorkerRequest);
+  });
+}
+
 /** Run several parameter sets (e.g. saved profiles); results in input order. */
 export function useRuns(data: MarketData | null, list: Params[]) {
   const [results, setResults] = useState<(WireResult | null)[]>([]);

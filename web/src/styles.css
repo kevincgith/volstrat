@@ -945,3 +945,52 @@ a {
   font-size: 13px;
   margin-bottom: 10px;
 }
+
+/* optimise & costs */
+.universe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.weight-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.weight-chip {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+h3.sub {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 14px 0 6px;
+}
+.asset-costs {
+  margin: 4px 0 8px;
+}
+.asset-costs summary {
+  cursor: pointer;
+}
+.cost-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+}
+.cost-grid label {
+  display: grid;
+  grid-template-columns: 1fr 56px;
+  align-items: center;
+  gap: 6px;
+}
+.cost-grid input {
+  padding: 2px 6px;
+}
+.wf-panel {
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 12px;
+}

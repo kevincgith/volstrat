@@ -36,7 +36,7 @@ export const DEFAULT_PARAMS: Params = {
       COMPONENTS.map((c) => [c.id, { enabled: c.defaultEnabled, weight: c.defaultWeight || 1, invert: false }]),
     ),
   },
-  regime: { thresholds: [20, 40, 60, 80], hysteresis: 2.5 },
+  regime: { thresholds: [20, 40, 60, 80], hysteresis: 2.5, minHoldDays: 0, fastDerisk: true },
   allocation: {
     mode: 'regime',
     adaptiveHedge: { enabled: false, lookback: 63, threshold: 0, replacement: 'BIL' },
@@ -58,7 +58,7 @@ export const DEFAULT_PARAMS: Params = {
     },
   },
   assets: { financingSpread: 0.0075, alwaysSynthetic: false },
-  backtest: { lag: 1, rebalance: 'regime', band: 0.05, costBps: 5 },
+  backtest: { lag: 1, rebalance: 'regime', band: 0.05, costBps: 5, assetCostBps: {} },
   period: { start: '2007-01-01', end: '', oosStart: '' },
   benchmarks: { equity: 'SPX', bond: 'AGG', volTarget: 0.12, volLookback: 21 },
 };

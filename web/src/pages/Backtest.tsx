@@ -4,6 +4,7 @@ import { baseOption, line, num, pct, regimeAreas, timeAxis, valueAxis, zoom } fr
 import { assetColor, colors, entityColor, type Colors } from '../charts/palette';
 import { assetLabel, ParamPanel } from '../components/ParamPanel';
 import { BootstrapCard } from '../components/BootstrapCard';
+import { CostCard } from '../components/CostCard';
 import { Robustness } from '../components/Robustness';
 import { Card, ErrorBox, Loading, Segmented, Toggle } from '../components/ui';
 import { COMPONENTS } from '../engine/components';
@@ -37,6 +38,7 @@ const STAT_ROWS: { key: keyof Metrics; label: string; fmt: (v: number) => string
   { key: 'worstYear', label: 'Worst calendar year', fmt: (v) => pct(v), hint: 'Partial first/last years included' },
   { key: 'bestYear', label: 'Best calendar year', fmt: (v) => pct(v), hint: 'Partial first/last years included' },
   { key: 'turnover', label: 'Turnover (one-way, p.a.)', fmt: (v) => `${num(v, 1)}x`, hint: '1.0x = whole portfolio traded once a year' },
+  { key: 'costDrag', label: 'Cost drag (p.a.)', fmt: (v) => pct(v, 2), hint: 'Transaction costs paid per year, % of NAV' },
   { key: 'avgHoldingYears', label: 'Avg holding period', fmt: (v) => (Number.isFinite(v) ? `${(v * 12).toFixed(1)} mo` : '–'), hint: '1 / turnover' },
 ];
 
@@ -387,6 +389,7 @@ export default function Backtest() {
               </Card>
 
               <BootstrapCard result={result} paramsKey={JSON.stringify(params)} />
+              <CostCard result={result} params={params} />
 
               <Card title="Growth of $1 (log scale)" actions={<button className="btn ghost" onClick={() => refs.equity.current?.toPNG('volstrat-equity')}>PNG</button>}>
                 <Chart ref={refs.equity} option={charts.equity} height={380} group="bt" ariaLabel="Equity curves of the strategy and benchmarks, log scale" />

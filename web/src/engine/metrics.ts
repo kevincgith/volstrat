@@ -28,6 +28,8 @@ export interface Metrics {
   turnover: number;
   /** Average years between full turnovers, i.e. 1 / turnover. */
   avgHoldingYears: number;
+  /** Transaction costs paid per year, as a fraction of NAV. */
+  costDrag: number;
   positiveMonths: number;
   /** Share of months beating the reference. */
   hitRate: number;
@@ -97,6 +99,7 @@ export function computeMetrics(
   cashReturns: Float64Array,
   refNav: Float64Array,
   turnover?: Float64Array,
+  costs?: Float64Array,
 ): Metrics {
   const r: number[] = [];
   const ex: number[] = [];
@@ -173,6 +176,8 @@ export function computeMetrics(
   let to = 0;
   if (turnover) for (let t = s; t <= e; t++) to += turnover[t]!;
   const annualTurnover = years > 0 ? to / years : NaN;
+  let paid = 0;
+  if (costs) for (let t = s + 1; t <= e; t++) paid += costs[t]!;
 
   return {
     start: dates[s]!,
@@ -192,6 +197,7 @@ export function computeMetrics(
     correlation: vr > 0 && vf > 0 ? cov / Math.sqrt(vr * vf) : NaN,
     turnover: annualTurnover,
     avgHoldingYears: annualTurnover > 0 ? 1 / annualTurnover : NaN,
+    costDrag: costs && years > 0 ? paid / years : NaN,
     positiveMonths: mStrat.length ? mStrat.filter((m) => m.ret > 0).length / mStrat.length : NaN,
     hitRate: mStrat.length ? hits / mStrat.length : NaN,
     worstMonth: Math.min(...mStrat.map((m) => m.ret)),

@@ -38,6 +38,13 @@ GitHub Action).
   - CSV/PNG export.
 - **Diagnostics:** asset behaviour after each regime or score bucket, information
   coefficient, and leave-one-out component attribution.
+- **Optimise:**
+  - regime portfolios (mean-variance with shrinkage), tested walk-forward;
+  - signal weights (coordinate descent), with train/test split and walk-forward
+    re-optimisation;
+  - "apply" buttons to load the results on the Backtest page.
+- **Whipsaw and cost controls:** asymmetric regime buffers, minimum holding period,
+  per-asset trading costs, cost drag and break-even cost.
 - **Compare:** saved parameter profiles side by side.
 - **Methodology:** plain-English documentation with stress-episode tables computed from the
   data.

@@ -6,6 +6,7 @@ import Signals from './pages/Signals';
 import Backtest from './pages/Backtest';
 import Compare from './pages/Compare';
 import Diagnostics from './pages/Diagnostics';
+import Optimise from './pages/Optimise';
 import Methodology from './pages/Methodology';
 
 const TABS = [
@@ -13,6 +14,7 @@ const TABS = [
   { path: '/signals', label: 'Signals' },
   { path: '/backtest', label: 'Backtest' },
   { path: '/diagnostics', label: 'Diagnostics' },
+  { path: '/optimise', label: 'Optimise' },
   { path: '/compare', label: 'Compare' },
   { path: '/methodology', label: 'Methodology' },
 ] as const;
@@ -44,6 +46,7 @@ export default function App() {
           <Route path="/signals" element={<Signals />} />
           <Route path="/backtest" element={<Backtest />} />
           <Route path="/diagnostics" element={<Diagnostics />} />
+          <Route path="/optimise" element={<Optimise />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

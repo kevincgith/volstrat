@@ -227,7 +227,42 @@ export function ParamPanel({
             />
           ))}
         </div>
-        <NumberInput label="Hysteresis (points)" value={params.regime.hysteresis} min={0} step={0.5} onChange={(v) => up((d) => void (d.regime.hysteresis = Math.max(0, v)))} hint="The score must cross a cut-off by this much before the regime changes." />
+        <div className="row-2">
+          <NumberInput
+            label="Buffer to move up (pts)"
+            value={params.regime.bufferUp ?? params.regime.hysteresis}
+            min={0}
+            step={0.5}
+            onChange={(v) => up((d) => void (d.regime.bufferUp = Math.max(0, v)))}
+            hint="Toward risk-on: the score must exceed a cut-off by this much. 0 = switch as soon as the cut-off is crossed."
+          />
+          <NumberInput
+            label="Buffer to move down (pts)"
+            value={params.regime.bufferDown ?? params.regime.hysteresis}
+            min={0}
+            step={0.5}
+            onChange={(v) => up((d) => void (d.regime.bufferDown = Math.max(0, v)))}
+            hint="Toward risk-off: the score must fall below a cut-off by this much. E.g. up 0 / down 5 with a cut-off at 50: switch up at 50, back down only below 45."
+          />
+          <NumberInput
+            label="Min days in regime"
+            value={params.regime.minHoldDays ?? 0}
+            min={0}
+            step={5}
+            onChange={(v) => up((d) => void (d.regime.minHoldDays = Math.max(0, Math.round(v))))}
+            hint="After a switch, stay at least this many trading days before switching again (0 = off)."
+          />
+        </div>
+        <Toggle
+          label="Always allow de-risking immediately"
+          checked={params.regime.fastDerisk ?? true}
+          onChange={(v) => up((d) => void (d.regime.fastDerisk = v))}
+          title="With a minimum holding period, still move down (toward risk-off) without waiting."
+        />
+        <p className="muted small" style={{ margin: '6px 0 0' }}>
+          Buffers stop the allocation flip-flopping when the score hovers around a cut-off. Asymmetric buffers let you re-risk quickly but de-risk only
+          on a clear drop, or the reverse.
+        </p>
       </Section>
 
       <Section title="Allocation" open>
@@ -332,6 +367,33 @@ export function ParamPanel({
           <NumberInput label="Drift band" value={params.backtest.band} scale={100} suffix="%" min={0} step={1} onChange={(v) => up((d) => void (d.backtest.band = Math.max(0, v)))} hint="Daily/weekly/monthly modes: skip trades unless some weight is off target by more than this." />
           <NumberInput label="Leverage financing spread" value={params.assets.financingSpread} scale={10000} suffix="bp" min={0} step={5} onChange={(v) => up((d) => void (d.assets.financingSpread = Math.max(0, v)))} hint="Over T-bills, applied to the borrowed exposure of synthetic leveraged ETFs." />
         </div>
+        <details className="asset-costs">
+          <summary className="small">Per-asset costs (bp per side)</summary>
+          <p className="muted small">Override the cost for individual assets, e.g. wider spreads on leveraged ETFs. Blank = the cost above.</p>
+          <div className="cost-grid">
+            {STRATEGY_ASSETS.map((k) => (
+              <label key={k} className="small">
+                <span>{assetLabel(k)}</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  placeholder={String(params.backtest.costBps)}
+                  value={params.backtest.assetCostBps?.[k] ?? ''}
+                  onChange={(e) =>
+                    up((d) => {
+                      const m = { ...(d.backtest.assetCostBps ?? {}) };
+                      const x = parseFloat(e.target.value);
+                      if (Number.isFinite(x) && x >= 0) m[k] = x;
+                      else delete m[k];
+                      d.backtest.assetCostBps = m;
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        </details>
         <Toggle label="Use synthetic leveraged ETFs for the whole period" checked={params.assets.alwaysSynthetic} onChange={(v) => up((d) => void (d.assets.alwaysSynthetic = v))} />
       </Section>
 

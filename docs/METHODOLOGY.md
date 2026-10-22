@@ -207,6 +207,26 @@ Full-sample normalisation is never used, because it would leak future informatio
   realised distribution, because that would be in-sample fitting. The share of time in each
   regime is shown with every backtest.
 
+### 5.1 Whipsaw control: asymmetric buffers and minimum holding period
+- **Asymmetric buffers.** `bufferUp` and `bufferDown` replace the symmetric hysteresis per
+  direction. With a cut-off at 50, `bufferUp = 0` and `bufferDown = 5` switch to the higher
+  regime as soon as the score crosses 50, and back only once it falls below 45. If neither is
+  set, both default to `hysteresis`.
+- **Minimum holding period.** `minHoldDays` blocks regime changes for N trading days after a
+  switch. With `fastDerisk` (default on), moves toward risk-off are still allowed
+  immediately, so the hold never delays protection.
+- *Measured on default settings, data through 2026-10-21:*
+
+| Setting | CAGR | Sharpe | Max drawdown | Trades | Cost drag |
+|---|---|---|---|---|---|
+| Default (2.5 / 2.5) | 7.4% | 0.60 | −21.8% | 205 | 0.61% |
+| Up 0 / down 5 | 7.8% | 0.60 | −23.4% | 205 | 0.61% |
+| Up 5 / down 0 | 6.7% | 0.57 | −22.9% | 210 | 0.61% |
+| 20-day minimum hold | 7.0% | 0.57 | −21.8% | 171 | 0.52% |
+
+  None of these changes risk-adjusted returns materially. They mainly trade turnover against
+  responsiveness.
+
 ## 6. Allocation mapping
 - **Regime mode (default):** each regime has its own editable portfolio. Defaults:
   - Crisis: 100% T-bills (BIL)
@@ -257,6 +277,15 @@ by 2022, so its backtest benefit is partly hindsight.
   - Weights drift with returns between trades.
 - **Transaction costs:** `costBps` (default 5 bp) per unit of notional traded on each side. A
   full switch from one asset to another costs 2 × 5 = 10 bp.
+- **Per-asset costs:** any asset can be given its own cost (bp per side), e.g. wider spreads
+  on leveraged ETFs. Each leg of a trade is charged at its own rate.
+- **Cost reporting:** *cost drag* is the annual cost paid as a % of NAV. The **break-even
+  cost** is the cost per side, applied to every asset and to the benchmark alike, at which the
+  strategy's Sharpe falls to the benchmark's (bisection over 0–200 bp).
+  - *Example on 2026-10-22 data, default parameters:* the break-even vs 60/40 is **6.6 bp per
+    side**. Sharpe falls from 0.66 at 0 bp to 0.60 at 5 bp, 0.54 at 10 bp and 0.41 at 20 bp,
+    while 60/40 holds at about 0.58. Turnover of about 6× a year makes execution cost a
+    first-order issue for this strategy.
 - **Fees:** ETF returns are already net of expense ratios. Where a gross index, the T-bill
   accrual or the gold future stands in for an ETF, that ETF's expense ratio is deducted daily.
 - **Leverage:** SSO and UPRO use actual ETF returns from inception. Before that (or always,
@@ -437,4 +466,58 @@ After the pipeline runs, the daily Action executes the same TypeScript engine in
 If the regime differs from the previous day's `latest.json`, the Action opens a GitHub
 issue labelled `regime-change` with the new regime, allocation and component table.
 GitHub emails the repository's watchers.
+
+## 13. Optimisation (allocation and signal weights)
+The **Optimise** tab (`web/src/engine/optimise.ts`) searches for better regime portfolios and
+component weights. Every result is shown next to an out-of-sample test, and costs are charged
+in every evaluation.
+
+### 13.1 What to hold in each regime
+- **Estimates.** For each regime, the means and covariance of asset excess returns (over
+  T-bills) are estimated on the days *after* the regime was signalled (label at t, return at
+  t + lag + 1). Means are shrunk toward the cross-asset average (default 50%), and
+  correlations toward zero (10%).
+- **Objective, long-only, capped weights (default 60%):**
+  - *return − γ/2 × variance* (default, γ = 3);
+  - max return under a volatility cap;
+  - minimum variance;
+  - max Sharpe. Max Sharpe puts short Treasuries and T-bills in every regime, because those
+    have the highest Sharpe ratios, so it is a poor choice for a timing allocation.
+- **Thin regimes.** A regime with fewer than 250 days of history (default) keeps its
+  current portfolio. Strong Risk-On has only 138 days.
+- **Walk-forward.** Every year, portfolios are re-fitted on all data up to that date and
+  applied to the next year.
+- *Result on 2026-10-22 data (defaults, out-of-sample window 2007–2026):*
+
+| | Sharpe | CAGR | Max drawdown |
+|---|---|---|---|
+| Current hand-built portfolios | 0.60 | 7.4% | −21.8% |
+| Walk-forward optimised | 0.51 | 7.1% | −23.5% |
+| Full-sample optimised (hindsight, not achievable) | 0.80 | 11.2% | −17.8% |
+
+  The full-sample optimum also produces odd portfolios, such as 60% gold in Risk-On.
+  Conditional mean returns are too noisy to estimate per regime, consistent with §11's
+  finding that the score sorts risk rather than return.
+
+### 13.2 Signal component weights
+- **Search.** Coordinate descent over candidate weights (e.g. 0 / 0.5 / 1 / 2): up to three
+  passes, keeping any change that improves the objective on the **training period only**.
+- **Train / test.** Results are reported for the training period and for the untouched test
+  period, against the current and equal weights.
+- **Walk-forward.** From the training cut-off, the search is re-run every 1–3 years on an
+  expanding window and its weights are applied to the next period only. A switching cost is
+  charged at each re-fit.
+- *Result on 2026-10-22 data (Sharpe objective, training to 2016-12-31):*
+
+| | Training 2007–2016 | Test 2017–2026 |
+|---|---|---|
+| Current weights | 0.46 | 0.75 |
+| Equal weights | 0.66 | 0.58 |
+| Optimised on training | **0.95** | 0.50 |
+| Walk-forward re-optimised yearly | – | 0.58 |
+
+  The in-sample gain (+0.49 Sharpe from the best of 58 tries) reversed out of sample: textbook
+  overfitting. Periodic re-optimisation also failed to beat fixed weights. Recommendation:
+  keep simple, economically motivated weights, and use the optimiser to learn how fragile an
+  apparent improvement is.
 

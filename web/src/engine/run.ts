@@ -201,11 +201,11 @@ export function run(d: MarketData, p: Params): RunResult {
   const cash = assets.CASH!.returns;
 
   const mk = (id: string, label: string, res: BacktestResult, refNav: Float64Array): PortfolioRun => {
-    const m = computeMetrics(d.dates, res.nav, res.start, res.end, cash, refNav, res.turnover);
+    const m = computeMetrics(d.dates, res.nav, res.start, res.end, cash, refNav, res.turnover, res.costs);
     const out: PortfolioRun = { id, label, result: res, metrics: m };
     if (oos > res.start + 21 && oos < res.end - 21) {
-      out.inSample = computeMetrics(d.dates, res.nav, res.start, oos, cash, refNav, res.turnover);
-      out.outOfSample = computeMetrics(d.dates, res.nav, oos, res.end, cash, refNav, res.turnover);
+      out.inSample = computeMetrics(d.dates, res.nav, res.start, oos, cash, refNav, res.turnover, res.costs);
+      out.outOfSample = computeMetrics(d.dates, res.nav, oos, res.end, cash, refNav, res.turnover, res.costs);
     }
     return out;
   };

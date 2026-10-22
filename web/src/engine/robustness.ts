@@ -41,6 +41,8 @@ export function applyAxis(p: Params, param: AxisParam, v: number): Params {
       break;
     case 'hysteresis':
       q.regime.hysteresis = v;
+      q.regime.bufferUp = v;
+      q.regime.bufferDown = v;
       break;
     case 'window':
       q.score.window = v;

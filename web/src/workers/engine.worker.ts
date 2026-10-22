@@ -2,6 +2,8 @@
 import type { MarketData } from '../engine/data';
 import type { Params } from '../engine/params';
 import { attribution, type Attribution } from '../engine/attribution';
+import { costSensitivity, type CostSensitivity } from '../engine/costs';
+import { optimiseAllocation, optimiseWeights, walkForwardWeights, type WeightWalkForward, type AllocationOptimisation, type AllocOptions, type WeightObjective, type WeightOptimisation } from '../engine/optimise';
 import { AXES, runGrid, walkForward, type Axis, type GridCell, type Objective, type WalkForwardResult } from '../engine/robustness';
 import { run } from '../engine/run';
 import { toWire } from '../engine/wire';
@@ -30,13 +32,21 @@ export type WorkerRequest =
   | { type: 'init'; data: MarketData }
   | { type: 'run'; id: number; params: Params }
   | ({ type: 'robustness'; id: number } & RobustnessRequest)
-  | { type: 'attribution'; id: number; params: Params };
+  | { type: 'attribution'; id: number; params: Params }
+  | { type: 'costs'; id: number; params: Params; bench: string }
+  | { type: 'wfWeights'; id: number; params: Params; objective: WeightObjective; firstTest: string; refitYears: number; values: number[]; maxPasses: number }
+  | { type: 'optAlloc'; id: number; params: Params; opt: AllocOptions; wf: { minTrainYears: number; refitYears: number } }
+  | { type: 'optWeights'; id: number; params: Params; objective: WeightObjective; trainEnd: string; values: number[]; maxPasses: number };
 
 export type WorkerResponse =
   | { type: 'result'; id: number; result: ReturnType<typeof toWire>; ms: number }
   | { type: 'progress'; id: number; done: number; total: number }
   | { type: 'robustness'; id: number; result: RobustnessResult; ms: number }
   | { type: 'attribution'; id: number; result: Attribution; ms: number }
+  | { type: 'optAlloc'; id: number; result: AllocationOptimisation; ms: number }
+  | { type: 'costs'; id: number; result: CostSensitivity; ms: number }
+  | { type: 'wfWeights'; id: number; result: WeightWalkForward | null; ms: number }
+  | { type: 'optWeights'; id: number; result: WeightOptimisation; ms: number }
   | { type: 'error'; id: number; message: string };
 
 const post = (m: WorkerResponse) => (self as DedicatedWorkerGlobalScope).postMessage(m);
@@ -45,6 +55,43 @@ self.onmessage = (ev: MessageEvent<WorkerRequest>) => {
   const msg = ev.data;
   if (msg.type === 'init') {
     data = msg.data;
+    return;
+  }
+  if (msg.type === 'wfWeights') {
+    try {
+      if (!data) throw new Error('engine not initialised');
+      const t0 = performance.now();
+      const result = walkForwardWeights(data, msg.params, msg, (done, total) => post({ type: 'progress', id: msg.id, done, total }));
+      post({ type: 'wfWeights', id: msg.id, result, ms: performance.now() - t0 });
+    } catch (e) {
+      post({ type: 'error', id: msg.id, message: String(e) });
+    }
+    return;
+  }
+  if (msg.type === 'costs') {
+    try {
+      if (!data) throw new Error('engine not initialised');
+      const t0 = performance.now();
+      post({ type: 'costs', id: msg.id, result: costSensitivity(data, msg.params, msg.bench), ms: performance.now() - t0 });
+    } catch (e) {
+      post({ type: 'error', id: msg.id, message: String(e) });
+    }
+    return;
+  }
+  if (msg.type === 'optAlloc' || msg.type === 'optWeights') {
+    try {
+      if (!data) throw new Error('engine not initialised');
+      const t0 = performance.now();
+      if (msg.type === 'optAlloc') {
+        const result = optimiseAllocation(data, msg.params, msg.opt, msg.wf);
+        post({ type: 'optAlloc', id: msg.id, result, ms: performance.now() - t0 });
+      } else {
+        const result = optimiseWeights(data, msg.params, msg, (done, total) => post({ type: 'progress', id: msg.id, done, total }));
+        post({ type: 'optWeights', id: msg.id, result, ms: performance.now() - t0 });
+      }
+    } catch (e) {
+      post({ type: 'error', id: msg.id, message: String(e) });
+    }
     return;
   }
   if (msg.type === 'attribution') {
