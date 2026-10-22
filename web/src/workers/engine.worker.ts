@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import type { MarketData } from '../engine/data';
 import type { Params } from '../engine/params';
+import { attribution, type Attribution } from '../engine/attribution';
 import { AXES, runGrid, walkForward, type Axis, type GridCell, type Objective, type WalkForwardResult } from '../engine/robustness';
 import { run } from '../engine/run';
 import { toWire } from '../engine/wire';
@@ -28,12 +29,14 @@ export interface RobustnessResult {
 export type WorkerRequest =
   | { type: 'init'; data: MarketData }
   | { type: 'run'; id: number; params: Params }
-  | ({ type: 'robustness'; id: number } & RobustnessRequest);
+  | ({ type: 'robustness'; id: number } & RobustnessRequest)
+  | { type: 'attribution'; id: number; params: Params };
 
 export type WorkerResponse =
   | { type: 'result'; id: number; result: ReturnType<typeof toWire>; ms: number }
   | { type: 'progress'; id: number; done: number; total: number }
   | { type: 'robustness'; id: number; result: RobustnessResult; ms: number }
+  | { type: 'attribution'; id: number; result: Attribution; ms: number }
   | { type: 'error'; id: number; message: string };
 
 const post = (m: WorkerResponse) => (self as DedicatedWorkerGlobalScope).postMessage(m);
@@ -42,6 +45,17 @@ self.onmessage = (ev: MessageEvent<WorkerRequest>) => {
   const msg = ev.data;
   if (msg.type === 'init') {
     data = msg.data;
+    return;
+  }
+  if (msg.type === 'attribution') {
+    try {
+      if (!data) throw new Error('engine not initialised');
+      const t0 = performance.now();
+      const result = attribution(data, msg.params, (done, total) => post({ type: 'progress', id: msg.id, done, total }));
+      post({ type: 'attribution', id: msg.id, result, ms: performance.now() - t0 });
+    } catch (e) {
+      post({ type: 'error', id: msg.id, message: String(e) });
+    }
     return;
   }
   if (msg.type === 'robustness') {

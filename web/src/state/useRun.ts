@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Attribution } from '../engine/attribution';
 import type { MarketData } from '../engine/data';
 import type { Params } from '../engine/params';
 import type { WireResult } from '../engine/wire';
@@ -79,6 +80,23 @@ export function runRobustness(
       else if (r.type === 'error') reject(new Error(r.message));
     });
     getWorker(data).postMessage({ type: 'robustness', id, ...req } satisfies WorkerRequest);
+  });
+}
+
+/** Leave-one-out component attribution in the worker. */
+export function runAttribution(
+  data: MarketData,
+  params: Params,
+  onProgress: (done: number, total: number) => void,
+): Promise<{ result: Attribution; ms: number }> {
+  return new Promise((resolve, reject) => {
+    const id = nextId++;
+    progress.set(id, onProgress);
+    listeners.set(id, (r) => {
+      if (r.type === 'attribution') resolve({ result: r.result, ms: r.ms });
+      else if (r.type === 'error') reject(new Error(r.message));
+    });
+    getWorker(data).postMessage({ type: 'attribution', id, params } satisfies WorkerRequest);
   });
 }
 

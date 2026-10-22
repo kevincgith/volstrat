@@ -929,3 +929,19 @@ ul.plain li {
 a {
   color: var(--accent);
 }
+
+/* diagnostics */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+.ic-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  align-items: baseline;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
