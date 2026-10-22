@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     include: ['src/**/*.test.ts'],
+    testTimeout: 60_000,
     environment: 'node',
   },
 });

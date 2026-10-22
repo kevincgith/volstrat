@@ -148,11 +148,129 @@ and expense ratio can be set as parameters.
 - **Long history:** from 1990 with a reduced component set. Components without data on a given
   date are excluded and the remaining weights are rescaled to sum to 1.
 
-## 3. Signal components *(P2/P5)*
-## 4. Standardisation: rolling and expanding windows only *(P2)*
-## 5. Composite score, smoothing and hysteresis *(P2)*
-## 6. Allocation mapping *(P2)*
-## 7. Backtest assumptions: execution lag, costs, financing, cash yield *(P2)*
-## 8. Performance metrics *(P2)*
+## 3. Signal components
+The registry is in `web/src/engine/components.ts`. Each component computes one raw feature per
+day from point-in-time inputs. "Direction" says which way is stress; the engine flips features
+so that **100 = risk-on**, and any component's direction can be inverted in the UI (for
+example to read put/call as a contrarian signal).
+
+| Component | Raw feature | Stress when | Default weight | First data |
+|---|---|---|---|---|
+| VIX level | VIX | high | 1 | 1990 |
+| VIX term structure | VIX / VIX3M | high (inverted curve) | 1 | 2006-07 |
+| VIX futures slope | VX CM30 / CM60 | high (backwardation) | 1 | 2004-03 |
+| VX1/VX2 | VX1 / VX2 | high | off | 2004-03 |
+| VVIX | VVIX | high | 0.5 | 2007-01 |
+| SKEW | SKEW | high (ambiguous, see note) | 0.25 | 1990 |
+| Equity put/call | 10-day average | high | 0.5 | 2003-10 |
+| Variance risk premium | VIX − 21-day realised vol of the S&P 500 | low / negative | 1 | 1990 |
+| Credit (ETF) | 63-day log return of HYG minus IEF (Vanguard HY fund before 2007) | low | 1 | 1991 |
+| Credit (OAS) | 63-day change in ICE BofA HY OAS | high (widening) | 1 | FRED |
+| Trend | S&P 500 / 200-day average − 1 | low | 1 | 1990 |
+| MOVE | MOVE | high | off | 2002-11 |
+| NFCI / STLFSI | index level | high | off | FRED |
+| Curve | 10y − 2y | low (inverted) | off | 1990 |
+
+Notes:
+- The VRP uses past realised volatility, so it is known on the day. The academic definition
+  uses future realised volatility, which a trading signal cannot.
+- **SKEW** is weighted low because its link to subsequent stress is weak and sometimes
+  reversed: it often falls *during* crashes.
+- The VIX futures slope uses constant-maturity points rather than VX1/VX2 because the latter
+  jumps at every monthly roll.
+
+## 4. Standardisation: trailing windows only
+Each raw feature is converted to a 0–100 score using **only past and current
+observations** (`web/src/engine/stats.ts`):
+- **Percentile (default):** rank of today's value among the finite values in the trailing
+  window (default 756 trading days ≈ 3 years), with ties counted as half. A window of 0 means
+  expanding.
+- **Z-score:** (x − trailing mean) / trailing standard deviation, mapped through the normal
+  CDF to 0–100. It is more sensitive to extremes than the percentile rank.
+- A component is only used once it has at least `minPeriods` observations (default 252).
+
+Full-sample normalisation is never used, because it would leak future information.
+
+## 5. Composite score, smoothing and hysteresis
+- **Composite:** the weighted average of the oriented component scores **available on that
+  day**. Weights are rescaled to sum to 1 over those components. If less than `minCoverage`
+  (default 50%) of the enabled weight is available, the score is undefined and no position
+  is taken.
+- **Smoothing:** an optional EMA with span N (default 5 days).
+- **Regimes:** four cut-offs (default 20/40/60/80) define Crisis, Risk-Off, Neutral, Risk-On
+  and Strong Risk-On. With **hysteresis** h (default 2.5 points) the regime only changes once
+  the score crosses a cut-off by more than h, which cuts whipsaw near the boundaries. A large
+  move can jump several regimes at once.
+- **Calibration caveat:** averaging several roughly independent percentile scores pulls the
+  composite toward 50. With the default cut-offs, Strong Risk-On occurred on only ~2% of days
+  from 2007 to 2026, and Crisis on ~7.5%. The cut-offs were deliberately *not* tuned to the
+  realised distribution, because that would be in-sample fitting. The share of time in each
+  regime is shown with every backtest.
+
+## 6. Allocation mapping
+- **Regime mode (default):** each regime has its own editable portfolio. Defaults:
+  - Crisis: 100% T-bills (BIL)
+  - Risk-Off: 50% IEF, 25% GLD, 25% XLU
+  - Neutral: 60% S&P 500, 40% IEF
+  - Risk-On: 100% S&P 500
+  - Strong Risk-On: 100% SSO (2×)
+- **Continuous mode:** equity exposure moves linearly from `minEquity` at score ≤ `scoreLow`
+  to `maxEquity` at score ≥ `scoreHigh` (defaults 0% at 20 and 150% at 80). Exposure up to
+  100% is the S&P 500 plus the defensive mix (default 50% IEF / 25% GLD / 25% BIL). Above
+  100% it is a fully invested blend of the S&P 500 and the leveraged ETF.
+- **Presets:**
+  - *Conservative:* no leverage, slower signal, 40/60 in Neutral.
+  - *Balanced:* the defaults.
+  - *Aggressive:* faster signal, 2× in Risk-On and 3× in Strong Risk-On.
+  - *Continuous:* continuous mode.
+
+## 7. Backtest assumptions
+- **Timing:** the target is decided at the close of day *d* using data available by then
+  (§2.6). It is traded at the **close of d + lag** (default lag 1, i.e. the next close), and the
+  new weights earn returns from d + lag + 1. Lag must be at least 1. Execution at the next
+  *open* is not available because the total-return series are close-to-close; next close is
+  the conservative alternative.
+- **Rebalancing:**
+  - *On regime change* (default): trade only when the target portfolio changes.
+  - *Daily, weekly or monthly:* trade to the latest target on the last trading day of each
+    period, skipping trades where no weight is off target by more than the band (default 5%).
+  - Weights drift with returns between trades.
+- **Transaction costs:** `costBps` (default 5 bp) per unit of notional traded on each side. A
+  full switch from one asset to another costs 2 × 5 = 10 bp.
+- **Fees:** ETF returns are already net of expense ratios. Where a gross index, the T-bill
+  accrual or the gold future stands in for an ETF, that ETF's expense ratio is deducted daily.
+- **Leverage:** SSO and UPRO use actual ETF returns from inception. Before that (or always,
+  if the user chooses) they are synthetic: L × S&P 500 TR − (L − 1) × (T-bill + spread) −
+  expense ratio/252, rebalanced daily. Over 2006–2026 the synthetic 2× had a **0.997 daily
+  correlation** with the real SSO and returned **0.26% a year more** at a 0.50% spread. The
+  default spread is therefore set at **0.75%**, which roughly closes that gap.
+- **Cash:** T-bill holdings earn the BIL ETF's return (3-month bill accrual before 2007).
+- **Benchmarks:**
+  - S&P 500 and MSCI World, buy and hold.
+  - 80/20, 60/40 and 40/60 equity/bond portfolios (S&P 500 or MSCI World with AGG or IEF),
+    rebalanced monthly.
+  - Naive volatility targeting: S&P 500 weight = min(1, target vol / 21-day realised vol),
+    the rest in T-bills, rebalanced weekly; default target 12%.
+  - All benchmarks share the strategy's start date, lag and costs.
+- **Start date:** the backtest starts at the later of the chosen date, the first date with a
+  valid score, and the first date every asset used has returns. Any move is reported.
+
+## 8. Performance metrics
+| Metric | Definition |
+|---|---|
+| CAGR | (NAV_end / NAV_start)^(365.25 / calendar days) − 1 |
+| Volatility | stdev of daily returns × √252 |
+| Sharpe | mean / stdev of daily returns in excess of T-bills × √252 |
+| Sortino | annualised mean excess return / (downside deviation of excess returns × √252) |
+| Max drawdown | largest peak-to-trough fall in NAV |
+| Calmar | CAGR / abs(max drawdown) |
+| Ulcer index | √(mean of squared % drawdowns), which captures both depth and duration |
+| Beta, correlation | against the S&P 500, daily returns |
+| Turnover | one-way annual turnover (1.0 = whole portfolio traded once a year) |
+| Average holding period | 1 / turnover, in years; average regime spell in days is reported separately |
+| Hit rate | share of calendar months beating the S&P 500 |
+| Worst month / year | calendar months and years |
+| Up / down capture | geometric mean monthly return in S&P 500 up (down) months ÷ the S&P 500's |
+
 ## 9. Robustness and overfitting *(P4)*
 ## 10. Behaviour in stress episodes: 2008, 2018, 2020, 2022 *(P5)*
