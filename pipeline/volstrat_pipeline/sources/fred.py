@@ -4,6 +4,11 @@ Fetched keyless from fredgraph.csv, one request at a time; FRED blocks bursts
 of parallel requests. If FRED_API_KEY is set the official API is used instead.
 All FRED inputs are optional: a failure keeps the cached data and is reported
 in meta.json, and the site falls back to proxies.
+
+Verified 2026-10-22: the keyless endpoint times out both from a home network
+and from GitHub Actions runners, so without FRED_API_KEY the first failure
+trips a circuit breaker and the remaining series are skipped (cached data, if
+any, is kept).
 """
 
 from __future__ import annotations
@@ -55,22 +60,26 @@ def fetch(sid: str) -> pd.Series:
             index=pd.to_datetime([o["date"] for o in obs]),
         )
         return s.dropna().sort_index()
-    return parse_graph_csv(get(GRAPH_URL.format(sid=sid), timeout=60, retries=2).text)
+    return parse_graph_csv(get(GRAPH_URL.format(sid=sid), timeout=20, retries=1).text)
 
 
 def update(raw_dir: Path) -> list[SourceStatus]:
     path = raw_dir / CACHE
     cached = read_cache(path)
     cols, statuses = {}, []
+    tripped = False
     for sid in SERIES:
         st = SourceStatus(f"fred:{sid}", required=False)
         try:
+            if tripped:
+                raise FetchError("skipped: FRED unreachable earlier in this run")
             s = fetch(sid)
             if s.empty:
                 raise FetchError("empty series")
             cols[sid] = s
             st.ok, st.rows, st.last_date = True, len(s), s.index[-1].date().isoformat()
         except (FetchError, ValueError, KeyError) as e:
+            tripped = tripped or "Timeout" in str(e) or "Connection" in str(e)
             st.message = str(e)[:200]
             log.warning("FRED %s failed: %s", sid, st.message)
             if cached is not None and sid in cached and cached[sid].notna().any():
@@ -79,7 +88,8 @@ def update(raw_dir: Path) -> list[SourceStatus]:
                 st.last_date = cached[sid].dropna().index[-1].date().isoformat()
                 st.warnings.append("using cached data")
         statuses.append(st)
-        time.sleep(1.5)
+        if not tripped:
+            time.sleep(1.5)
     if cols:
         df = pd.DataFrame(cols).sort_index()
         try:

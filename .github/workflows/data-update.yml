@@ -55,11 +55,12 @@ jobs:
             echo "No data changes."
           else
             git commit -m "data: update $(date -u +%Y-%m-%d)"
+            git pull --rebase origin main
             git push
           fi
 
       - name: Report failure
-        if: steps.run.outputs.failed == '1'
+        if: always() && (steps.run.outputs.failed == '1' || failure())
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

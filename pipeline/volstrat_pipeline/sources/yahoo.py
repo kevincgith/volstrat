@@ -105,9 +105,7 @@ def update(raw_dir: Path) -> list[SourceStatus]:
             df = drop_incomplete_today(fetch(t.symbol))
             path = raw_dir / cache_name(t.symbol)
             # Adjusted history is rescaled on dividends: compare returns, loosely.
-            safe_write(
-                df, path, columns=["adj_close"], returns=True, rtol=2e-3, max_changed_frac=0.02
-            )
+            safe_write(df, path, columns=["adj_close"], returns=True, max_changed_frac=0.02)
             st.ok, st.rows, st.last_date = True, len(df), df.index[-1].date().isoformat()
         except (DataGuardError, RuntimeError) as e:
             st.message = str(e)

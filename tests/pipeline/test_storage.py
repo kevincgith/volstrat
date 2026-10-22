@@ -63,3 +63,16 @@ def test_dividend_rescale_passes_on_returns():
     with pytest.raises(DataGuardError):
         check_history_stable(old, new, ["close"])
     check_history_stable(old, new, ["close"], returns=True)
+
+
+def test_rounding_noise_in_adjusted_returns_passes():
+    import numpy as np
+
+    old = frame("2024-01-01", 200, mult=0.001)  # T-bill-like: tiny daily returns
+    rng = np.random.default_rng(0)
+    new = old * (1 + rng.normal(0, 2e-6, size=(200, 1)))  # ~0.02bp re-rounding noise
+    check_history_stable(old, new, ["close"], returns=True)
+    bad = old.copy()
+    bad.iloc[::5, 0] *= 1.001  # 10bp restatements on 20% of days
+    with pytest.raises(DataGuardError):
+        check_history_stable(old, bad, ["close"], returns=True)

@@ -36,10 +36,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - run: npm ci
         working-directory: web
-      - run: npm run build
+      - run: npm run build # also copies data/site into dist/data
         working-directory: web
-      - name: Bundle site data
-        run: mkdir -p web/dist/data && cp -r data/site/. web/dist/data/ && rm -f web/dist/data/.gitkeep
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

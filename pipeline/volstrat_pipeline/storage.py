@@ -48,12 +48,16 @@ def check_history_stable(
     rtol: float = 1e-4,
     max_changed_frac: float = 0.01,
     returns: bool = False,
+    returns_atol: float = 2e-5,
 ) -> None:
     """Fail if more than `max_changed_frac` of overlapping history changed.
 
     With `returns=True` the comparison is on daily percentage changes, which is
     the right test for dividend-adjusted prices (a new dividend rescales the
-    whole adjusted history but leaves past returns intact).
+    whole adjusted history but leaves past returns intact). Returns are compared
+    with an absolute tolerance (default 0.2 bp): Yahoo's re-rounded adjusted
+    prices move past returns by up to ~3e-6, which a relative tolerance would
+    flag for low-volatility assets such as T-bill ETFs.
     """
     if old is None or old.empty:
         return
@@ -70,7 +74,10 @@ def check_history_stable(
         both = a.notna() & b.notna()
         if both.sum() == 0:
             continue
-        changed = ~np.isclose(a[both], b[both], rtol=rtol, atol=1e-8)
+        if returns:
+            changed = ~np.isclose(a[both], b[both], rtol=0, atol=returns_atol)
+        else:
+            changed = ~np.isclose(a[both], b[both], rtol=rtol, atol=1e-8)
         frac = changed.mean()
         if frac > max_changed_frac:
             raise DataGuardError(
