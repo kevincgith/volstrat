@@ -1,4 +1,4 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Disclaimer } from './components/Disclaimer';
 import Dashboard from './pages/Dashboard';
@@ -16,6 +16,8 @@ const TABS = [
 ] as const;
 
 export default function App() {
+  // keep the parameter query (?p=...) when switching tabs
+  const { search } = useLocation();
   return (
     <div className="shell">
       <header className="topbar">
@@ -26,7 +28,7 @@ export default function App() {
         </div>
         <nav className="tabs" aria-label="Sections">
           {TABS.map((t) => (
-            <NavLink key={t.path} to={t.path} className={({ isActive }) => (isActive ? 'tab active' : 'tab')}>
+            <NavLink key={t.path} to={{ pathname: t.path, search }} className={({ isActive }) => (isActive ? 'tab active' : 'tab')}>
               {t.label}
             </NavLink>
           ))}

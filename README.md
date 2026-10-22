@@ -14,9 +14,9 @@ browser, so the results update as soon as you change a parameter.
 | Phase | Scope | State |
 |---|---|---|
 | P0 | Repo, scaffold, CI, Pages deploy | ✅ |
-| P1 | Data pipeline: Cboe indices, VX futures curve, put/call, assets, macro; daily Action | ⏳ |
-| P2 | TypeScript scoring and backtest engine with look-ahead tests | ⏳ |
-| P3 | Dashboard, Signals, Backtest pages; URL-encoded parameters | ⏳ |
+| P1 | Data pipeline: Cboe indices, VX futures curve, put/call, assets, macro; daily Action | ✅ |
+| P2 | TypeScript scoring and backtest engine with look-ahead tests | ✅ |
+| P3 | Dashboard, Signals, Backtest pages; URL-encoded parameters | ✅ |
 | P4 | Robustness (IS/OOS, walk-forward, sensitivity), Compare, exports | ⏳ |
 | P5 | Methodology content and polish | ⏳ |
 

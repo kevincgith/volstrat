@@ -202,7 +202,7 @@ export const COMPONENTS: ComponentDef[] = [
     inputs: ['HY_OAS'],
     riskOffWhenHigh: true,
     defaultWeight: 1,
-    defaultEnabled: true,
+    defaultEnabled: false, // FRED is unreachable without an API key (see METHODOLOGY 2.5)
     unit: 'pp (63d)',
     compute: (d) => diff(s(d, 'HY_OAS'), 63),
     doc: {
