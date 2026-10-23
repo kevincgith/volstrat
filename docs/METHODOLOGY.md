@@ -835,3 +835,63 @@ Scaled to the S&P 500's volatility with the same method as the card, the rebound
 - **Adopted as the default on 2026-10-23**, with live track record v2 (§12.1). The v1 record
   continues with the Balanced parameters, so the two run side by side out of sample.
 
+
+### 15.5 Re-entry rules after a sell-off
+**Question (2026-10-23).** §15.4 found that most of the return gap comes from missed
+rebounds. Is there a sound, more general way to re-enter than the panic-rebound rule?
+
+**Rationale for a broader rule.**
+- After a volatility shock, implied volatility mean-reverts, and returns are highest when
+  fear is high but falling (§14.3).
+- Volatility also eases during bear-market rallies. A price condition guards against buying
+  those.
+
+**Test 1: recovery re-entry, fixed before testing.**
+- **Applies:** only in Crisis or Risk-Off.
+- **Enter** (lift to Neutral) when all three hold:
+  1. VIX is at most 0.80× its 20-day high;
+  2. VIX/VIX3M is below 1.00;
+  3. the S&P 500 is above its 20-day moving average.
+- **Exit** when VIX/VIX3M returns to 1.00 or above, or the S&P 500 closes below its lowest
+  close of the previous 20 days.
+- **Adoption bar:**
+  - test-half Sharpe above Growth's in at least 90% of paired bootstrap resamples;
+  - training-half Sharpe not lower than Growth's;
+  - full-period max drawdown no more than 3 points worse.
+
+**Test 2: "rebound, held", specified after test 1 and reported as a second look.**
+- Same trigger as the panic-rebound rule.
+- Instead of a fixed 20 days, the lift lasts until VIX/VIX3M is back at 1.00, the S&P 500
+  breaks its 20-day low, or the signalled regime itself reaches Neutral.
+
+All variants are on top of Growth.
+
+| Variant | Train CAGR / Sharpe / max DD | Test CAGR / Sharpe / max DD | Full max DD | Turnover | Test Sharpe: P(better than Growth) |
+|---|---|---|---|---|---|
+| Growth (panic rebound, 20-day hold) | 6.6% / 0.50 / −19.7% | 12.9% / 0.85 / −23.8% | −23.8% | 6.6× | — |
+| Recovery re-entry instead | 4.9% / 0.37 / −31.8% | 12.9% / 0.84 / −26.8% | −31.8% | 8.4× | 46% |
+| Both | 6.7% / 0.49 / −25.9% | 13.4% / 0.87 / −26.8% | −26.8% | 7.7× | 54% |
+| *Ablation: recovery re-entry without the price condition* | 4.2% / 0.32 / −35.3% | 12.9% / 0.85 / −23.8% | −35.3% | 9.7× | 46% |
+| Rebound, held (test 2) | 6.7% / 0.52 / −20.4% | 13.1% / 0.88 / −23.8% | −23.8% | 7.0× | 61% (train: 65%) |
+| Growth without any re-entry | 6.0% / 0.47 / −22.5% | 11.2% / 0.75 / −23.8% | −23.8% | 6.0× | 9% |
+
+**Conclusions.**
+- **Re-entering after ordinary stress does not pay.**
+  - The broad rule fired 70 times in 20 years, against 19 for the panic trigger, and many
+    entries were 2008 bear-market rallies.
+  - The price condition helped (Sharpe 2007–2016: 0.32 → 0.37) but not enough.
+- **Re-entering after capitulation does pay.**
+  - Removing the panic rule costs 0.10 test Sharpe (re-entry is worth it in 91% of
+    resamples).
+  - Both tests say the same thing: buy back after the VIX curve has inverted deeply and then
+    normalised, not merely after volatility eases.
+- **Holding the rebound until the signal recovers is slightly better** in both halves, but
+  only in 61–65% of resamples, below the bar. Specified after test 1, it would need a stronger
+  result than that.
+- **A gap remains.** The rule lifts to Neutral (80/20), so it still captures only part of a
+  V-shaped recovery (COVID: +11% vs +53% for the S&P 500 in the six months after the low).
+  Lifting further raises the cost of false triggers. With 19 triggers in 20 years, the data
+  can't settle that reliably.
+- **Decision:** Growth is unchanged. Both rules are options in the Backtest panel: *Recovery
+  re-entry (broad)*, and *Ends: on re-inversion or breakdown* in the panic-rebound box. Both
+  are off by default.

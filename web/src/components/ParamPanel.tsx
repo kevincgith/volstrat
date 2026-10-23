@@ -288,6 +288,15 @@ export function ParamPanel({
               <NumberInput label="Re-enter when below" value={params.regime.rebound.normal} step={0.05} min={0.5} onChange={(v) => up((d) => void (d.regime.rebound!.normal = v))} />
               <NumberInput label="Hold (days)" value={params.regime.rebound.hold} step={5} min={1} onChange={(v) => up((d) => void (d.regime.rebound!.hold = Math.max(1, Math.round(v))))} />
               <Select
+                label="Ends"
+                value={params.regime.rebound.exit ?? 'days'}
+                onChange={(v) => up((d) => void (d.regime.rebound!.exit = v))}
+                options={[
+                  { value: 'days', label: 'after the hold' },
+                  { value: 'signal', label: 'on re-inversion or breakdown' },
+                ]}
+              />
+              <Select
                 label="Lift to"
                 value={params.regime.rebound.toRegime}
                 onChange={(v) => up((d) => void (d.regime.rebound!.toRegime = v))}
@@ -297,7 +306,35 @@ export function ParamPanel({
           )}
           <p className="muted small" style={{ margin: '4px 0 0' }}>
             Defaults (1.10 / 20 / 1.00 / 20 days / Neutral) were fixed before testing. Out of sample (2017–2026): Sharpe 0.75 → 0.85; changing them now
-            would be fitting.
+            would be fitting. Ending on re-inversion or breakdown (the hold then sets the breakdown look-back) was a second look: slightly better in both
+            halves, but not reliably (METHODOLOGY 15.5).
+          </p>
+        </div>
+        <div className="rebound-box">
+          <Toggle
+            label="Recovery re-entry (broad)"
+            checked={!!params.regime.reentry?.enabled}
+            onChange={(v) => up((d) => void (d.regime.reentry = { ...(d.regime.reentry ?? DEFAULT_PARAMS.regime.reentry!), enabled: v }))}
+            title="While in Crisis/Risk-Off: re-enter when VIX is well off its recent peak, VIX/VIX3M is below the normal level and the S&P 500 is above its moving average. Exit on re-inversion or a close below the recent low."
+          />
+          {params.regime.reentry?.enabled && (
+            <div className="row-2" style={{ marginTop: 6 }}>
+              <NumberInput label="VIX at most × its peak" value={params.regime.reentry.offPeak} step={0.05} min={0.3} onChange={(v) => up((d) => void (d.regime.reentry!.offPeak = v))} />
+              <NumberInput label="…peak over (days)" value={params.regime.reentry.peakDays} step={5} min={2} onChange={(v) => up((d) => void (d.regime.reentry!.peakDays = Math.max(2, Math.round(v))))} />
+              <NumberInput label="VIX/VIX3M below" value={params.regime.reentry.normal} step={0.05} min={0.5} onChange={(v) => up((d) => void (d.regime.reentry!.normal = v))} />
+              <NumberInput label="S&P above MA (days)" value={params.regime.reentry.maDays} step={5} min={1} onChange={(v) => up((d) => void (d.regime.reentry!.maDays = Math.max(1, Math.round(v))))} />
+              <NumberInput label="Exit below low of (days)" value={params.regime.reentry.lowDays} step={5} min={1} onChange={(v) => up((d) => void (d.regime.reentry!.lowDays = Math.max(1, Math.round(v))))} />
+              <Select
+                label="Lift to"
+                value={params.regime.reentry.toRegime}
+                onChange={(v) => up((d) => void (d.regime.reentry!.toRegime = v))}
+                options={[1, 2, 3].map((i) => ({ value: i, label: REGIMES[i]! }))}
+              />
+            </div>
+          )}
+          <p className="muted small" style={{ margin: '4px 0 0' }}>
+            Fixed before testing; rejected (METHODOLOGY 15.5). It re-enters after ordinary stress too, and was whipsawed by bear-market rallies in 2008:
+            Sharpe 2007–2016 0.50 → 0.37.
           </p>
         </div>
         <p className="muted small" style={{ margin: '6px 0 0' }}>

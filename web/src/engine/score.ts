@@ -56,6 +56,23 @@ export interface RegimeParams {
   fastDerisk?: boolean;
   /** Optional contrarian "panic rebound" override (see applyRebound). */
   rebound?: ReboundParams;
+  /** Optional recovery re-entry (see applyReentry). */
+  reentry?: ReentryParams;
+}
+
+export interface ReentryParams {
+  enabled: boolean;
+  /** Stress receding: VIX at or below this fraction of its max over `peakDays` (incl. today). */
+  offPeak: number;
+  peakDays: number;
+  /** Term structure normal: VIX/VIX3M below this. Re-inverting to it or above exits. */
+  normal: number;
+  /** Price confirmation: S&P 500 above its simple moving average over this many days. */
+  maDays: number;
+  /** Exit on a close below the lowest close of the previous `lowDays` days. */
+  lowDays: number;
+  /** Regime used while the re-entry is active (default 2 = Neutral). */
+  toRegime: number;
 }
 
 export interface ReboundParams {
@@ -69,6 +86,12 @@ export interface ReboundParams {
   hold: number;
   /** Regime whose portfolio is used during the override (default 2 = Neutral). */
   toRegime: number;
+  /**
+   * 'days' (default): the override lasts `hold` days. 'signal': it lasts until
+   * VIX/VIX3M is back at `normal` or above, the S&P 500 closes below its lowest
+   * close of the previous `hold` days, or the signalled regime reaches `toRegime`.
+   */
+  exit?: 'days' | 'signal';
 }
 
 /**
@@ -78,8 +101,9 @@ export interface ReboundParams {
  * `toRegime` for `hold` days. A fresh inversion above `peak` cancels it.
  * Causal: only uses the ratio up to day t.
  */
-export function applyRebound(reg: Int8Array, ratio: Float64Array, p: ReboundParams): Int8Array {
+export function applyRebound(reg: Int8Array, ratio: Float64Array, p: ReboundParams, spx?: Float64Array): Int8Array {
   const out = Int8Array.from(reg);
+  const bySignal = p.exit === 'signal' && !!spx;
   let left = 0;
   let lastPeak = -Infinity;
   for (let t = 0; t < reg.length; t++) {
@@ -88,13 +112,63 @@ export function applyRebound(reg: Int8Array, ratio: Float64Array, p: ReboundPara
       lastPeak = t;
       left = 0; // panic still building: cancel any active override
     } else if (Number.isFinite(r) && r < p.normal && t - lastPeak <= p.lookback && left === 0 && lastPeak > -Infinity) {
-      left = p.hold;
+      left = bySignal ? Infinity : p.hold;
       lastPeak = -Infinity; // one trigger per panic
+    } else if (bySignal && left > 0) {
+      let low = Infinity;
+      for (let i = Math.max(0, t - p.hold); i < t; i++) if (Number.isFinite(spx![i]!)) low = Math.min(low, spx![i]!);
+      if ((Number.isFinite(r) && r >= p.normal) || spx![t]! < low || reg[t]! >= p.toRegime) left = 0;
     }
     if (left > 0) {
       if (out[t]! >= 0 && out[t]! < p.toRegime) out[t] = p.toRegime;
       left--;
     }
+  }
+  return out;
+}
+
+/**
+ * Recovery re-entry: while the signalled regime is below `toRegime`, lift it to
+ * `toRegime` once stress is receding (VIX well off its recent peak), the VIX
+ * term structure is back in contango and the S&P 500 is above its short moving
+ * average. Exits when the term structure re-inverts or the S&P 500 breaks below
+ * its recent low; then all three conditions are needed again. Lapses once the
+ * signalled regime itself reaches `toRegime`. Causal: uses closes up to t only.
+ */
+export function applyReentry(reg: Int8Array, vix: Float64Array, vix3m: Float64Array, spx: Float64Array, p: ReentryParams): Int8Array {
+  const out = Int8Array.from(reg);
+  const n = reg.length;
+  let active = false;
+  let maSum = 0;
+  let maN = 0;
+  for (let t = 0; t < n; t++) {
+    // trailing SMA of the S&P 500 including t
+    if (Number.isFinite(spx[t]!)) {
+      maSum += spx[t]!;
+      maN++;
+    }
+    const drop = t - p.maDays;
+    if (drop >= 0 && Number.isFinite(spx[drop]!)) {
+      maSum -= spx[drop]!;
+      maN--;
+    }
+    if (reg[t]! < 0 || reg[t]! >= p.toRegime) {
+      active = false;
+      continue;
+    }
+    const v = vix[t]!;
+    const ratio = vix3m[t]! > 0 ? v / vix3m[t]! : NaN;
+    const px = spx[t]!;
+    if (active) {
+      let low = Infinity;
+      for (let i = Math.max(0, t - p.lowDays); i < t; i++) if (Number.isFinite(spx[i]!)) low = Math.min(low, spx[i]!);
+      if ((Number.isFinite(ratio) && ratio >= p.normal) || (Number.isFinite(px) && px < low)) active = false;
+    } else if (Number.isFinite(v) && Number.isFinite(ratio) && Number.isFinite(px) && maN >= p.maDays) {
+      let peak = -Infinity;
+      for (let i = Math.max(0, t - p.peakDays + 1); i <= t; i++) if (Number.isFinite(vix[i]!)) peak = Math.max(peak, vix[i]!);
+      active = v <= p.offPeak * peak && ratio < p.normal && px > maSum / maN;
+    }
+    if (active) out[t] = p.toRegime;
   }
   return out;
 }

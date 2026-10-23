@@ -10,7 +10,7 @@ import { simulate, type BacktestResult } from './backtest';
 import type { MarketData } from './data';
 import { computeMetrics, type Metrics } from './metrics';
 import type { Params } from './params';
-import { applyRebound, computeScore, regimes as regimePath, REGIMES, type ScoreResult } from './score';
+import { applyReentry, applyRebound, computeScore, regimes as regimePath, REGIMES, type ScoreResult } from './score';
 import { realisedVol } from './stats';
 
 export interface PortfolioRun {
@@ -168,7 +168,8 @@ export function run(d: MarketData, p: Params): RunResult {
   const score = computeScore(d, p.score);
   const baseReg = regimePath(score.score, p.regime);
   const rb = p.regime.rebound;
-  const reg = rb?.enabled
+  const re = p.regime.reentry;
+  const reg1 = rb?.enabled
     ? applyRebound(
         baseReg,
         cached(d, 'vixterm', () => {
@@ -177,8 +178,10 @@ export function run(d: MarketData, p: Params): RunResult {
           return a.map((x, i) => (b[i]! > 0 ? x / b[i]! : NaN));
         }),
         rb,
+        d.series.SPX,
       )
     : baseReg;
+  const reg = re?.enabled ? applyReentry(reg1, d.series.VIX!, d.series.VIX3M!, d.series.SPX!, re) : reg1;
   const assets = cached(d, 'assets' + JSON.stringify(p.assets), () => buildAssets(d, p.assets));
   const hedge = p.allocation.adaptiveHedge;
   const sbCorr = hedge?.enabled

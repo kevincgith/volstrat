@@ -52,6 +52,8 @@ export const BASE_PARAMS: Params = {
     fastDerisk: true,
     // rule fixed before testing (2026-10-23): see METHODOLOGY 15
     rebound: { enabled: false, peak: 1.1, lookback: 20, normal: 1.0, hold: 20, toRegime: 2 },
+    // rule fixed before testing (2026-10-23): see METHODOLOGY 15.5
+    reentry: { enabled: false, offPeak: 0.8, peakDays: 20, normal: 1.0, maDays: 20, lowDays: 20, toRegime: 2 },
   },
   allocation: {
     mode: 'regime',

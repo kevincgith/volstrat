@@ -44,6 +44,10 @@ const configs: [string, Params][] = [
     'rebound overlay on',
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { rebound: { enabled: true, peak: 1.05 } } }),
   ],
+  [
+    'recovery re-entry on',
+    merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { reentry: { enabled: true, offPeak: 0.9, maDays: 10, lowDays: 10 } } }),
+  ],
 ];
 
 function same(a: ArrayLike<number>, b: ArrayLike<number>, upto: number) {

@@ -75,3 +75,32 @@ describe('rebound overlay', () => {
     expect(Array.from(out)).toEqual([0, 2, 0, 2, 2]);
   });
 });
+
+describe('recovery re-entry', () => {
+  const P = { enabled: true, offPeak: 0.8, peakDays: 3, normal: 1.0, maDays: 2, lowDays: 2, toRegime: 2 };
+  it('enters when stress recedes, the curve is normal and price confirms; exits on re-inversion', async () => {
+    const { applyReentry } = await import('../score');
+    const reg = Int8Array.from([1, 0, 0, 0, 0, 0, 0, 1]);
+    const vix = Float64Array.from([20, 40, 35, 30, 28, 28, 30, 30]);
+    const v3m = Float64Array.from([22, 32, 33, 32, 31, 31, 29, 31]);
+    const spx = Float64Array.from([100, 90, 92, 95, 97, 98, 99, 100]);
+    // t=3: 30 <= 0.8*40=32, ratio 0.94, spx 95 > sma(92,95)=93.5 -> enter
+    // t=6: ratio 30/29 >= 1 -> exit; t=7: peak(28,30,30)=30, 30 > 24 -> no re-entry
+    expect(Array.from(applyReentry(reg, vix, v3m, spx, P))).toEqual([1, 0, 0, 2, 2, 2, 0, 1]);
+  });
+  it('exits on a break below the recent low and needs all conditions again', async () => {
+    const { applyReentry } = await import('../score');
+    const reg = Int8Array.from([0, 0, 0, 0, 0, 0]);
+    const vix = Float64Array.from([40, 30, 30, 30, 30, 30]);
+    const v3m = Float64Array.from([35, 32, 32, 32, 32, 32]);
+    const spx = Float64Array.from([100, 102, 104, 103, 99, 103]);
+    // t=1 enter (30<=32, 0.94, 102>101); t=4: 99 < min(104,103) -> exit; t=5: peak(30,30,30) -> 30 > 24, stays out
+    expect(Array.from(applyReentry(reg, vix, v3m, spx, P))).toEqual([0, 2, 2, 2, 0, 0]);
+  });
+  it('never lowers a regime and lapses once the signal itself recovers', async () => {
+    const { applyReentry } = await import('../score');
+    const reg = Int8Array.from([0, 3, 0]);
+    const out = applyReentry(reg, Float64Array.from([40, 30, 30]), Float64Array.from([35, 32, 32]), Float64Array.from([100, 102, 99]), P);
+    expect(out[1]).toBe(3);
+  });
+});

@@ -18,6 +18,11 @@ describe('defaults, presets and frozen track records', () => {
     expect(merge(BASE_PARAMS, file.params)).toEqual(BASE_PARAMS);
   });
 
+  it('track record v2 resolves to exactly the Growth parameters it was frozen with', () => {
+    const file = JSON.parse(readFileSync(resolve(__dirname, '../../../../data/track/v2/params.json'), 'utf8'));
+    expect(merge(BASE_PARAMS, file.params)).toEqual(DEFAULT_PARAMS);
+  });
+
   it('links encoded before the default change keep their meaning', () => {
     const legacy = compressToEncodedURIComponent(JSON.stringify({ score: { smoothing: 10 } }));
     expect(decodeParams(legacy)).toEqual(merge(BASE_PARAMS, { score: { smoothing: 10 } }));
