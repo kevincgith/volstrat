@@ -53,10 +53,23 @@ GitHub Action).
 - **Default profile:** *Growth* since 2026-10-23: 80/20 in Neutral, 125% equity in Risk-On,
   and a re-entry rule after panics (METHODOLOGY §15.4). The earlier defaults remain as the
   *Balanced* preset.
+- **Holdings:** S&P 500 (1×/2×/3×), MSCI World, factor ETFs (low vol, min vol, quality,
+  momentum, value, high beta), Treasuries from 1–3y to 20y+, TIPS, aggregate bonds, T-bills
+  (BIL, SGOV), floating-rate Treasuries, overnight cash, gold, utilities.
 - **Live track records:** decisions logged daily with frozen parameters, append-only, in
   `data/track/` (v1 Balanced, v2 Growth), replayed on the Dashboard (METHODOLOGY §12.1).
 - **Alerts:** an RSS feed (`/data/feed.xml`) and a GitHub issue when the default profile's
   regime changes. Watch the repository to get these by email.
+
+## Limitations
+
+- **The edge is era-specific.** On 2007–2026 the strategy cut drawdowns well. On 1993–2006,
+  never used in its design, it trailed a static 60/40 portfolio (Sharpe 0.18 vs 0.51). It
+  under-invested in the high-volatility boom of 1996–1999 and lost more than the S&P 500 in
+  2001. It detects sharp volatility shocks, not slow, high-volatility bear markets
+  (METHODOLOGY §15.8).
+- **Few events.** 2007–2026 holds about seven real sell-offs, so out-of-sample statistics are
+  noisy. The live track records (`data/track/`) are the only genuine forward test.
 
 ## Architecture
 

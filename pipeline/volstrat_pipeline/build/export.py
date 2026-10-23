@@ -150,8 +150,8 @@ def build_signals(raw: Path, cal: pd.DatetimeIndex) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------- assets
-def _seg(src: str, label: str, synthetic: bool = False) -> Segment:
-    return Segment(src, label, synthetic)
+def _seg(src: str, label: str, synthetic: bool = False, start: str | None = None) -> Segment:
+    return Segment(src, label, synthetic, start)
 
 
 ASSETS: list[AssetSpec] = [
@@ -180,6 +180,26 @@ ASSETS: list[AssetSpec] = [
     AssetSpec("XLU", "US Utilities", "defensive",
               [_seg("XLU", "XLU ETF"), _seg("FSUTX", "Fidelity Select Utilities fund", True)],
               0.0008),
+    # factor ETFs: no pre-inception extension (SPLV/SPHB 2011-05, USMV 2011-10, MTUM/VLUE
+    # 2013-04, QUAL 2013-07); a backtest holding one starts when it does
+    AssetSpec("SPLV", "S&P 500 Low Volatility (SPLV)", "risk", [_seg("SPLV", "SPLV ETF")], 0.0025),
+    AssetSpec("USMV", "MSCI USA Min Volatility (USMV)", "risk", [_seg("USMV", "USMV ETF")], 0.0015),
+    AssetSpec("QUAL", "MSCI USA Quality (QUAL)", "risk", [_seg("QUAL", "QUAL ETF")], 0.0015),
+    AssetSpec("MTUM", "MSCI USA Momentum (MTUM)", "risk", [_seg("MTUM", "MTUM ETF")], 0.0015),
+    AssetSpec("VLUE", "MSCI USA Value (VLUE)", "risk", [_seg("VLUE", "VLUE ETF")], 0.0015),
+    AssetSpec("SPHB", "S&P 500 High Beta (SPHB)", "risk", [_seg("SPHB", "SPHB ETF")], 0.0025),
+    # durations (IEI/TLH 2007-01, TIP 2003-12) and cash
+    AssetSpec("IEI", "US Treasuries 3-7y", "defensive", [_seg("IEI", "IEI ETF")], 0.0015),
+    AssetSpec("TLH", "US Treasuries 10-20y", "defensive", [_seg("TLH", "TLH ETF")], 0.0015),
+    AssetSpec("TIP", "US TIPS", "defensive", [_seg("TIP", "TIP ETF")], 0.0018),
+    AssetSpec("SGOV", "T-bills 0-3m (SGOV)", "defensive",
+              [_seg("SGOV", "SGOV ETF"), _seg("cash", "3m T-bill accrual", True)], 0.0009),
+    AssetSpec("USFR", "Floating-rate Treasuries (USFR)", "defensive",
+              # thinly traded until ~2017: stale closes and one-day bad prints (e.g. 2014-12-22)
+              [_seg("USFR", "USFR ETF", start="2018-01-02"),
+               _seg("cash", "3m T-bill accrual", True)], 0.0015),
+    AssetSpec("OVERNIGHT", "Overnight cash (fed funds accrual)", "defensive",
+              [_seg("dff", "Effective fed funds accrual", True)], 0.001),
     AssetSpec("CASH", "3m T-bill (financing / cash rate)", "proxy",
               [_seg("cash", "3m T-bill accrual")]),
     AssetSpec("HYG", "US High Yield (credit proxy)", "proxy",
@@ -190,14 +210,20 @@ ASSETS: list[AssetSpec] = [
 
 def build_assets(raw: Path, cal: pd.DatetimeIndex, y3m: pd.Series) -> dict:
     cash = cash_returns(y3m, cal)
+    fr = fred.load(raw)
+    dff = fr["DFF"] if fr is not None and "DFF" in fr else pd.Series(dtype=float)
+    # overnight rate earned from the close of the day it applies to (same timing as T-bills)
+    overnight = cash_returns(dff, cal) if len(dff) else pd.Series(np.nan, index=cal)
     out = {}
     for spec in ASSETS:
         rets = []
         for seg in spec.segments:
-            if seg.source == "cash":
-                rets.append(cash)
+            if seg.source in ("cash", "dff"):
+                rets.append(cash if seg.source == "cash" else overnight)
                 continue
             px = _close(raw, seg.source, "adj_close")
+            if seg.start:
+                px = px[px.index >= seg.start]
             if px.empty:
                 rets.append(pd.Series(np.nan, index=cal))
                 continue

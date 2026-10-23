@@ -62,6 +62,19 @@ TICKERS: list[Ticker] = [
     Ticker("HYG", "High-yield corporate bond ETF (credit proxy)", False),
     Ticker("LQD", "Investment-grade corporate bond ETF (credit proxy)", False),
     Ticker("VWEHX", "Vanguard High-Yield Corporate fund (credit proxy extension)", False),
+    # factor ETFs (holdable; short histories, no extensions)
+    Ticker("SPLV", "S&P 500 Low Volatility ETF", False),
+    Ticker("USMV", "MSCI USA Minimum Volatility ETF", False),
+    Ticker("QUAL", "MSCI USA Quality ETF", False),
+    Ticker("MTUM", "MSCI USA Momentum ETF", False),
+    Ticker("VLUE", "MSCI USA Value ETF", False),
+    Ticker("SPHB", "S&P 500 High Beta ETF", False),
+    # more durations and cash
+    Ticker("IEI", "3-7y Treasury ETF", False),
+    Ticker("TLH", "10-20y Treasury ETF", False),
+    Ticker("TIP", "TIPS (inflation-linked Treasuries) ETF", False),
+    Ticker("SGOV", "0-3 month T-bill ETF", False),
+    Ticker("USFR", "Floating-rate Treasury ETF (weekly reset)", False),
     # sector ETFs: the cross-section for the absorption ratio (all from 1998-12)
     Ticker("XLB", "Materials sector ETF (absorption ratio)", False),
     Ticker("XLE", "Energy sector ETF (absorption ratio)", False),

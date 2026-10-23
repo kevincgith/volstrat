@@ -10,6 +10,11 @@ credit/financial-conditions indicators, and to map it to a tactical allocation b
 gold, utilities). The aim is to cut drawdowns in stress regimes while keeping most of the upside in
 calm ones.
 
+> **Main caveat (§15.8).** On 2007–2026 the strategy cuts drawdowns well. On 1993–2006, an
+> era never used to design it, it trailed a static 60/40 portfolio (Sharpe 0.18 against 0.51)
+> and lost more than the S&P 500 in 2001. It works on sharp volatility shocks, not on slow,
+> high-volatility bear markets or booms.
+
 ## 2. Data sources
 
 Every source was verified by direct download on 2026-10-22. Dates are the first observation
@@ -93,6 +98,12 @@ Caveats: these are Cboe-only volumes, and there are structural breaks (retail ca
 | Cash | BIL (2007-05-30) | 3-month T-bill accrual |
 | Gold | GLD (2004-11-18) | `GC=F` front future (2000-08-30). No verified free daily series before 2000. |
 | Utilities | XLU (1998-12-22) | FSUTX (1981) |
+| Factor equity: low vol / min vol / quality / momentum / value / high beta | SPLV (2011-05-05) / USMV (2011-10-20) / QUAL (2013-07-18) / MTUM, VLUE (2013-04-18) / SPHB (2011-05-05) | none: a backtest holding one starts when it does |
+| Treasuries 3–7y / 10–20y | IEI / TLH (2007-01-11) | none |
+| TIPS | TIP (2003-12-05) | none |
+| T-bills 0–3m | SGOV (2020-06-01) | 3-month T-bill accrual |
+| Floating-rate Treasuries | USFR (prices used from 2018; thinly traded before, with stale and bad prints) | 3-month T-bill accrual |
+| Overnight cash | none: accrual at the effective fed funds rate (FRED DFF) less 0.10% a year | — |
 
 Joined (spliced) segments are flagged in the data and shaded on charts.
 
@@ -951,4 +962,107 @@ paper's headline example, and it is why the first half looked good.
 **Decision.** Rejected. Judged on 2007–2016 alone, it would have been adopted. It remains
 available as *Absorption ratio shift (sector PCA)* in the new **Correlation** group, off by
 default. The defaults and the live records are unchanged.
+
+### 15.7 Factor ETFs, bond duration and cash as holdings
+**Settings fixed before testing (2026-10-23).** Each variant changes one part of Growth's
+portfolios. The adoption bar is the same as §15.4–15.6.
+
+**Factor ETFs.** Window 2013-07-22 to today, with halves split at 2020. Every variant,
+Growth included, starts on the same day.
+
+| Variant | 2013–2019 Sharpe / max DD | 2020– Sharpe / max DD | Full CAGR / max DD | P(better than Growth): 1st / 2nd / full |
+|---|---|---|---|---|
+| Growth | 0.79 / −11.5% | 0.70 / −23.8% | 10.0% / −23.8% | — |
+| Risk-Off: utilities → min-vol (USMV) | 0.82 / −10.5% | 0.67 / −23.8% | 9.8% / −23.8% | 72% / 22% / 40% |
+| Neutral: S&P 500 → min-vol (USMV 80 / IEF 20) | 0.98 / −8.4% | 0.60 / −19.8% | 9.5% / −19.8% | 95% / 23% / 53% |
+| Risk-On: S&P 500 → quality (QUAL 75 / SSO 25) | 0.71 / −13.1% | 0.65 / −24.0% | 9.3% / −24.0% | 6% / 16% / 5% |
+
+- Min-vol in Neutral was the strongest idea in 2013–2019 and lagged after 2020. That is the
+  same first-half/second-half reversal seen in §15.3 and §15.6.
+- **None adopted.**
+
+**Bond duration.** The IEF sleeve (50% of Risk-Off, 20% of Neutral) was replaced with each
+alternative. Train 2007–2016, test 2017–2026.
+
+| Sleeve | Train Sharpe | Test Sharpe | Max DD | 2022 window | GFC | P(better): train / test |
+|---|---|---|---|---|---|---|
+| IEF 7–10y (Growth) | 0.49 | 0.85 | −23.8% | −22.3% | −17.9% | — |
+| SHY 1–3y | 0.44 | 0.90 | −21.2% | −19.0% | −18.9% | 6% / 86% |
+| IEI 3–7y | 0.46 | 0.88 | −21.8% | −20.8% | −18.3% | 9% / 87% |
+| TLH 10–20y | 0.49 | 0.78 | −27.8% | −25.8% | −18.1% | 64% / 1% |
+| TIP | 0.48 | 0.87 | −22.3% | −21.6% | −19.4% | 35% / 76% |
+
+- Shorter duration helped in the rising-rate decade and hurt in the falling-rate one. Longer
+  duration did the opposite. No single duration was better in both, so IEF stays.
+- TIPS were in between and did not fix 2022: −21.6% against −22.3%.
+
+**Cash.** BIL, SGOV and USFR in Crisis give the same results to one decimal place (CAGR
+9.6%). The choice is a matter of implementation: fee and liquidity.
+
+All of these remain available in the portfolio editors.
+
+### 15.8 An independent era: 1993–2006
+**Purpose.** Every rule so far was designed and tested on 2007–2026, which has about seven
+real sell-offs. The years 1993–2006 were never used for any choice. Settings fixed before
+running:
+- **A:** Growth exactly, 2000-09 to 2006, since gold history starts in 2000-08.
+- **B:** Growth and Balanced from 1993 to 2006, with gold removed from Risk-Off (IEF 75% /
+  XLU 25%).
+- Only some components exist before 2006: VIX, SKEW, VRP, credit and trend; put/call from
+  2003-10 and the VX slope from 2004-03. They renormalise as usual. VIX/VIX3M begins in 2006,
+  so the panic-rebound rule is inactive.
+
+| 1993–2006 (B) | CAGR | Sharpe | Max drawdown |
+|---|---|---|---|
+| Growth | 5.6% | 0.18 | −50.1% |
+| Balanced | 5.2% | 0.16 | −39.6% |
+| Static mix with Growth's average 72% equity | 9.8% | 0.49 | −34.1% |
+| S&P 500 | 10.7% | 0.45 | −47.5% |
+| 60/40 | 9.1% | 0.51 | −25.7% |
+| Vol target 12% | 8.5% | 0.41 | −37.4% |
+
+| 2000-09 to 2006 (A) | CAGR | Sharpe | Max drawdown |
+|---|---|---|---|
+| Growth | −2.7% | −0.36 | −47.2% |
+| Balanced | −1.7% | −0.37 | −37.6% |
+| S&P 500 | 0.5% | −0.04 | −47.3% |
+| 60/40 | 2.7% | 0.04 | −25.7% |
+
+**This is not a data problem.**
+- Asset returns match published history: S&P 500 −11.9% in 2001 and −22.1% in 2002;
+  utilities −29% in 2002; gold +24% in 2002.
+- Run on 2007–2026, the reduced set of components does as well as the full model: Sharpe
+  0.68 against 0.66, max drawdown −24.5% against −23.8%.
+- So the failure belongs to the era, not to the missing components.
+
+**How it fails (Growth, 1993–2006, by year):**
+- **High-volatility bull markets.** In 1996–1999, VIX rose (averaging 22–26 in 1997–1999)
+  while stocks boomed. The volatility percentiles read stress, and the strategy held 43–73%
+  equity:
+
+  | | 1997 | 1998 | 1999 |
+  |---|---|---|---|
+  | Strategy | +15.0% | +20.4% | +7.2% |
+  | S&P 500 | +33.5% | +28.7% | +20.4% |
+
+- **Slow, choppy bear markets.**
+  - 2000–2002 was a valuation bust with persistently high volatility, not a single shock.
+  - Measured against a three-year window that was itself volatile, a VIX of 20–23 looked
+    calm. The score kept returning to Neutral or Risk-On during declines: Jan–May 2002,
+    Dec 2002–Mar 2003.
+  - The strategy re-entered failed rallies, sometimes with 2× leverage, and its utilities
+    sleeve fell 29% in 2002.
+  - In 2001 it lost 20.6% against 11.8% for the S&P 500, while averaging only 37% equity.
+
+**Conclusion.** The edge measured on 2007–2026 is specific to that era: sharp volatility
+shocks followed by V-shaped recoveries (2008, 2011, 2015, 2018, 2020). The composite is a
+detector of volatility shocks. It does not recognise a bear market made of high-volatility
+grinding declines, and it under-invests in a high-volatility boom.
+
+The live records and the defaults are unchanged. This section is the most important caveat
+in this document: the backtest from 2007 overstates how reliably the strategy beats a static
+60/40 portfolio.
+
+Changing the rules now to fix 1993–2006 would use up the last untouched data. Any such fix
+would need to be judged on the live record.
 

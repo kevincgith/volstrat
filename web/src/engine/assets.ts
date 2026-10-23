@@ -11,11 +11,19 @@
 import type { MarketData } from './data';
 import { returnsFromIndex } from './stats';
 
-export const STRATEGY_ASSETS = ['SPX', 'SSO', 'UPRO', 'WORLD', 'IEF', 'TLT', 'AGG', 'SHY', 'BIL', 'GLD', 'XLU'] as const;
+export const STRATEGY_ASSETS = [
+  'SPX', 'SSO', 'UPRO', 'WORLD',
+  'SPLV', 'USMV', 'QUAL', 'MTUM', 'VLUE', 'SPHB',
+  'SHY', 'IEI', 'IEF', 'TLH', 'TLT', 'TIP', 'AGG',
+  'BIL', 'SGOV', 'USFR', 'OVERNIGHT',
+  'GLD', 'XLU',
+] as const; // prettier-ignore
+/** Unlevered US equity sleeves: the S&P 500, MSCI World and the factor ETFs. */
+export const EQUITY_ASSETS = new Set<string>(['SPX', 'WORLD', 'SPLV', 'USMV', 'QUAL', 'MTUM', 'VLUE', 'SPHB']);
 export type AssetKey = (typeof STRATEGY_ASSETS)[number];
 
 /** Segments whose returns are gross of any fund fee. */
-const GROSS_SOURCES = new Set(['^SP500TR', '^990100-USD-STRD', 'cash', 'GC=F']);
+const GROSS_SOURCES = new Set(['^SP500TR', '^990100-USD-STRD', 'cash', 'dff', 'GC=F']);
 
 export const LEVERAGE: Partial<Record<AssetKey, number>> = { SSO: 2, UPRO: 3 };
 

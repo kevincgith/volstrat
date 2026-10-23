@@ -38,6 +38,7 @@ SERIES = {
     "BAA10Y": "Moody's Baa yield minus 10y Treasury (%)",
     "NFCI": "Chicago Fed National Financial Conditions Index (weekly)",
     "STLFSI4": "St. Louis Fed Financial Stress Index (weekly)",
+    "DFF": "Effective federal funds rate, daily (%): overnight cash accrual",
 }
 CACHE = "fred.csv"
 

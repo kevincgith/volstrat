@@ -21,6 +21,9 @@ class Segment:
     source: str  # e.g. "SPY", "^SP500TR", "cash"
     label: str
     synthetic: bool = False  # True for proxies (anything that is not the asset itself)
+    start: str | None = (
+        None  # ignore this source's prices before this date (unreliable early prints)
+    )
 
 
 @dataclass

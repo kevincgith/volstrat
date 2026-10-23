@@ -8,7 +8,7 @@
  * remainder is held in the defensive mix.
  */
 
-import { LEVERAGE, type AssetKey } from './assets';
+import { EQUITY_ASSETS, LEVERAGE, type AssetKey } from './assets';
 
 export type Weights = Partial<Record<AssetKey, number>>;
 
@@ -22,7 +22,7 @@ export interface AdaptiveHedge {
   replacement: AssetKey;
 }
 
-export const DURATION_ASSETS: AssetKey[] = ['IEF', 'TLT', 'AGG'];
+export const DURATION_ASSETS: AssetKey[] = ['IEI', 'IEF', 'TLH', 'TLT', 'TIP', 'AGG'];
 
 /** Replace duration assets by `to` (weights merged); returns the input when nothing changes. */
 export function swapDuration(w: Weights, to: AssetKey): Weights {
@@ -81,12 +81,12 @@ export function continuousWeights(score: number, c: AllocationParams['continuous
   return out;
 }
 
-/** Equity beta-equivalent exposure of a weight vector (leveraged ETFs count L times). */
+/** Equity exposure of a weight vector: unlevered equity sleeves count once, leveraged ETFs L times. */
 export function equityExposure(w: Weights): number {
   let e = 0;
   for (const [k, v] of Object.entries(w)) {
     const key = k as AssetKey;
-    if (key === 'SPX' || key === 'WORLD') e += v ?? 0;
+    if (EQUITY_ASSETS.has(key)) e += v ?? 0;
     else if (LEVERAGE[key]) e += (v ?? 0) * LEVERAGE[key]!;
   }
   return e;
