@@ -92,7 +92,9 @@ export function assemble(sig: RawSignals, ast: RawAssets, meta: MarketData['meta
 }
 
 async function getJson<T>(base: string, name: string): Promise<T> {
-  const r = await fetch(`${base}data/${name}`);
+  // 'no-cache' = always revalidate with the server (a cheap 304 when unchanged), so a
+  // reload never shows data older than the latest published update.
+  const r = await fetch(`${base}data/${name}`, { cache: 'no-cache' });
   if (!r.ok) throw new Error(`failed to load ${name}: HTTP ${r.status}`);
   return (await r.json()) as T;
 }
@@ -104,6 +106,11 @@ export async function loadMarketData(base: string): Promise<MarketData> {
     getJson<MarketData['meta']>(base, 'meta.json'),
   ]);
   return assemble(sig, ast, meta);
+}
+
+/** Just the build metadata (small): used to detect that a newer data update was published. */
+export async function loadMeta(base: string): Promise<MarketData['meta']> {
+  return getJson<MarketData['meta']>(base, 'meta.json');
 }
 
 export async function loadVxCurves(base: string): Promise<VxCurves> {

@@ -36,11 +36,11 @@ export function TrackRecord({ data }: { data: MarketData }) {
   const [missing, setMissing] = useState(false);
 
   useEffect(() => {
-    fetch(`${import.meta.env.BASE_URL}data/track_record.json`)
+    fetch(`${import.meta.env.BASE_URL}data/track_record.json`, { cache: 'no-cache' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((j: TrackFile) => setTrack(j))
       .catch(() => setMissing(true));
-  }, []);
+  }, [data.meta.generated_at]); // reload with each new data build
 
   const perf = useMemo(() => {
     if (!track || !track.decisions.length) return null;
