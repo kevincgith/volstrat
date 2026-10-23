@@ -996,8 +996,12 @@ alternative. Train 2007–2016, test 2017–2026.
   duration did the opposite. No single duration was better in both, so IEF stays.
 - TIPS were in between and did not fix 2022: −21.6% against −22.3%.
 
-**Cash.** BIL, SGOV and USFR in Crisis give the same results to one decimal place (CAGR
-9.6%). The choice is a matter of implementation: fee and liquidity.
+**Cash.** BIL, SGOV, USFR and overnight cash in Crisis give the same results to one decimal
+place (Growth CAGR 9.61% with BIL, 9.63% with overnight cash). The choice is a matter of
+implementation: fee and liquidity.
+- Overnight cash accrues the effective fed funds rate less 0.10% a year. It earned 1.51% a
+  year from mid-2007 against 1.40% for BIL, and 5.14% against 4.99% in 2023.
+- It is a synthetic series: no ETF tracks the overnight rate over this history.
 
 All of these remain available in the portfolio editors.
 
