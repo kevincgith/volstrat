@@ -11,3 +11,7 @@ knowing about a row is recorded here instead.
   previous day's, so the target was unaffected. From the next run onwards, a date is only
   logged once every input of the strategy has been published for it
   (`build/export.py: completeness`).
+- **2026-10-22, follow-up** (2026-10-23). Once all inputs for 22 Oct were published, recomputing
+  the day with complete data gives score **37.7** (logged: 42.82). The regime and target are
+  unchanged: Neutral, SPX 60% / IEF 40%. 37.7 sits just above the 37.5 level at which
+  hysteresis would have moved the regime to Risk-Off.
