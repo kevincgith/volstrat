@@ -308,6 +308,8 @@ Full-sample normalisation is never used, because it would leak future informatio
   - *Conservative:* no leverage, slower signal, 40/60 in Neutral.
   - *Balanced:* the defaults.
   - *Aggressive:* faster signal, 2× in Risk-On and 3× in Strong Risk-On.
+  - *Growth:* 80/20 in Neutral, 125% equity in Risk-On (75% S&P 500, 25% SSO), and the
+    panic-rebound re-entry (§15.2). See §15.4.
   - *Continuous:* continuous mode.
 
 ### 6.1 Adaptive hedge (optional, off by default)
@@ -745,4 +747,64 @@ hurt after 2016. Defaults are unchanged.
   would have been adopted.
 - Both remain available as options (Backtest panel: *Re-rank the composite*; the ½ button
   per component) and are off by default.
+
+### 15.4 Does avoiding drawdowns improve long-term returns?
+Question (2026-10-23): the strategy's premise is that avoiding drawdowns compounds into better
+long-term performance, yet its CAGR trails the S&P 500 (7.4% vs 10.9%, 2007–2026).
+
+**Diagnosis.** The drawdown control works: the worst drawdown is −21.8% against −55.2% for the
+S&P 500 and −35.4% for 60/40. The return gap has three sources:
+
+| Measurement | Result |
+|---|---|
+| Average equity exposure | 59% (Neutral, 60/40, holds 37% of days) |
+| Static mix with the same 59% exposure, rebalanced monthly | CAGR 8.6%, Sharpe 0.63, max drawdown −34.4% (strategy: 7.4%, 0.60, −21.8%) |
+| Annualised return with the S&P 500 within 5% of its high | strategy 6.8%, S&P 9.4% |
+| … more than 15% below its high (the rebound phase) | strategy 8.6%, S&P 21.7% |
+| Strategy scaled to the S&P 500's volatility (1.95×) | CAGR 11.3% vs 10.9%; test half 14.8% vs 15.1% |
+
+1. **Missed rebounds.** After each low the composite stays low for about 40 trading days.
+   Realised volatility keeps the VRP negative, and the VIX level and trend are slow to
+   recover. Across nine sell-offs since 2007, the strategy captured a median of about a third
+   of the S&P 500's rebound from the low (COVID: +7.5% vs +52.6%; Q4 2018: +4.7% vs +25.5%).
+2. **Low exposure in calm markets.** Never above 100% except in Strong Risk-On (2% of days).
+3. **At equal risk the timing adds almost nothing.** The lower drawdowns come mostly from
+   holding less equity, not from timing. Avoiding a −55% loss only compounds into a higher
+   return if the saved risk is spent somewhere.
+
+The Backtest page's **Equal-risk check** card now shows this comparison for every run.
+
+**Candidates, fixed before testing; train 2007–2016, test 2017–2026.**
+- (A) The panic-rebound re-entry of §15.2, unchanged.
+- (B) Spend the drawdown savings: Neutral 80% S&P 500 / 20% IEF; Risk-On 75% S&P 500 /
+  25% SSO (125% equity). Crisis, Risk-Off and Strong Risk-On are unchanged.
+- (A + B), and (A + B) with the adaptive hedge of §6.1.
+
+| Variant | Train CAGR / Sharpe / max DD | Test CAGR / Sharpe / max DD | Full CAGR / max DD | Equity exposure | Test Sharpe vs base: P(better) |
+|---|---|---|---|---|---|
+| S&P 500 | 7.0% / 0.39 / −55.2% | 15.0% / 0.72 / −33.7% | 10.9% / −55.2% | 100% | — |
+| 60/40 | 6.3% / 0.50 / −35.4% | 9.8% / 0.66 / −21.5% | 8.0% / −35.4% | 60% | — |
+| Base | 5.1% / 0.46 / −20.1% | 9.7% / 0.75 / −21.8% | 7.4% / −21.8% | 59% | — |
+| A rebound | 5.8% / 0.51 / −15.2% | 10.9% / 0.84 / −21.8% | 8.3% / −21.8% | 62% | 92% |
+| B exposure | 6.0% / 0.47 / −22.5% | 11.2% / 0.75 / −23.8% | 8.6% / −23.8% | 74% | 53% |
+| **A + B (Growth preset)** | 6.6% / 0.50 / −19.7% | 12.9% / 0.85 / −23.8% | 9.7% / −23.8% | 79% | 88% |
+| A + B + hedge | 6.7% / 0.50 / −20.1% | 12.8% / 0.86 / −21.9% | 9.7% / −21.9% | 79% | 86% |
+
+Scaled to the S&P 500's volatility with the same method as the card, the rebound variant earns
+12.8% a year against 10.9% (train 8.9% vs 7.0%, test 16.9% vs 15.1%), with a worst drawdown of
+−39.0% against −55.2%.
+
+**Conclusions.**
+- **(B) is a risk dial, not an edge.** It raises return and drawdown together and leaves the
+  Sharpe ratio unchanged. It is how drawdown savings turn into return.
+- **(A) is the only change that adds timing skill**, and it repairs the documented weakness:
+  missed rebounds. Its caveats are in §15.2.
+- **(A + B) beats 60/40 in both halves** with a smaller drawdown (full: 9.7% vs 8.0% CAGR,
+  −23.8% vs −35.4%). It still trails the S&P 500's CAGR (9.7% vs 10.9%) at roughly half the
+  drawdown. Beating the index's CAGR outright takes about 1.9× the base risk, with
+  drawdowns near −39%.
+- The adaptive hedge adds little and was prompted by 2022 (hindsight), so it is not in the
+  preset.
+- The defaults and the live track record v1 are unchanged. *Growth* is a preset; adopting
+  it would start a new live record.
 

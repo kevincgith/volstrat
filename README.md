@@ -33,7 +33,7 @@ GitHub Action).
 - **Backtest:**
   - every parameter is editable and recomputes instantly in a Web Worker; settings live in
     the URL;
-  - statistics against six benchmarks, plus bootstrap confidence intervals;
+  - statistics against six benchmarks, plus bootstrap confidence intervals and an equal-risk check (the strategy scaled to each benchmark's volatility);
   - equity, drawdown, allocation, rolling and monthly charts;
   - sensitivity heatmap, walk-forward test and multiple-testing check;
   - CSV/PNG export.

@@ -5,6 +5,7 @@ import { assetColor, colors, entityColor, type Colors } from '../charts/palette'
 import { assetLabel, ParamPanel } from '../components/ParamPanel';
 import { BootstrapCard } from '../components/BootstrapCard';
 import { CostCard } from '../components/CostCard';
+import { EqualRiskCard } from '../components/EqualRiskCard';
 import { Robustness } from '../components/Robustness';
 import { Card, ErrorBox, Loading, Segmented, Toggle } from '../components/ui';
 import { COMPONENTS } from '../engine/components';
@@ -395,6 +396,7 @@ export default function Backtest() {
 
               <BootstrapCard result={result} paramsKey={JSON.stringify(params)} />
               <CostCard result={result} params={params} />
+              <EqualRiskCard result={result} params={params} />
 
               <Card title="Growth of $1 (log scale)" actions={<button className="btn ghost" onClick={() => refs.equity.current?.toPNG('volstrat-equity')}>PNG</button>}>
                 <Chart ref={refs.equity} option={charts.equity} height={380} group="bt" ariaLabel="Equity curves of the strategy and benchmarks, log scale" />

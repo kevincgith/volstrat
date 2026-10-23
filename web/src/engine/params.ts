@@ -156,6 +156,24 @@ export const PRESETS: Preset[] = [
     },
   },
   {
+    id: 'growth',
+    label: 'Growth',
+    description:
+      'Spends the drawdown savings on exposure: 80/20 in neutral, 125% equity in risk-on, plus the panic-rebound re-entry. Tested out of sample (Methodology 15.4).',
+    patch: {
+      regime: { rebound: { enabled: true } },
+      allocation: {
+        regimePortfolios: [
+          { BIL: 1 },
+          { IEF: 0.5, GLD: 0.25, XLU: 0.25 },
+          { SPX: 0.8, IEF: 0.2 },
+          { SPX: 0.75, SSO: 0.25 },
+          { SSO: 1 },
+        ],
+      },
+    },
+  },
+  {
     id: 'continuous',
     label: 'Continuous',
     description: 'Equity exposure scales linearly with the score from 0% (score 20) to 150% (score 80).',
