@@ -1080,3 +1080,52 @@ The redesign and the definition of "proven" were fixed in
 - **Holdout:** Europe 2000–2026, run once.
 
 Results will be recorded here, including failures.
+
+### 16.1 Build and data checks (2026-10-23)
+- **Engine:** `web/src/engine/v3.ts`. Covered by tests: unit checks, the 40–80% bounds, trend
+  saturation, and a no-look-ahead test (changing all inputs after day T leaves the signals,
+  targets and NAV up to T unchanged). Evaluation script: `npm run v3 -- us`.
+- **European data:** `pipeline/volstrat_pipeline/europe.py`, writing `data/europe/europe.json`
+  and `data/europe/checks.json`. Only data checks were run. What they found and what was done:
+  - **STOXX file writes 0.00 on market holidays** (Good Friday and Easter Monday 2016).
+    Those rows are dropped.
+  - **Yahoo's Euro Stoxx 50 repeats a stale close** of 2631.98 on 14, 19 and 21 July 2011.
+    The STOXX file is used until 2016-10-04, so this doesn't affect the data. After 2016 the
+    Yahoo series shows no repeated closes, and no day where its return differs from the
+    DAX's by more than 3%.
+  - **The VSTOXX 3-month sub-index has short gaps** (six in 2005, Easter 2014) and ends
+    2016-02-12. P1 averages the components that are available.
+  - **VSTOXX is missing on 34 calendar days**, all half-days and holidays (24 and 31 Dec,
+    1 May).
+  - **EONIA vs €STR + 8.5 bp:** identical over the 579 overlapping days.
+  - **AAA 10y vs German 10y:** the ECB AAA curve averages 0.20 points above the German 10y
+    yield (up to 1.02 in the 2011–12 crisis). Only the 7y spot rate is used, from 2004-09.
+  - **Returns match published history:** Euro Stoxx 50 with estimated dividends 5.05% a
+    year, DAX 5.74%, 7y bond 2.35% (2022: −16.9%; 2008: +10.6%), cash 1.53%.
+  - **Bonds before 2004-09** are spread evenly from monthly data. Their daily volatility is
+    understated (0.055% vs 0.28%), as declared in the pre-registration.
+  - **Certificate workaround:** STOXX's certificate chains to a root Python's bundle no
+    longer carries, so its files are fetched with the system `curl`. Verification stays on.
+
+### 16.2 US design check (run once, 2026-10-23, frozen parameters, no revision round)
+
+| Period | v3 CAGR / vol / Sharpe / max DD | 60/40 CAGR / vol / Sharpe / max DD | Sharpe difference |
+|---|---|---|---|
+| 1993–2006 | 9.3% / 9.6% / 0.56 / −20.3% | 9.2% / 10.2% / 0.52 / −24.0% | +0.04 |
+| 2007–2026 | 8.3% / 10.0% / 0.68 / −23.3% | 8.2% / 11.0% / 0.63 / −32.2% | +0.06 |
+| 1993–2026 | 8.7% / 9.8% / 0.64 / −23.3% | 8.6% / 10.7% / 0.58 / −32.2% | +0.05 |
+
+- **Paired bootstrap, 1993–2026:** Sharpe difference median +0.048 (5th–95th percentile
+  −0.001 to +0.099); v3 is better in 95% of resamples.
+- **Trading:** turnover 0.6× a year; costs 0.06% a year.
+- **Criteria:** A pass, B pass, C pass.
+
+**Reading.**
+- **The edge is modest but consistent.** About +0.05 Sharpe and +0.1% a year of return, and
+  most of it is risk reduction: a lower worst drawdown (−23% vs −32%) and about 1 point less
+  volatility. The biggest years: 2002 (−3.7% vs −8.2%) and 2008 (−10.8% vs −17.7%).
+- **v3 did not help in 2022** (−17.0% vs −16.6%). Stocks and bonds fell together, and a
+  stock/bond tilt can't avoid that.
+- **This is not out of sample.** The design was written by someone who knew US history (for
+  example, that trend was bearish in 2000–2002). Passing A–C is necessary, not sufficient.
+  The European run (D–F) is the real test.

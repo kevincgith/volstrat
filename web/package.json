@@ -11,7 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build:signal": "vite build --ssr scripts/signal.ts --outDir dist-node --emptyOutDir",
-    "signal": "npm run build:signal && node dist-node/signal.js"
+    "signal": "npm run build:signal && node dist-node/signal.js",
+    "v3": "vite build --ssr scripts/v3.ts --outDir dist-node/v3 --emptyOutDir && node dist-node/v3/v3.js"
   },
   "dependencies": {
     "echarts": "^6.1.0",

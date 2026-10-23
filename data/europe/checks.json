@@ -1,0 +1,114 @@
+{
+ "V2TX": {
+  "first": "1999-01-04",
+  "last": "2026-10-22",
+  "rows": 7079,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "V6I3": {
+  "first": "1999-01-04",
+  "last": "2016-02-12",
+  "rows": 4296,
+  "gaps_over_5_days_ex_christmas": [
+   "2005-02-16..2005-02-22",
+   "2005-04-13..2005-04-19",
+   "2005-05-18..2005-05-24",
+   "2005-07-13..2005-07-19",
+   "2005-08-17..2005-08-23",
+   "2005-10-19..2005-10-25",
+   "2014-04-17..2014-04-23"
+  ]
+ },
+ "SX5E_file": {
+  "first": "1999-01-04",
+  "last": "2016-10-04",
+  "rows": 4552,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "SX5E_yahoo": {
+  "first": "2007-03-30",
+  "last": "2026-10-22",
+  "rows": 4905,
+  "gaps_over_5_days_ex_christmas": [
+   "2008-03-19..2008-03-25"
+  ]
+ },
+ "DAX": {
+  "first": "1999-01-04",
+  "last": "2026-10-22",
+  "rows": 7061,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "EONIA": {
+  "first": "1999-01-04",
+  "last": "2021-12-31",
+  "rows": 5890,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "ESTR": {
+  "first": "2019-10-01",
+  "last": "2026-10-22",
+  "rows": 1809,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "AAA7Y": {
+  "first": "2004-09-06",
+  "last": "2026-10-21",
+  "rows": 5657,
+  "gaps_over_5_days_ex_christmas": []
+ },
+ "SX5E_file_vs_yahoo": {
+  "overlap_days": 2380,
+  "max_abs_rel_diff": 0.04754,
+  "share_days_over_0.1pct": 0.0034,
+  "worst_day": "2011-07-21"
+ },
+ "V2TX_vs_subindex_file": {
+  "overlap_days": 4354,
+  "max_abs_diff": 0.5357
+ },
+ "EONIA_vs_ESTR_plus_8.5bp": {
+  "overlap_days": 579,
+  "max_abs_diff_pct": 0.0
+ },
+ "AAA10y_vs_German10y_monthly": {
+  "overlap_months": 265,
+  "mean_diff_pct": 0.199,
+  "max_abs_diff_pct": 1.02
+ },
+ "returns_EQ_SX5E": {
+  "first": "1999-01-05",
+  "days": 7076,
+  "annualised": 0.0505,
+  "days_beyond_0.12": {
+   "2020-03-12": -0.1239
+  }
+ },
+ "returns_EQ_DAX": {
+  "first": "1999-01-05",
+  "days": 7076,
+  "annualised": 0.0574,
+  "days_beyond_0.12": {
+   "2020-03-12": -0.1224
+  }
+ },
+ "returns_BOND_EU7": {
+  "first": "1999-01-04",
+  "days": 7077,
+  "annualised": 0.0235,
+  "days_beyond_0.03": {}
+ },
+ "returns_CASH_EUR": {
+  "first": "1999-01-05",
+  "days": 7076,
+  "annualised": 0.0153,
+  "days_beyond_0.001": {}
+ },
+ "SX5E_yahoo_after_file_unchanged_closes": [],
+ "calendar": {
+  "first": "1999-01-04",
+  "last": "2026-10-22",
+  "days": 7077
+ },
+ "V2TX_missing_on_calendar_days": 34
+}
