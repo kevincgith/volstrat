@@ -1129,3 +1129,40 @@ Results will be recorded here, including failures.
 - **This is not out of sample.** The design was written by someone who knew US history (for
   example, that trend was bearish in 2000–2002). Passing A–C is necessary, not sufficient.
   The European run (D–F) is the real test.
+
+### 16.3 European holdout (run once, 2026-10-23): not supported
+Frozen v3 parameters, run once with `npm run v3 -- europe`. The raw output is saved in
+`data/europe/holdout-2026-10-23.txt`. The DAX check, as read from the pre-registration,
+keeps the signals unchanged (VSTOXX, Euro Stoxx 50) and replaces the equity held, in both
+the strategy and the benchmark.
+
+| Period (Euro Stoxx 50) | v3 CAGR / vol / Sharpe / max DD | 60/40 CAGR / vol / Sharpe / max DD | Sharpe difference |
+|---|---|---|---|
+| **2000–2026** | 3.8% / 11.9% / 0.25 / −34.5% | 4.0% / 12.8% / 0.25 / −38.7% | **−0.00** |
+| 2000–2006 | 4.2% / 12.5% / 0.15 / −34.5% | 3.4% / 13.9% / 0.09 / −38.7% | +0.06 |
+| 2007–2026 | 3.7% / 11.7% / 0.29 / −30.6% | 4.2% / 12.4% / 0.31 / −36.7% | −0.03 |
+| DAX check, 2000–2026 | 4.6% / 12.1% / 0.31 / −41.8% | 4.6% / 13.0% / 0.30 / −47.4% | +0.01 |
+
+- **Paired bootstrap:** Euro Stoxx 50, v3 better in **44%** of resamples (median difference
+  −0.005); DAX, 63%.
+- **Criteria:**
+  - D **fails**: no Sharpe advantage.
+  - E passes: the worst drawdown is 4 points shallower.
+  - F passes: the DAX check reaches the same verdict as D.
+- **Verdict: not supported** (§4 of the pre-registration). The defaults are unchanged and no
+  v3 live record starts.
+
+**What it shows.**
+- **In Europe, v3 is a mild de-risker with no edge.** It had lower volatility (−0.9 points)
+  and shallower drawdowns (2002: −15.7% vs −19.6%; 2008: −20.1% vs −24.4%). It paid for
+  them in recoveries and choppy years: 2010, 2014–2016, 2020 (−3.2% vs +0.9%) and 2022.
+  The net Sharpe difference is zero.
+- **The US result now looks like the same pattern.** The +0.05 Sharpe there was mostly
+  lower risk, and it doesn't carry over to another market.
+- **Across all the evidence:** US 1993–2006 and 2007–2026, and Europe 2000–2026. Timing
+  equity exposure with volatility, trend and volatility-scaling signals reliably reduces
+  drawdowns, but has not reliably improved risk-adjusted returns over a static balanced
+  portfolio.
+- **Commitment (pre-registration §6).** This is the answer for v3. It is not the start of
+  another search on the same data. Any new design needs data it hasn't seen: the live
+  record, or a market not yet used.

@@ -129,3 +129,11 @@ The Europe holdout starts in 2000 because the expanding ranks need 252 days of V
 - European data is not used for any decision before step 4.
 - If v3 is "not supported", that is the answer, not the start of another search on the same
   data.
+
+## Amendment log
+- 2026-10-23: US design check run once with the frozen parameters; A, B and C passed, with
+  no revision round (METHODOLOGY §16.2). The DAX check was implemented with the signals
+  unchanged and only the equity sleeve replaced, the literal reading of §2, decided before
+  the European run.
+- 2026-10-23: European holdout run once. D fails (Sharpe 0.25 vs 0.25, bootstrap 44%); E and
+  F pass. **Verdict: not supported** (METHODOLOGY §16.3).

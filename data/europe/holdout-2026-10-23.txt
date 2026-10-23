@@ -1,0 +1,75 @@
+
+== Euro Stoxx 50 (+3% est. dividends), 7y euro govt bond, VSTOXX signals
+run 2000-01-26 .. 2026-10-22; params {"base":0.6,"tilt":0.2,"trendSat":0.1,"maDays":200,"rvDays":21,"minPeriods":252,"pillarWeights":[1,1,1],"band":0.05,"costBps":5,"lag":1}
+era                 |  v3: CAGR    vol   Sharpe  maxDD   turn  costs | 60/40: CAGR    vol  Sharpe  maxDD | Sharpe diff
+Europe 2000-latest  |    3.8%  11.9%   0.25  -34.5%  0.66  0.07% |     4.0%  12.8%   0.25  -38.7% |  -0.00
+Europe 2000-2006    |    4.2%  12.5%   0.15  -34.5%  0.52  0.05% |     3.4%  13.9%   0.09  -38.7% |   0.06
+Europe 2007-latest  |    3.7%  11.7%   0.29  -30.6%  0.71  0.07% |     4.2%  12.4%   0.31  -36.7% |  -0.03
+bootstrap (whole run, 21-day blocks, 1000 draws): Sharpe diff p5 -0.060 p50 -0.005 p95 0.054; better in 44%
+year      v3   60/40  avg equity
+2000    5.6%    6.3% eq 0.61
+2001   -8.9%   -8.3% eq 0.52
+2002  -15.7%  -19.6% eq 0.51
+2003   14.6%   13.7% eq 0.60
+2004    8.4%    9.8% eq 0.70
+2005   18.7%   17.0% eq 0.72
+2006   11.1%   10.1% eq 0.68
+2007    5.9%    6.8% eq 0.66
+2008  -20.1%  -24.4% eq 0.49
+2009   16.7%   17.5% eq 0.56
+2010   -1.4%    1.1% eq 0.60
+2011   -5.6%   -5.6% eq 0.56
+2012   12.7%   14.7% eq 0.61
+2013   12.9%   11.6% eq 0.68
+2014    4.7%    7.0% eq 0.66
+2015    3.2%    4.7% eq 0.60
+2016    3.0%    3.9% eq 0.57
+2017    6.5%    5.0% eq 0.73
+2018   -7.8%   -6.8% eq 0.63
+2019   16.5%   17.9% eq 0.66
+2020   -3.2%    0.9% eq 0.55
+2021   13.9%   12.9% eq 0.69
+2022  -14.2%  -11.9% eq 0.55
+2023   16.0%   16.2% eq 0.67
+2024    7.1%    6.7% eq 0.68
+2025   13.7%   13.1% eq 0.66
+2026    3.8%    3.8% eq 0.67
+
+== Check: DAX as the equity sleeve, same signals
+run 2000-01-26 .. 2026-10-22; params {"base":0.6,"tilt":0.2,"trendSat":0.1,"maDays":200,"rvDays":21,"minPeriods":252,"pillarWeights":[1,1,1],"band":0.05,"costBps":5,"lag":1}
+era                 |  v3: CAGR    vol   Sharpe  maxDD   turn  costs | 60/40: CAGR    vol  Sharpe  maxDD | Sharpe diff
+Europe 2000-latest  |    4.6%  12.1%   0.31  -41.8%  0.64  0.06% |     4.6%  13.0%   0.30  -47.4% |   0.01
+Europe 2000-2006    |    3.7%  13.6%   0.11  -41.8%  0.50  0.05% |     2.5%  15.1%   0.04  -47.4% |   0.08
+Europe 2007-latest  |    4.9%  11.5%   0.39  -27.2%  0.69  0.07% |     5.3%  12.2%   0.41  -33.6% |  -0.02
+bootstrap (whole run, 21-day blocks, 1000 draws): Sharpe diff p5 -0.049 p50 0.012 p95 0.074; better in 63%
+year      v3   60/40  avg equity
+2000   -1.0%   -0.9% eq 0.60
+2001   -9.6%   -9.3% eq 0.51
+2002  -20.4%  -25.7% eq 0.51
+2003   24.4%   24.1% eq 0.60
+2004    5.9%    8.1% eq 0.69
+2005   20.1%   18.2% eq 0.72
+2006   14.2%   12.0% eq 0.68
+2007   13.4%   13.9% eq 0.66
+2008  -18.4%  -22.6% eq 0.49
+2009   16.1%   17.1% eq 0.57
+2010   10.6%   12.2% eq 0.60
+2011   -4.4%   -5.6% eq 0.57
+2012   20.7%   21.3% eq 0.61
+2013   15.6%   13.7% eq 0.68
+2014    3.9%    5.9% eq 0.65
+2015    4.9%    6.3% eq 0.60
+2016    4.5%    5.8% eq 0.57
+2017    8.4%    6.6% eq 0.73
+2018  -11.7%  -10.7% eq 0.63
+2019   14.8%   15.8% eq 0.66
+2020   -0.6%    4.2% eq 0.56
+2021    8.6%    8.2% eq 0.69
+2022  -15.7%  -13.7% eq 0.54
+2023   14.6%   14.8% eq 0.67
+2024   11.5%   11.1% eq 0.68
+2025   12.4%   13.3% eq 0.66
+2026    0.9%    1.5% eq 0.67
+
+criteria: D (Sharpe > 60/40 and bootstrap >= 90%) FAIL (bootstrap 44%); E (max DD no deeper) PASS; F (DAX check agrees with D) PASS
+verdict (US A-C passed on 2026-10-23): NOT SUPPORTED
