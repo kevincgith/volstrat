@@ -1070,3 +1070,13 @@ in this document: the backtest from 2007 overstates how reliably the strategy be
 Changing the rules now to fix 1993–2006 would use up the last untouched data. Any such fix
 would need to be judged on the live record.
 
+
+## 16. v3: a redesign to beat 60/40, tested on Europe
+The redesign and the definition of "proven" were fixed in
+[`docs/PREREG-v3.md`](PREREG-v3.md) on 2026-10-23, before any v3 code or European result.
+- **Design:** a 40–80% equity tilt around 60/40, driven by three pillars (volatility stress
+  with long-anchored ranks, trend, and volatility scaling).
+- **Design check:** United States 1993–2026.
+- **Holdout:** Europe 2000–2026, run once.
+
+Results will be recorded here, including failures.
