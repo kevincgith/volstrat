@@ -20,6 +20,7 @@ import pandas as pd
 from ..checks import crosscheck as cc
 from ..sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, yahoo
 from ..sources.fetch_status import load_status
+from .absorption import SECTORS, absorption_ratio
 from .align import as_of, master_calendar
 from .assets import (
     AssetSpec,
@@ -76,6 +77,8 @@ SIGNAL_META: dict[str, dict] = {
     "IG_OAS": dict(label="US investment-grade OAS", unit="%", source="FRED BAMLC0A0CM",
                    lag_bdays=1),
     "BAA10Y": dict(label="Baa minus 10y Treasury", unit="%", source="FRED BAA10Y", lag_bdays=1),
+    "AR2_9": dict(label="Absorption ratio: top 2 of 9 sector ETF principal components",
+                  unit="share", source="Yahoo sector ETFs (adjusted)"),
     "NFCI": dict(label="Chicago Fed NFCI", unit="index", source="FRED NFCI", lag_days=5,
                  max_stale_days=14),
     "STLFSI": dict(label="St. Louis Fed Financial Stress Index", unit="index",
@@ -125,6 +128,12 @@ def build_signals(raw: Path, cal: pd.DatetimeIndex) -> pd.DataFrame:
                      ("BAA10Y", "BAA10Y"), ("NFCI", "NFCI"), ("STLFSI", "STLFSI4")):  # fmt: skip
         if fr is not None and sid in fr:
             s[key] = fr[sid]
+
+    sectors = {k: _close(raw, k, "adj_close") for k in SECTORS}
+    if all(len(v) for v in sectors.values()):
+        # dates every sector has (one NYSE calendar); a missing day would otherwise
+        # reset the 252-day window
+        s["AR2_9"] = absorption_ratio(pd.DataFrame(sectors).dropna())
 
     out = {}
     for key, meta in SIGNAL_META.items():

@@ -45,6 +45,10 @@ const configs: [string, Params][] = [
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { rebound: { enabled: true, peak: 1.05 } } }),
   ],
   [
+    'absorption ratio shift on',
+    merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, score: { components: { absorption: { enabled: true, weight: 1 } } } }),
+  ],
+  [
     'recovery re-entry on',
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { reentry: { enabled: true, offPeak: 0.9, maDays: 10, lowDays: 10 } } }),
   ],

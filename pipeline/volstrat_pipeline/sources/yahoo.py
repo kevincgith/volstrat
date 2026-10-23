@@ -62,6 +62,16 @@ TICKERS: list[Ticker] = [
     Ticker("HYG", "High-yield corporate bond ETF (credit proxy)", False),
     Ticker("LQD", "Investment-grade corporate bond ETF (credit proxy)", False),
     Ticker("VWEHX", "Vanguard High-Yield Corporate fund (credit proxy extension)", False),
+    # sector ETFs: the cross-section for the absorption ratio (all from 1998-12)
+    Ticker("XLB", "Materials sector ETF (absorption ratio)", False),
+    Ticker("XLE", "Energy sector ETF (absorption ratio)", False),
+    Ticker("XLF", "Financials sector ETF (absorption ratio)", False),
+    Ticker("XLI", "Industrials sector ETF (absorption ratio)", False),
+    Ticker("XLK", "Technology sector ETF (absorption ratio)", False),
+    Ticker("XLP", "Consumer staples sector ETF (absorption ratio)", False),
+    Ticker("XLV", "Health care sector ETF (absorption ratio)", False),
+    Ticker("XLY", "Consumer discretionary sector ETF (absorption ratio)", False),
+    # (XLU, the ninth, is listed with the defensive assets)
     # volatility fallbacks
     Ticker("^VIX3M", "VIX3M (pre-2009 history missing from the Cboe file)", False),
     Ticker("^VVIX", "VVIX fallback", False),

@@ -7,9 +7,9 @@
  */
 
 import type { MarketData } from './data';
-import { diff, realisedVol, rollingResidual, sma, wma, zip2 } from './stats';
+import { diff, realisedVol, rollingMeanStd, rollingResidual, sma, wma, zip2 } from './stats';
 
-export type ComponentGroup = 'Volatility' | 'Term structure' | 'Sentiment' | 'Credit' | 'Macro' | 'Trend' | 'VTS-style';
+export type ComponentGroup = 'Volatility' | 'Term structure' | 'Sentiment' | 'Credit' | 'Macro' | 'Trend' | 'Correlation' | 'VTS-style';
 
 export interface ComponentDef {
   id: string;
@@ -247,6 +247,28 @@ export const COMPONENTS: ComponentDef[] = [
       why: 'A price trend filter. Volatility signals are fast but noisy; trend is slow but confirms whether stress is turning into a bear market. Below the 200-day average, historical equity returns have been lower and much more volatile.',
       range: 'Typically −5% to +10%; below −10% = bear market (low: −39.7% on 20 Nov 2008).',
       episodes: 'Below the average from Nov 2007 to Jun 2009 (95% of days in 2008–H1 2009). It barely touched it in Feb–Apr 2018 (2% of days), so the trend filter missed Volmageddon; the vol components caught it. Below on 71% of days in Mar–Jun 2020 and 85% of 2022.',
+    },
+  },
+  {
+    id: 'absorption',
+    label: 'Absorption ratio shift (sector PCA)',
+    group: 'Correlation',
+    inputs: ['AR2_9'],
+    riskOffWhenHigh: true,
+    defaultWeight: 1,
+    defaultEnabled: false,
+    unit: 'σ',
+    compute: (d) => {
+      // Kritzman et al.'s standardised shift: 15-day average vs the past year, in standard deviations
+      const ar = s(d, 'AR2_9');
+      const { mean, std } = rollingMeanStd(ar, 252, 252);
+      return zip2(sma(ar, 15), zip2(mean, std, (m, sd) => (sd > 0 ? m : NaN)), (a, m) => a - m).map((x, t) => x / std[t]!);
+    },
+    doc: {
+      what: 'Shift in the absorption ratio of the 9 original Select Sector SPDRs (XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY): the share of their return variance explained by the top 2 of 9 principal components (exponentially weighted covariance of 252 daily returns, half-life 126 days). The component is the 15-day average minus the 1-year average, in 1-year standard deviations (Kritzman, Li, Page and Rigobon, 2010).',
+      why: 'A high absorption ratio means sectors move as one block, driven by one or two common factors: diversification is weak and shocks spread. Kritzman et al. found sharp rises preceded large drawdowns. Out of sample here it did not help (METHODOLOGY 15.6): its peaks mostly came at or after the lows.',
+      range: 'Absorption ratio 10th/50th/90th percentile 0.68 / 0.80 / 0.89 since 1999 (low 0.58 in Dec 2017, high 0.948 on 24 Mar 2020). Shift 10th/50th/90th percentile −1.98 / +0.06 / +1.67σ since Dec 2000; above +1σ on 29% of days.',
+      episodes: 'Shift peaks: +2.09σ on 23 Aug 2007 (before the Oct 2007 top), +2.92σ on 31 Oct 2008 (after Lehman), +2.59σ on 30 Aug 2011, +1.78σ on 5 Mar 2018 (after Volmageddon), +0.82σ on 31 Dec 2018 (after the low), +3.54σ on 27 Mar 2020 (after the low), +2.24σ on 8 Jul 2022.',
     },
   },
   {

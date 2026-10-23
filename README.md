@@ -27,8 +27,9 @@ GitHub Action).
 
 - **Dashboard:** today's score, regime, recommended allocation, component breakdown,
   stock–bond correlation, recent regime changes, data status.
-- **Signals:** 24 components, including nine VTS-style dashboard metrics (off by default, see
-  METHODOLOGY §14); every component's history over the S&P 500 with regime shading; animated VIX
+- **Signals:** 26 components, including nine VTS-style dashboard metrics and a sector-PCA
+  absorption ratio (off by default, see
+  METHODOLOGY §14 and §15.6); every component's history over the S&P 500 with regime shading; animated VIX
   futures term structure.
 - **Backtest:**
   - every parameter is editable and recomputes instantly in a Web Worker; settings live in

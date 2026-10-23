@@ -83,7 +83,7 @@ function WeightsEditor({ value, onChange, title }: { value: Weights; onChange: (
   );
 }
 
-const GROUPS: ComponentGroup[] = ['Volatility', 'Term structure', 'Sentiment', 'Credit', 'Trend', 'Macro', 'VTS-style'];
+const GROUPS: ComponentGroup[] = ['Volatility', 'Term structure', 'Sentiment', 'Credit', 'Trend', 'Correlation', 'Macro', 'VTS-style'];
 
 export function ParamPanel({
   params,

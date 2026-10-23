@@ -96,6 +96,10 @@ Caveats: these are Cboe-only volumes, and there are structural breaks (retail ca
 
 Joined (spliced) segments are flagged in the data and shaded on charts.
 
+The nine original Select Sector SPDRs (XLB, XLE, XLF, XLI, XLK, XLP, XLU, XLV, XLY; all from
+1998-12-22) are also downloaded, dividend-adjusted. They aren't held; they feed the absorption
+ratio (§15.6). On download (2026-10-23) all nine had 7,001 days with no gaps.
+
 ### 2.5 Rates, credit and financial conditions
 - **US Treasury daily par yield curve** (`home.treasury.gov` CSV, 1990 → today) is the primary
   source for the 3-month bill, 2-year, 10-year and the 10y–2y slope.
@@ -236,6 +240,7 @@ example to read put/call as a contrarian signal).
 | MOVE | MOVE | high | off | 2002-11 |
 | NFCI / STLFSI | index level | high | off | FRED |
 | Curve | 10y − 2y | low (inverted) | off | 1990 |
+| Absorption ratio shift | 15-day vs 1-year average of the sector-PCA absorption ratio, in σ (§15.6) | high | off | 2000-12 |
 
 Notes:
 - The VRP uses past realised volatility, so it is known on the day. The academic definition
@@ -895,3 +900,55 @@ All variants are on top of Growth.
 - **Decision:** Growth is unchanged. Both rules are options in the Backtest panel: *Recovery
   re-entry (broad)*, and *Ends: on re-inversion or breakdown* in the panic-rebound box. Both
   are off by default.
+
+### 15.6 Absorption ratio (sector PCA): rejected
+**Idea.** Kritzman, Li, Page and Rigobon, *Principal Components as a Measure of Systemic Risk*
+(2010/11). When a few common factors explain most of the movement across a market's parts,
+the market is tightly coupled, and shocks spread. They reported that sharp rises in this
+*absorption ratio* came before large drawdowns.
+
+**Definition, fixed before computing it (2026-10-23).**
+- **Universe:** the 9 original Select Sector SPDRs, dividend-adjusted daily log returns.
+- **Absorption ratio** at close t: the exponentially weighted covariance of the last 252
+  returns (half-life 126 days); the ratio is the share of its total variance in the top 2
+  eigenvalues.
+  - 2 of 9 follows the paper's rule of about a fifth of the assets.
+  - Pipeline: `build/absorption.py`; signal `AR2_9`.
+- **Component** (the paper's standardised shift): 15-day mean minus 252-day mean, divided by
+  the 252-day standard deviation. High = risk-off.
+- **Test:** the same bar as §15.4–15.5: Growth plus the component at weight 1, train
+  2007–2016, test 2017–2026. The AR level as a component was reported as a secondary result,
+  not as a candidate.
+
+**Data.** The ratio ranges from 0.58 (Dec 2017) to 0.948 (24 Mar 2020); median 0.80. Today
+it is low, 0.60 (2026-10-22): sectors are moving unusually independently.
+
+| | Train Sharpe / max DD | Test Sharpe / max DD | Full CAGR / max DD | P(better than Growth), test / train |
+|---|---|---|---|---|
+| Growth | 0.50 / −19.7% | 0.85 / −23.8% | 9.7% / −23.8% | — |
+| **+ absorption shift (candidate)** | **0.64** / −16.8% | **0.71** / −26.9% | 9.8% / −26.9% | **1%** / 94% |
+| + AR level (secondary) | 0.54 / −19.0% | 0.83 / −22.9% | 9.9% / −22.9% | 44% / 66% |
+
+- **On its own:** Sharpe 0.40 (train 0.10, test 0.78).
+- **Information coefficient:** the oriented score against next-month S&P 500 returns is −0.07
+  (t −1.0), i.e. no forecasting power.
+- **Overlap with existing components:** correlation 0.53 with trend, 0.42 with the VIX level
+  and 0.40 with credit.
+
+**Why it failed.** The shift peaked *after* most lows:
+- 31 Oct 2008, after Lehman;
+- 31 Dec 2018, a week after the low;
+- 27 Mar 2020, after the low;
+- 5 Mar 2018, after Volmageddon.
+
+Correlation is measured from realised returns over a long window, so it confirms a sell-off
+rather than anticipating it. As a risk-off input it therefore delays re-entry: the weakness
+found in §15.4.
+
+Its one early warning was 23 Aug 2007 (+2.09σ, before the Oct 2007 top). That warning is the
+paper's headline example, and it is why the first half looked good.
+
+**Decision.** Rejected. Judged on 2007–2016 alone, it would have been adopted. It remains
+available as *Absorption ratio shift (sector PCA)* in the new **Correlation** group, off by
+default. The defaults and the live records are unchanged.
+
