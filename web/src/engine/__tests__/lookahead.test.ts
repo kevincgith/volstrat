@@ -37,6 +37,10 @@ const configs: [string, Params][] = [
     }),
   ],
   [
+    'composite re-rank + one-sided VRP',
+    merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, score: { rerank: true, window: 252, minPeriods: 126, components: { vrp: { oneSided: true } } } }),
+  ],
+  [
     'rebound overlay on',
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { rebound: { enabled: true, peak: 1.05 } } }),
   ],

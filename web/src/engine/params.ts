@@ -32,8 +32,9 @@ export const DEFAULT_PARAMS: Params = {
     minPeriods: 252,
     minCoverage: 0.5,
     smoothing: 5,
+    rerank: false,
     components: Object.fromEntries(
-      COMPONENTS.map((c) => [c.id, { enabled: c.defaultEnabled, weight: c.defaultWeight || 1, invert: false }]),
+      COMPONENTS.map((c) => [c.id, { enabled: c.defaultEnabled, weight: c.defaultWeight || 1, invert: false, oneSided: false }]),
     ),
   },
   regime: {

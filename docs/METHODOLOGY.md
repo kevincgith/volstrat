@@ -717,3 +717,32 @@ hurt after 2016. Defaults are unchanged.
   It stays **off by default**. Enabling it is a portfolio decision. The live track record v1
   keeps the original rules; adopting the override would start a v2 record.
 
+### 15.3 Composite re-ranking and a one-sided VRP: rejected
+- **Motivation (2026-10-23).** The variance risk premium dominated the composite: it ranked
+  at the 91st percentile while the other components sat at 14–54. That raised two questions:
+  1. Should the composite be standardised again? Averaging ranks pulls it toward 50, so the
+     regime cut-offs aren't frequencies.
+  2. Should the VRP count only on the stress side?
+- **Settings fixed before testing.**
+  - (A) Re-rank the composite within the components' trailing window (756 days, at least
+    252 of history) before smoothing.
+  - (B) Cap the VRP's oriented score at 50.
+
+| Variant | Sharpe 2007–2016 | Sharpe 2017–2026 | Turnover | Test bootstrap | Regime shares (Crisis…Strong) |
+|---|---|---|---|---|---|
+| Current method | 0.46 | 0.75 | 6.1× | — | 8 / 21 / 37 / 33 / 2 % |
+| A re-rank | 0.39 | 0.52 | 13.2× | worse in 94% | 21 / 20 / 21 / 21 / 18 % |
+| B one-sided VRP | 0.61 | 0.44 | 6.9× | worse in 100% | 9 / 23 / 38 / 30 / 0 % |
+| A + B | 0.43 | 0.57 | 14.5× | worse in 86% | 21 / 21 / 20 / 20 / 18 % |
+
+**Conclusions.**
+- **Re-ranking doubles turnover without better timing.** It spreads time evenly across the
+  regimes, including the leveraged and all-cash extremes.
+- **The VRP's calm-side information is real.** Cutting it helped in 2007–2016 but cost 0.31
+  Sharpe in 2017–2026. A rich premium with low realised volatility has preceded good equity
+  returns, and that is what the composite rewards.
+- **This is the textbook case for the held-out test:** judged on the first half alone, (B)
+  would have been adopted.
+- Both remain available as options (Backtest panel: *Re-rank the composite*; the ½ button
+  per component) and are off by default.
+

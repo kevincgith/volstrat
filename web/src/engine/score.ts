@@ -15,6 +15,8 @@ export interface ComponentSetting {
   weight: number;
   /** Flip the default direction (e.g. contrarian put/call). */
   invert: boolean;
+  /** Count only the stress side: the oriented score is capped at 50 (neutral). */
+  oneSided?: boolean;
 }
 
 export interface ScoreParams {
@@ -27,6 +29,12 @@ export interface ScoreParams {
   minCoverage: number;
   /** EMA span applied to the composite (1 = none). */
   smoothing: number;
+  /**
+   * Re-rank the composite against its own trailing window (same window and
+   * minimum history as the components) before smoothing, so regime cut-offs
+   * mean frequencies: 20 = more stressed than 80% of recent days.
+   */
+  rerank?: boolean;
   components: Record<string, ComponentSetting>;
 }
 
@@ -146,7 +154,9 @@ export function componentScores(d: MarketData, p: ScoreParams): ComponentResult[
     const raw = rawFeature(d, def);
     const pct = standardisedFeature(d, def, p);
     const riskOffHigh = def.riskOffWhenHigh !== setting.invert;
-    const score = riskOffHigh ? pct.map((v) => 100 - v) : pct;
+    const oriented = riskOffHigh ? pct.map((v) => 100 - v) : pct;
+    // one-sided: only the stress side counts; calm readings are treated as neutral
+    const score = setting.oneSided ? oriented.map((v) => (Number.isFinite(v) ? Math.min(v, 50) : v)) : oriented;
     out.push({ def, raw, score });
   }
   return out;
@@ -180,7 +190,8 @@ export function composite(
 
 export function computeScore(d: MarketData, p: ScoreParams): ScoreResult {
   const comps = componentScores(d, p);
-  const { composite: c, coverage } = composite(comps, p.components, d.dates.length, p.minCoverage);
+  const { composite: c0, coverage } = composite(comps, p.components, d.dates.length, p.minCoverage);
+  const c = p.rerank ? rollingPercentile(c0, p.window, p.minPeriods) : c0;
   return { components: comps, composite: c, score: ema(c, p.smoothing), coverage };
 }
 

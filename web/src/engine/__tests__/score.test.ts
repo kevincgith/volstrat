@@ -40,3 +40,33 @@ describe('composite', () => {
     expect(c[2]).toBeNaN();
   });
 });
+
+describe('standardisation refinements', () => {
+  it('one-sided caps the oriented score at 50', async () => {
+    const { componentScores } = await import('../score');
+    const { DEFAULT_PARAMS, merge } = await import('../params');
+    const { makeFixture } = await import('./fixture');
+    const d = makeFixture(800);
+    const p = merge(DEFAULT_PARAMS, { score: { window: 252, minPeriods: 60, components: { vrp: { oneSided: true } } } });
+    const vrp = componentScores(d, p.score).find((c) => c.def.id === 'vrp')!;
+    const vals = Array.from(vrp.score).filter(Number.isFinite);
+    expect(Math.max(...vals)).toBeLessThanOrEqual(50);
+    expect(Math.min(...vals)).toBeLessThan(20); // the stress side is untouched
+  });
+
+  it('re-ranked composite is spread over 0-100', async () => {
+    const { computeScore } = await import('../score');
+    const { DEFAULT_PARAMS, merge } = await import('../params');
+    const { makeFixture } = await import('./fixture');
+    const d = makeFixture(1500);
+    const base = merge(DEFAULT_PARAMS, { score: { window: 252, minPeriods: 60 } });
+    const a = Array.from(computeScore(d, base.score).composite).filter(Number.isFinite);
+    const b = Array.from(computeScore(d, merge(base, { score: { rerank: true } }).score).composite).filter(Number.isFinite);
+    const spread = (x: number[]) => {
+      const s = [...x].sort((p, q) => p - q);
+      return s[Math.floor(s.length * 0.9)]! - s[Math.floor(s.length * 0.1)]!;
+    };
+    expect(spread(b)).toBeGreaterThan(spread(a));
+    expect(spread(b)).toBeGreaterThan(60); // roughly uniform: 10th-90th pct ~80 apart
+  });
+});

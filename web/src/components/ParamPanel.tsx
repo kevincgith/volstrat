@@ -160,6 +160,15 @@ export function ParamPanel({
                     }}
                   />
                   <button
+                    className={`btn ghost tiny ${s.oneSided ? 'on' : ''}`}
+                    title="One-sided: count only the stress side (score capped at 50). Tested for the VRP and rejected out of sample; see METHODOLOGY 15.3."
+                    aria-pressed={!!s.oneSided}
+                    disabled={!s.enabled}
+                    onClick={() => up((d) => void (d.score.components[c.id]!.oneSided = !s.oneSided))}
+                  >
+                    ½
+                  </button>
+                  <button
                     className={`btn ghost tiny ${s.invert ? 'on' : ''}`}
                     title={`Direction: ${c.riskOffWhenHigh !== s.invert ? 'high = risk-off' : 'low = risk-off'} (click to invert)`}
                     aria-pressed={s.invert}
@@ -205,6 +214,12 @@ export function ParamPanel({
           <NumberInput label="Min history (days)" value={sp.minPeriods} min={20} step={21} onChange={(v) => up((d) => void (d.score.minPeriods = Math.round(v)))} hint="A component is only used once it has this many observations." />
           <NumberInput label="Smoothing (EMA days)" value={sp.smoothing} min={1} step={1} onChange={(v) => up((d) => void (d.score.smoothing = Math.max(1, Math.round(v))))} hint="1 = no smoothing." />
         </div>
+        <Toggle
+          label="Re-rank the composite against its own history"
+          checked={!!sp.rerank}
+          onChange={(v) => up((d) => void (d.score.rerank = v))}
+          title="Ranks the averaged score within the same trailing window before smoothing, so regime cut-offs become frequencies. Tested and rejected out of sample (turnover doubles); see METHODOLOGY 15.3."
+        />
         <NumberInput label="Min coverage" value={sp.minCoverage} scale={100} suffix="%" min={0} max={100} step={5} onChange={(v) => up((d) => void (d.score.minCoverage = Math.min(1, Math.max(0, v))))} hint="Share of the enabled weight that must have data for the score to be defined." />
       </Section>
 
