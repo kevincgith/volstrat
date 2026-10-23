@@ -28,3 +28,6 @@ dist-node/
 * [0-9].ts
 * [0-9].tsx
 * [0-9].py
+
+# Private notes (never uploaded)
+PRIVATE-*.md
