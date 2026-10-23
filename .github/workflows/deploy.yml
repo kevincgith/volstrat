@@ -4,9 +4,8 @@ on:
   push:
     branches: [main]
     paths: ["web/**", "data/site/**", ".github/workflows/deploy.yml"]
-  workflow_run:
-    workflows: ["Data update"]
-    types: [completed]
+  # Data updates dispatch this workflow themselves, and only when data changed
+  # (pushes made with GITHUB_TOKEN don't trigger workflows; dispatches do).
   workflow_dispatch:
 
 permissions:
@@ -20,7 +19,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     env:
       # Set the repository variable VITE_BASE to "/" when a custom domain is configured.

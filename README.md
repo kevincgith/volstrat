@@ -104,9 +104,9 @@ already does this through `pyproject.toml`.
 ## Deployment
 
 - **Data schedule:** a Cloudflare Worker (`worker/volstrat-refresh.js`, set up in the
-  Cloudflare dashboard) dispatches the data-update workflow at 23:20, 01:20, 03:20 and
-  11:20 UTC. GitHub's own schedule is best effort and often late, so it's kept only as a
-  fallback.
+  Cloudflare dashboard) dispatches the data-update workflow every hour at :20. A run commits
+  and redeploys the site only when data actually changed. GitHub's own schedule is best effort
+  and often late, so it's kept only as a fallback.
 - **Completeness gate:** a date is only published once every input of the strategy has been
   published for it. Vendors post at different times after the close. Until then the site stays
   on the last complete date, and the Dashboard lists what it is waiting for.

@@ -124,8 +124,9 @@ still revise closing-auction prints and settlements. Rules (`sources/base.py`, `
    tail refresh, put/call daily files, live VX contracts, current-year Treasury file, full Cboe
    index files), so a late correction overwrites the stored value. Only older history is
    frozen.
-3. **Timing.** A Cloudflare cron Worker (`worker/volstrat-refresh.js`) dispatches the run at
-   23:20, 01:20, 03:20 and 11:20 UTC. GitHub's own schedule (23:30 and 11:15 UTC) is kept as a best-effort fallback.
+3. **Timing.** A Cloudflare cron Worker (`worker/volstrat-refresh.js`) dispatches the run
+   every hour at :20. A day is picked up within an hour of its last input being published.
+   Runs that find nothing new commit nothing and don't redeploy. GitHub's own schedule (23:30 and 11:15 UTC) is kept as a best-effort fallback.
 4. **Completeness gate.** Vendors publish at different times after the close. On
    2026-10-22 at 21:10 New York time, Yahoo had index bars but no ETF bars, Cboe's VIX field
    was blank, and CFE settlements were not out. So a date is published, and a live decision
