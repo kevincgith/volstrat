@@ -273,6 +273,7 @@ def build_all(raw: Path, site: Path) -> None:
     complete_through, pending = completeness(raw, cal[-1])
     if pending:
         log.info("complete through %s; waiting for %s", complete_through.date(), pending)
+    full_last = cal[-1]  # latest end-of-day date the index calendar has
     cal = cal[cal <= complete_through]
     dates = [d.strftime("%Y-%m-%d") for d in cal]
 
@@ -324,7 +325,8 @@ def build_all(raw: Path, site: Path) -> None:
     cb = cboe_indices.load(raw)
     ys = {k: _close(raw, k) for k in ("^VIX3M", "^VVIX")}
     checks = [
-        cc.calendar_vs_cboe(cal[-1], cb["VIX"].dropna().index[-1]),
+        # compare the ungated calendar: the gate holding back a date is reported via `pending`
+        cc.calendar_vs_cboe(full_last, cb["VIX"].dropna().index[-1]),
         *cc.vol_index_agreement(cb, ys),
         cc.spy_vs_index(_close(raw, "SPY", "adj_close"), _close(raw, "^SP500TR")),
         cc.futures_vs_spot(sig),
