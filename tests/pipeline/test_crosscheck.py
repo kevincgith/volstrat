@@ -41,3 +41,20 @@ def test_futures_vs_spot_and_staleness():
     assert cc.futures_vs_spot(sig).ok
     st = {c.name: c for c in cc.staleness(sig, ["VIX", "PC_EQUITY"], max_bdays=3)}
     assert st["VIX fresh"].ok and not st["PC_EQUITY fresh"].ok
+
+
+def test_completeness_gate(tmp_path):
+    from volstrat_pipeline.build import export
+    from volstrat_pipeline.sources import yahoo
+    from volstrat_pipeline.storage import safe_write
+
+    idx = pd.bdate_range("2026-10-19", periods=4)  # Mon..Thu
+    full = pd.DataFrame({"close": [1.0, 2, 3, 4], "adj_close": [1.0, 2, 3, 4]}, index=idx)
+    for sym in export.REQUIRED_YAHOO:
+        safe_write(full if sym != "SPY" else full.iloc[:3], tmp_path / yahoo.cache_name(sym))
+    cb = pd.DataFrame({k: [20.0, 21, 22, 23] for k in export.REQUIRED_CBOE}, index=idx)
+    cb.loc[idx[-1], "VIX"] = np.nan  # Cboe row exists but VIX not yet filled
+    safe_write(cb, tmp_path / "cboe_indices.csv")
+    complete, pending = export.completeness(tmp_path, idx[-1])
+    assert complete == idx[2]
+    assert set(pending) == {"Yahoo SPY", "Cboe VIX"}

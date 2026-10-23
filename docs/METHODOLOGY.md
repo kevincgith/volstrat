@@ -124,11 +124,22 @@ still revise closing-auction prints and settlements. Rules (`sources/base.py`, `
    tail refresh, put/call daily files, live VX contracts, current-year Treasury file, full Cboe
    index files), so a late correction overwrites the stored value. Only older history is
    frozen.
-3. **Timing.** The evening run is at 23:30 UTC (19:30 EDT / 18:30 EST), after the cutoff.
-   The morning catch-up (11:15 UTC) uses the previous day.
-4. **Disclosure.** The cutoff of the last fetch is published in `meta.json` and on the
+3. **Timing.** A Cloudflare cron Worker dispatches the run at 23:20, 01:20, 03:20 and
+   11:20 UTC. GitHub's own schedule (23:30 and 11:15 UTC) is kept as a best-effort fallback.
+4. **Completeness gate.** Vendors publish at different times after the close. On
+   2026-10-22 at 21:10 New York time, Yahoo had index bars but no ETF bars, Cboe's VIX field
+   was blank, and CFE settlements were not out. So a date is published, and a live decision
+   logged, only once every input of the default strategy has it:
+   - Yahoo ^GSPC, SPY, SSO, IEF, AGG, GLD, XLU, BIL and HYG;
+   - Cboe VIX, VIX3M, VVIX and SKEW;
+   - CFE VIX futures;
+   - Cboe equity put/call.
+
+   Until then everything stays on the last complete date, and `meta.json` / the Dashboard
+   list the pending inputs.
+5. **Disclosure.** The cutoff of the last fetch is published in `meta.json` and on the
    Dashboard.
-5. **Past-week reconciliation.** Every run compares the freshly downloaded values for the
+6. **Past-week reconciliation.** Every run compares the freshly downloaded values for the
    last 5 business days with the stored ones, for each source: Cboe index closes, VX
    settlements per contract, put/call ratios, Treasury yields, Yahoo unadjusted closes.
    - Changed values are recorded with their old and new values (`revisions` in each

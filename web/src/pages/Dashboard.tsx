@@ -320,6 +320,16 @@ export default function Dashboard() {
             </span>
           )}
         </p>
+        {data.meta.pending && Object.keys(data.meta.pending).length > 0 && (
+          <p className="small">
+            <span className="warn">
+              Waiting for {data.meta.eod_cutoff}: {Object.keys(data.meta.pending).join(', ')}.
+            </span>{' '}
+            <span className="muted">
+              A date is only published once every input of the strategy has it; until then everything stays on {data.meta.complete_through}.
+            </span>
+          </p>
+        )}
         {(() => {
           const rec = sources.filter((x) => (x.reconciled_days ?? 0) > 0);
           const revs = sources.flatMap((x) => (x.revisions ?? []).map((r) => ({ ...r, source: x.name })));

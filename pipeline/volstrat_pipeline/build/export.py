@@ -234,11 +234,46 @@ def _fetch_meta(raw: Path) -> dict:
     return json.loads(p.read_text()) if p.exists() else {}
 
 
+# Inputs the default strategy needs on every day it trades: a date is only
+# published (and a live decision logged) once all of them have that date.
+# Vendors publish at different times after the close (Yahoo's index bars come
+# before its ETF bars; Cboe's VIX row and CFE settlements can lag by hours).
+REQUIRED_YAHOO = ["^GSPC", "SPY", "SSO", "IEF", "AGG", "GLD", "XLU", "BIL", "HYG"]
+REQUIRED_CBOE = ["VIX", "VIX3M", "VVIX", "SKEW"]
+
+
+def completeness(raw: Path, cal_last: pd.Timestamp) -> tuple[pd.Timestamp, dict[str, str]]:
+    """Last date on which every required input exists, and the inputs lagging cal_last."""
+    last: dict[str, pd.Timestamp] = {}
+    for sym in REQUIRED_YAHOO:
+        v = _close(raw, sym, "adj_close")
+        if len(v):
+            last[f"Yahoo {sym}"] = v.index[-1]
+    cb = cboe_indices.load(raw)
+    for k in REQUIRED_CBOE:
+        v = cb[k].dropna()
+        if len(v):
+            last[f"Cboe {k}"] = v.index[-1]
+    vx = cfe_vx.load(raw)
+    if vx is not None:
+        last["CFE VIX futures"] = vx["date"].max()
+    pc = cboe_putcall.load(raw)
+    if pc is not None:
+        last["Cboe equity put/call"] = pc["equity"].dropna().index[-1]
+    complete = min([cal_last, *last.values()])
+    pending = {k: d.date().isoformat() for k, d in last.items() if d < cal_last}
+    return complete, pending
+
+
 def build_all(raw: Path, site: Path) -> None:
     gspc = yahoo.load(raw, "^GSPC")
     if gspc is None:
         raise FileNotFoundError("S&P 500 history missing; run `volstrat fetch` first")
     cal = master_calendar(gspc)
+    complete_through, pending = completeness(raw, cal[-1])
+    if pending:
+        log.info("complete through %s; waiting for %s", complete_through.date(), pending)
+    cal = cal[cal <= complete_through]
     dates = [d.strftime("%Y-%m-%d") for d in cal]
 
     sig = build_signals(raw, cal)
@@ -309,6 +344,8 @@ def build_all(raw: Path, site: Path) -> None:
             "sources": status,
             "checks": [c.to_dict() for c in checks],
             "eod_cutoff": _fetch_meta(raw).get("eod_cutoff"),
+            "complete_through": dates[-1],
+            "pending": pending,
         },
         site / "meta.json",
     )

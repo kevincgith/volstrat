@@ -103,6 +103,12 @@ already does this through `pyproject.toml`.
 
 ## Deployment
 
+- **Data schedule:** a Cloudflare Worker (`worker/`) dispatches the data-update workflow at
+  23:20, 01:20, 03:20 and 11:20 UTC. GitHub's own schedule is best effort and often late, so
+  it's kept only as a fallback. Setup walkthrough: [worker/README.md](worker/README.md).
+- **Completeness gate:** a date is only published once every input of the strategy has been
+  published for it. Vendors post at different times after the close. Until then the site stays
+  on the last complete date, and the Dashboard lists what it is waiting for.
 - `ci.yml` runs lint, tests, typecheck and build on every PR and every push to `main`.
 - `deploy.yml` builds the site, bundles `data/site` and publishes it to GitHub Pages. It runs on
   pushes that touch `web/` or `data/site/`, and after each successful data update.
