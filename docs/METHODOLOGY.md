@@ -138,6 +138,16 @@ still revise closing-auction prints and settlements. Rules (`sources/base.py`, `
 
    Until then everything stays on the last complete date, and `meta.json` / the Dashboard
    list the pending inputs.
+   - **VIX futures fast path.** CFE's per-contract history files update hours after
+     Cboe's daily settlement file (`…/futures/market_statistics/settlement/csv?dt=`). Days
+     after the last history date are filled from that file (monthly contracts, settlement
+     price only). When the history file catches up, its row replaces the fast-path row, and
+     the past-week reconciliation reports any difference. Verified identical for all 9
+     monthlies on 2026-10-21.
+   - **Alert.** If the latest end-of-day date is still incomplete at **12:00 New York time
+     on the next business day**, four hours before the close its decision would trade at,
+     the run opens one `data-incomplete` issue. It comments while the gap lasts and closes
+     automatically once the day completes.
 5. **Disclosure.** The cutoff of the last fetch is published in `meta.json` and on the
    Dashboard.
 6. **Past-week reconciliation.** Every run compares the freshly downloaded values for the

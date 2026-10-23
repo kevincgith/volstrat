@@ -100,6 +100,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/data-update.yml/enable"
 
+      - name: Alert if a day stays incomplete
+        # build sets meta.incomplete_alert when the latest end-of-day date is still
+        # missing an input at 12:00 New York time the next business day.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          msg=$(python3 -c "import json; print(json.load(open('data/site/meta.json')).get('incomplete_alert') or '')")
+          open=$(gh issue list --label data-incomplete --state open --json number -q '.[0].number')
+          if [ -n "$msg" ]; then
+            if [ -n "$open" ]; then
+              gh issue comment "$open" --body "Still incomplete $(date -u +%Y-%m-%dT%H:%MZ). $msg"
+            else
+              gh issue create --title "Data incomplete: live decision on hold" --body "$msg" --label data-incomplete
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "Data complete again (run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)."
+          fi
+
       - name: Notify regime change
         if: steps.signal.outputs.changed == 'true'
         env:

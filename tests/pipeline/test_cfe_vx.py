@@ -36,3 +36,22 @@ def test_normalise_rescales_pre_2007_and_drops_zero_settles():
     out = normalise(df, pd.Timestamp("2007-04-18"), "archive")
     assert out["settle"].tolist() == [15.2, 15.2, 15.3]
     assert (out["expiry"] == pd.Timestamp("2007-04-18")).all()
+
+
+def test_parse_settlement_file_keeps_live_monthlies_only():
+    from volstrat_pipeline.sources.cfe_vx import parse_settlement_file
+
+    text = "\n".join(
+        [
+            "Product,Symbol,Expiration Date,Price",
+            "VX,VX/V6,2026-10-21,16.82",  # expiring today: not live
+            "VX,VX43/V6,2026-10-28,18.2382",  # weekly: ignored
+            "VX,VX/X6,2026-11-18,18.2382",
+            "VX,VX/Z6,2026-12-16,18.5457",
+            "VXM,VXM/X6,2026-11-18,18.24",  # mini: ignored
+        ]
+    )
+    df = parse_settlement_file(text, pd.Timestamp("2026-10-21"))
+    assert df["expiry"].dt.strftime("%Y-%m-%d").tolist() == ["2026-11-18", "2026-12-16"]
+    assert df["settle"].tolist() == [18.2382, 18.5457]
+    assert (df["src"] == "settle_file").all()

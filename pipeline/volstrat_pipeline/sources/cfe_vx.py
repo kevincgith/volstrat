@@ -10,6 +10,14 @@ Quirks handled here:
   * prices before 2007-03-26 are quoted at 10x the index (pre-redenomination);
   * a few archive rows carry an extra trailing field.
 
+Fast path: the per-contract history files are updated hours after Cboe's
+daily settlement file (www.cboe.com/us/futures/market_statistics/settlement/
+csv?dt=YYYY-MM-DD). Days after the last history date are filled from that file
+(monthly contracts only, settlement price only, src="settle_file"); once the
+history file has the day, its row replaces the fast-path row and the past-week
+reconciliation reports any difference. Verified identical on 2026-10-21 for all
+9 listed monthlies.
+
 Cache: data/raw/vx_contracts.csv in long format (date, expiry, ...).
 """
 
@@ -30,6 +38,7 @@ from .base import SourceStatus, eod_cutoff
 log = logging.getLogger(__name__)
 
 LIST_URL = "https://www.cboe.com/us/futures/market_statistics/historical_data/product/list/VX/"
+SETTLE_URL = "https://www.cboe.com/us/futures/market_statistics/settlement/csv?dt={d}"
 CDN = "https://cdn.cboe.com/"
 ARCHIVE_URL = (
     "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_{code}{yy:02d}_VX.csv"
@@ -108,6 +117,39 @@ def _fetch_current(path: str, expiry: str) -> pd.DataFrame | None:
         return None
     df, _ = parse_contract_csv(r.text)
     return normalise(df, pd.Timestamp(expiry), "current") if not df.empty else None
+
+
+def parse_settlement_file(text: str, day: pd.Timestamp) -> pd.DataFrame:
+    """Monthly VX settlements from Cboe's daily settlement CSV (weeklies ignored)."""
+    df = pd.read_csv(io.StringIO(text))
+    if not {"Product", "Symbol", "Expiration Date", "Price"} <= set(df.columns):
+        raise ValueError(f"unexpected settlement columns {list(df.columns)}")
+    m = df[(df["Product"] == "VX") & df["Symbol"].str.match(r"^VX/[A-Z]\d$")]
+    out = pd.DataFrame(
+        {
+            "date": day,
+            "expiry": pd.to_datetime(m["Expiration Date"]),
+            "settle": pd.to_numeric(m["Price"], errors="coerce"),
+        }
+    )
+    out = out[(out["settle"] > 0) & (out["expiry"] > day)]  # live contracts only
+    for c in ("open", "high", "low", "close", "volume", "open_interest"):
+        out[c] = float("nan")
+    out["src"] = "settle_file"
+    return out
+
+
+def settlement_fast_path(after: pd.Timestamp, cutoff: pd.Timestamp) -> pd.DataFrame:
+    """Settlements for business days in (after, cutoff] from the daily file."""
+    frames = []
+    for day in pd.bdate_range(after + pd.Timedelta(days=1), cutoff):
+        r = get(SETTLE_URL.format(d=day.strftime("%Y-%m-%d")), missing_ok=(403, 404), retries=2)
+        if r is None or not r.text.strip():
+            continue
+        f = parse_settlement_file(r.text, day)
+        if len(f) >= 2:  # a holiday file is empty; a real day lists ~8 monthlies
+            frames.append(f)
+    return pd.concat(frames) if frames else pd.DataFrame()
 
 
 def load(raw_dir: Path) -> pd.DataFrame | None:
@@ -190,6 +232,20 @@ def update(raw_dir: Path, workers: int = 8, cutoff: pd.Timestamp | None = None) 
     else:
         combined = fresh
     combined = combined.sort_values(["date", "expiry"]).reset_index(drop=True)
+
+    # Fast path for days the history files don't have yet (rows already in the
+    # history files always win: fast-path rows are only added for later days).
+    hist_last = combined.loc[combined["src"] != "settle_file", "date"].max()
+    combined = combined[(combined["src"] != "settle_file") | (combined["date"] > hist_last)]
+    fast = settlement_fast_path(hist_last, cutoff)
+    if len(fast):
+        fast = fast[~fast["date"].isin(combined.loc[combined["src"] != "settle_file", "date"])]
+        combined = pd.concat([combined[~combined["date"].isin(fast["date"])], fast])
+        combined = combined.sort_values(["date", "expiry"]).reset_index(drop=True)
+        st.warnings.append(
+            f"settlements for {', '.join(sorted({str(d.date()) for d in fast['date']}))} "
+            "from the daily settlement file (history files not yet updated)"
+        )
 
     # Guard: never shrink or move backwards.
     if combined.empty:

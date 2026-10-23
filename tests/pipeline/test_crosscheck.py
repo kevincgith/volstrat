@@ -58,3 +58,30 @@ def test_completeness_gate(tmp_path):
     complete, pending = export.completeness(tmp_path, idx[-1])
     assert complete == idx[2]
     assert set(pending) == {"Yahoo SPY", "Cboe VIX"}
+
+
+def test_incomplete_alert_deadline():
+    from volstrat_pipeline.build.export import incomplete_alert
+
+    ny = "America/New_York"
+    pend = {"CFE VIX futures": "2026-10-21"}
+    # Thu 22 Oct data still missing: no alert overnight or Friday morning ...
+    assert (
+        incomplete_alert("2026-10-22", "2026-10-21", pend, pd.Timestamp("2026-10-23 09:00", tz=ny))
+        is None
+    )
+    # ... alert from Friday 12:00 New York
+    msg = incomplete_alert(
+        "2026-10-22", "2026-10-21", pend, pd.Timestamp("2026-10-23 12:05", tz=ny)
+    )
+    assert msg and "CFE VIX futures" in msg
+    # complete: never an alert
+    assert (
+        incomplete_alert("2026-10-22", "2026-10-22", {}, pd.Timestamp("2026-10-23 15:00", tz=ny))
+        is None
+    )
+    # Friday data: deadline is Monday noon
+    assert (
+        incomplete_alert("2026-10-23", "2026-10-22", pend, pd.Timestamp("2026-10-26 11:00", tz=ny))
+        is None
+    )

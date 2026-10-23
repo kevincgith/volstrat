@@ -265,6 +265,24 @@ def completeness(raw: Path, cal_last: pd.Timestamp) -> tuple[pd.Timestamp, dict[
     return complete, pending
 
 
+def incomplete_alert(eod: str | None, complete_through: str, pending: dict, now=None) -> str | None:
+    """Message if the latest end-of-day date is still incomplete at 12:00 New York time on
+    the next business day (4 hours before the close its decision would trade at)."""
+    if not eod or not pending or complete_through >= eod:
+        return None
+    now = now if now is not None else pd.Timestamp.now(tz="America/New_York")
+    deadline = (pd.Timestamp(eod) + pd.tseries.offsets.BDay(1)).tz_localize("America/New_York")
+    deadline += pd.Timedelta(hours=12)
+    if now < deadline:
+        return None
+    waiting = ", ".join(f"{k} (last {v})" for k, v in pending.items())
+    return (
+        f"Data for {eod} is still incomplete at {now:%Y-%m-%d %H:%M} New York time; "
+        f"the site and the live track record are held at {complete_through}. "
+        f"Waiting for: {waiting}."
+    )
+
+
 def build_all(raw: Path, site: Path) -> None:
     gspc = yahoo.load(raw, "^GSPC")
     if gspc is None:
@@ -348,6 +366,9 @@ def build_all(raw: Path, site: Path) -> None:
             "eod_cutoff": _fetch_meta(raw).get("eod_cutoff"),
             "complete_through": dates[-1],
             "pending": pending,
+            "incomplete_alert": incomplete_alert(
+                _fetch_meta(raw).get("eod_cutoff"), dates[-1], pending
+            ),
         },
         site / "meta.json",
     )
