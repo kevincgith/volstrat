@@ -15,3 +15,7 @@ knowing about a row is recorded here instead.
   the day with complete data gives score **37.7** (logged: 42.82). The regime and target are
   unchanged: Neutral, SPX 60% / IEF 40%. 37.7 sits just above the 37.5 level at which
   hysteresis would have moved the regime to Risk-Off.
+- **2026-10-23: defaults changed.** The site's default profile became *Growth*, with its own
+  record in `data/track/v2/`. v1 keeps the Balanced parameters frozen in `params.json` and
+  continues unchanged. Fields added to the parameters later (such as the rebound override)
+  are filled with their "off" value, never the new defaults; a test checks this.

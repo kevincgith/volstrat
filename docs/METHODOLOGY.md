@@ -294,22 +294,27 @@ Full-sample normalisation is never used, because it would leak future informatio
   responsiveness.
 
 ## 6. Allocation mapping
-- **Regime mode (default):** each regime has its own editable portfolio. Defaults:
+- **Regime mode (default):** each regime has its own editable portfolio. Defaults (the
+  *Growth* profile since 2026-10-23; Balanced, the earlier defaults, in brackets):
   - Crisis: 100% T-bills (BIL)
   - Risk-Off: 50% IEF, 25% GLD, 25% XLU
-  - Neutral: 60% S&P 500, 40% IEF
-  - Risk-On: 100% S&P 500
+  - Neutral: 80% S&P 500, 20% IEF (Balanced: 60% / 40%)
+  - Risk-On: 75% S&P 500, 25% SSO, i.e. 125% equity (Balanced: 100% S&P 500)
   - Strong Risk-On: 100% SSO (2×)
+  - Growth also enables the panic-rebound re-entry (§15.2); Balanced does not.
 - **Continuous mode:** equity exposure moves linearly from `minEquity` at score ≤ `scoreLow`
   to `maxEquity` at score ≥ `scoreHigh` (defaults 0% at 20 and 150% at 80). Exposure up to
   100% is the S&P 500 plus the defensive mix (default 50% IEF / 25% GLD / 25% BIL). Above
   100% it is a fully invested blend of the S&P 500 and the leveraged ETF.
 - **Presets:**
-  - *Conservative:* no leverage, slower signal, 40/60 in Neutral.
-  - *Balanced:* the defaults.
-  - *Aggressive:* faster signal, 2× in Risk-On and 3× in Strong Risk-On.
-  - *Growth:* 80/20 in Neutral, 125% equity in Risk-On (75% S&P 500, 25% SSO), and the
+  - *Growth:* the defaults. 80/20 in Neutral, 125% equity in Risk-On, and the
     panic-rebound re-entry (§15.2). See §15.4.
+  - *Balanced:* the defaults until 2026-10-23, with every optional feature off (live
+    track record v1).
+  - *Conservative:* no leverage, slower signal, 40/60 in Neutral.
+  - *Aggressive:* faster signal, 2× in Risk-On and 3× in Strong Risk-On.
+  - Presets other than Growth are changes to Balanced. Links and saved profiles created
+    before 2026-10-23 store changes to Balanced and still open with the same settings.
   - *Continuous:* continuous mode.
 
 ### 6.1 Adaptive hedge (optional, off by default)
@@ -443,7 +448,8 @@ Known limitations:
   2022).
 ## 10. Behaviour in stress episodes: 2008, 2018, 2020, 2022
 The in-app Methodology page computes these tables live for the current parameters. The
-snapshot below uses the **default (Balanced)** parameters and data through 2026-10-21.
+snapshot below uses the **Balanced** parameters (the defaults until 2026-10-23) and data
+through 2026-10-21.
 
 | Episode window | S&P 500 | Strategy | Lowest score | First Crisis / Risk-Off day | Days in Crisis / Risk-Off |
 |---|---|---|---|---|---|
@@ -526,7 +532,7 @@ round of fitting to the same history.
 
 ## 12. Daily signal snapshot and alerts
 After the pipeline runs, the daily Action executes the same TypeScript engine in Node
-(`web/scripts/signal.ts`) with the **default (Balanced)** parameters and writes:
+(`web/scripts/signal.ts`) with the **default (Growth since 2026-10-23)** parameters and writes:
 - `data/site/latest.json`: date, score, regime, allocation and components.
 - `data/site/regime_history.json`: every regime change since the score begins.
 - `data/site/feed.xml`: an RSS feed of the last 30 regime changes.
@@ -534,6 +540,26 @@ After the pipeline runs, the daily Action executes the same TypeScript engine in
 If the regime differs from the previous day's `latest.json`, the Action opens a GitHub
 issue labelled `regime-change` with the new regime, allocation and component table.
 GitHub emails the repository's watchers.
+
+### 12.1 Live track records
+The only results on the site that are not backtests. Each version has its own folder,
+`data/track/vN/`:
+- `params.json`: the parameters, frozen on the version's first run.
+- `decisions.csv`: one row per complete trading day (score, regime, target weights, data
+  cut-off, time recorded). It is appended after the close's data is complete and before the
+  target trades at the next close. Rows are never edited or backfilled.
+- `NOTES.md`: annotations, since rows are never edited.
+
+Parameter fields added after a version was frozen take their *off* value from the Balanced
+base (`BASE_PARAMS`), never from the current defaults, so new options cannot change a running
+record. A test checks that v1 still resolves to exactly the parameters it was frozen with.
+
+| Version | Profile | Frozen | First decision |
+|---|---|---|---|
+| v1 | Balanced | 2026-10-22 | 2026-10-21 close |
+| v2 | Growth (§15.4) | 2026-10-23 | 2026-10-22 close |
+
+Both versions continue side by side. Changing the defaults again would start v3.
 
 ## 13. Optimisation (allocation and signal weights)
 The **Optimise** tab (`web/src/engine/optimise.ts`) searches for better regime portfolios and
@@ -716,7 +742,8 @@ hurt after 2016. Defaults are unchanged.
 - **Verdict:** the first change to improve both halves and to beat fixed parameters out of
   sample. Caveats: the hypothesis came from full-sample statistics (only the rule's settings
   were fixed blind), 92% is below the conventional 95% bar, and 20 events is a small sample.
-  It stays **off by default**. Enabling it is a portfolio decision. The live track record v1
+  It stayed **off by default** at first; it became part of the default Growth profile with
+  §15.4 on 2026-10-23. The live track record v1
   keeps the original rules; adopting the override would start a v2 record.
 
 ### 15.3 Composite re-ranking and a one-sided VRP: rejected
@@ -805,6 +832,6 @@ Scaled to the S&P 500's volatility with the same method as the card, the rebound
   drawdowns near −39%.
 - The adaptive hedge adds little and was prompted by 2022 (hindsight), so it is not in the
   preset.
-- The defaults and the live track record v1 are unchanged. *Growth* is a preset; adopting
-  it would start a new live record.
+- **Adopted as the default on 2026-10-23**, with live track record v2 (§12.1). The v1 record
+  continues with the Balanced parameters, so the two run side by side out of sample.
 

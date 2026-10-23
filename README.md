@@ -49,6 +49,11 @@ GitHub Action).
 - **Compare:** saved parameter profiles side by side.
 - **Methodology:** plain-English documentation with stress-episode tables computed from the
   data.
+- **Default profile:** *Growth* since 2026-10-23: 80/20 in Neutral, 125% equity in Risk-On,
+  and a re-entry rule after panics (METHODOLOGY §15.4). The earlier defaults remain as the
+  *Balanced* preset.
+- **Live track records:** decisions logged daily with frozen parameters, append-only, in
+  `data/track/` (v1 Balanced, v2 Growth), replayed on the Dashboard (METHODOLOGY §12.1).
 - **Alerts:** an RSS feed (`/data/feed.xml`) and a GitHub issue when the default profile's
   regime changes. Watch the repository to get these by email.
 

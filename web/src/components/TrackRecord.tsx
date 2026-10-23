@@ -5,7 +5,7 @@ import type { Weights } from '../engine/allocation';
 import { buildAssets } from '../engine/assets';
 import { simulate } from '../engine/backtest';
 import type { MarketData } from '../engine/data';
-import { DEFAULT_PARAMS, merge, type Params } from '../engine/params';
+import { BASE_PARAMS, merge, type Params } from '../engine/params';
 import { REGIMES } from '../engine/score';
 import { useTheme } from '../theme';
 import { Card } from './ui';
@@ -18,33 +18,47 @@ interface Decision {
   cutoff: string;
   recorded: string;
 }
-interface TrackFile {
+interface Track {
   version: string;
+  label?: string;
   frozen_at_utc: string;
   params: Params;
   decisions: Decision[];
 }
+/** Current format lists every version; before v2 the file held v1 alone. */
+type TrackFile = { tracks: Track[] } | Track;
 
 /**
- * Live, out-of-sample track record: decisions logged daily with frozen
- * parameters (append-only, data/track/v1), replayed against actual returns.
+ * Live, out-of-sample track records: decisions logged daily with frozen
+ * parameters (append-only, data/track/vN), replayed against actual returns.
  */
 export function TrackRecord({ data }: { data: MarketData }) {
-  const { theme } = useTheme();
-  const c = colors(theme);
-  const [track, setTrack] = useState<TrackFile | null>(null);
-  const [missing, setMissing] = useState(false);
+  const [tracks, setTracks] = useState<Track[] | null>(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data/track_record.json`, { cache: 'no-cache' })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((j: TrackFile) => setTrack(j))
-      .catch(() => setMissing(true));
+      .then((j: TrackFile) => setTracks('tracks' in j ? j.tracks : [j]))
+      .catch(() => setTracks([]));
   }, [data.meta.generated_at]); // reload with each new data build
 
+  if (!tracks) return null;
+  return (
+    <>
+      {tracks.map((t) => (
+        <TrackCard key={t.version} track={t} data={data} />
+      ))}
+    </>
+  );
+}
+
+function TrackCard({ track, data }: { track: Track; data: MarketData }) {
+  const { theme } = useTheme();
+  const c = colors(theme);
   const perf = useMemo(() => {
-    if (!track || !track.decisions.length) return null;
-    const p = merge(DEFAULT_PARAMS, track.params);
+    if (!track.decisions.length) return null;
+    // as in scripts/signal.ts: fields added after freezing are off
+    const p = merge(BASE_PARAMS, track.params);
     const assets = buildAssets(data, p.assets);
     const idx = new Map(data.dates.map((d, i) => [d, i]));
     const first = idx.get(track.decisions[0]!.date);
@@ -68,16 +82,15 @@ export function TrackRecord({ data }: { data: MarketData }) {
     return { start: s <= end ? data.dates[s] : null, days: Math.max(0, end - s), strat: ret(strat.nav), spx: ret(spx.nav), b6040: ret(b6040.nav) };
   }, [track, data]);
 
-  if (missing) return null;
-  if (!track) return null;
   const last = track.decisions.at(-1);
   const recent = [...track.decisions].reverse().slice(0, 8);
   return (
-    <Card title={`Live track record (${track.version}, out-of-sample)`}>
+    <Card title={`Live track record ${track.version}: ${track.label ?? 'Balanced'} (out-of-sample)`}>
       <p className="small" style={{ marginTop: 0 }}>
-        Decisions are logged after every daily data run with parameters frozen on {track.frozen_at_utc.slice(0, 10)} (Balanced defaults), appended only
-        and never revised. The log lives in the repository (<code>data/track/v1/decisions.csv</code>), so its history is auditable. This is the only part
-        of the site that is not a backtest.
+        Decisions are logged after every daily data run with the {track.label ?? 'Balanced'} parameters frozen on {track.frozen_at_utc.slice(0, 10)},
+        appended only and never revised. The log lives in the repository (<code>data/track/{track.version}/decisions.csv</code>), so its history is auditable.
+        {track.version === 'v1' && ' v1 kept the Balanced defaults when the defaults changed to Growth on 2026-10-23; it continues unchanged.'} This is the only
+        part of the site that is not a backtest.
       </p>
       {perf && perf.start && perf.days > 0 ? (
         <div className="track-stats">

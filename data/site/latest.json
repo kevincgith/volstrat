@@ -1,13 +1,13 @@
 {
- "profile": "Balanced (default parameters)",
+ "profile": "Growth (default parameters)",
  "date": "2026-10-22",
  "score": 37.7,
  "composite": 31.6,
  "regime": "Neutral",
  "regime_since": "2026-09-10",
  "allocation": {
-  "SPX": 0.6,
-  "IEF": 0.4
+  "SPX": 0.8,
+  "IEF": 0.2
  },
  "components": [
   {
@@ -65,5 +65,5 @@
    "score": 19.6
   }
  ],
- "generated_at": "2026-10-23T06:01:58Z"
+ "generated_at": "2026-10-23T07:37:26Z"
 }

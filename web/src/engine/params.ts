@@ -25,7 +25,15 @@ export interface Params {
   benchmarks: BenchmarkParams;
 }
 
-export const DEFAULT_PARAMS: Params = {
+/**
+ * Reference parameters with every optional feature switched off: the Balanced
+ * profile, and the defaults until 2026-10-23 (frozen in live track record v1).
+ *
+ * Frozen parameter files (data/track/vN/params.json) fill fields added after
+ * they were frozen from BASE_PARAMS, so a new optional field must be "off" here
+ * or it would silently change an existing track record.
+ */
+export const BASE_PARAMS: Params = {
   score: {
     method: 'percentile',
     window: 756,
@@ -71,6 +79,24 @@ export const DEFAULT_PARAMS: Params = {
   benchmarks: { equity: 'SPX', bond: 'AGG', volTarget: 0.12, volLookback: 21 },
 };
 
+/**
+ * Growth: spends the drawdown savings on exposure (80/20 in Neutral, 125% equity
+ * in Risk-On) and re-enters after panics (rebound override). Tested out of
+ * sample in METHODOLOGY 15.4; the default since 2026-10-23 (track record v2).
+ */
+export const GROWTH_PATCH = {
+  regime: { rebound: { enabled: true } },
+  allocation: {
+    regimePortfolios: [
+      { BIL: 1 }, // Crisis
+      { IEF: 0.5, GLD: 0.25, XLU: 0.25 }, // Risk-Off
+      { SPX: 0.8, IEF: 0.2 }, // Neutral
+      { SPX: 0.75, SSO: 0.25 }, // Risk-On
+      { SSO: 1 }, // Strong Risk-On
+    ],
+  },
+};
+
 function clone<T>(x: T): T {
   return JSON.parse(JSON.stringify(x)) as T;
 }
@@ -90,6 +116,8 @@ export function merge<T>(base: T, patch: unknown): T {
   }
   return out as T;
 }
+
+export const DEFAULT_PARAMS: Params = merge(BASE_PARAMS, GROWTH_PATCH);
 
 /** Minimal patch p such that merge(base, p) deep-equals `value`. */
 export function diff(base: unknown, value: unknown): unknown {
@@ -114,9 +142,16 @@ export interface Preset {
 
 export const PRESETS: Preset[] = [
   {
+    id: 'growth',
+    label: 'Growth',
+    description:
+      'Defaults: 80/20 in neutral, 125% equity in risk-on, 2x S&P in strong risk-on, T-bills in crisis, plus the panic-rebound re-entry (Methodology 15.4).',
+    patch: GROWTH_PATCH,
+  },
+  {
     id: 'balanced',
     label: 'Balanced',
-    description: 'Defaults: 2x S&P in strong risk-on, 60/40 in neutral, T-bills in crisis.',
+    description: 'The defaults until 2026-10-23 (live track record v1): 60/40 in neutral, 100% S&P in risk-on, no rebound re-entry.',
     patch: {},
   },
   {
@@ -156,24 +191,6 @@ export const PRESETS: Preset[] = [
     },
   },
   {
-    id: 'growth',
-    label: 'Growth',
-    description:
-      'Spends the drawdown savings on exposure: 80/20 in neutral, 125% equity in risk-on, plus the panic-rebound re-entry. Tested out of sample (Methodology 15.4).',
-    patch: {
-      regime: { rebound: { enabled: true } },
-      allocation: {
-        regimePortfolios: [
-          { BIL: 1 },
-          { IEF: 0.5, GLD: 0.25, XLU: 0.25 },
-          { SPX: 0.8, IEF: 0.2 },
-          { SPX: 0.75, SSO: 0.25 },
-          { SSO: 1 },
-        ],
-      },
-    },
-  },
-  {
     id: 'continuous',
     label: 'Continuous',
     description: 'Equity exposure scales linearly with the score from 0% (score 20) to 150% (score 80).',
@@ -183,20 +200,28 @@ export const PRESETS: Preset[] = [
 
 export function presetParams(id: string): Params {
   const p = PRESETS.find((x) => x.id === id);
-  return merge(DEFAULT_PARAMS, p?.patch ?? {});
+  // presets are patches on the all-features-off base, not on the current defaults
+  return merge(BASE_PARAMS, p?.patch ?? {});
 }
 
-/** URL-safe compact encoding of the difference from defaults. */
+/**
+ * URL-safe compact encoding of the difference from the defaults. Since the
+ * defaults changed on 2026-10-23, encodings carry `_v: 2`; older links and
+ * saved profiles (no `_v`) were diffs from BASE_PARAMS and still decode to the
+ * same settings.
+ */
 export function encodeParams(p: Params): string {
   const d = diff(DEFAULT_PARAMS, p);
-  return d === undefined ? '' : compressToEncodedURIComponent(JSON.stringify(d));
+  return d === undefined ? '' : compressToEncodedURIComponent(JSON.stringify({ ...(d as Patch), _v: 2 }));
 }
 
 export function decodeParams(s: string | null | undefined): Params {
   if (!s) return clone(DEFAULT_PARAMS);
   try {
     const json = decompressFromEncodedURIComponent(s);
-    return json ? merge(DEFAULT_PARAMS, JSON.parse(json)) : clone(DEFAULT_PARAMS);
+    if (!json) return clone(DEFAULT_PARAMS);
+    const { _v, ...patch } = JSON.parse(json) as Patch;
+    return merge(_v === 2 ? DEFAULT_PARAMS : BASE_PARAMS, patch);
   } catch {
     return clone(DEFAULT_PARAMS);
   }

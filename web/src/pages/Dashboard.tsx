@@ -255,7 +255,7 @@ export default function Dashboard() {
         title="Recent regime changes"
         actions={
           <span className="small">
-            <a href={`${import.meta.env.BASE_URL}data/feed.xml`} title="RSS feed of regime changes for the default (Balanced) profile">
+            <a href={`${import.meta.env.BASE_URL}data/feed.xml`} title="RSS feed of regime changes for the default (Growth) profile">
               RSS feed
             </a>{' '}
             · <a href={`${import.meta.env.BASE_URL}data/regime_history.json`}>full history (JSON)</a>
@@ -297,7 +297,7 @@ export default function Dashboard() {
           </table>
         </div>
         <p className="muted small">
-          Uses the parameters shown on this page. The RSS feed and the GitHub issue alerts track the default (Balanced) profile: watch the repository on
+          Uses the parameters shown on this page. The RSS feed and the GitHub issue alerts track the default (Growth) profile: watch the repository on
           GitHub to be emailed when the daily update detects a regime change.
         </p>
       </Card>

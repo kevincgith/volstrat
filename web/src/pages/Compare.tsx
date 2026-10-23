@@ -65,7 +65,7 @@ export default function Compare() {
   const [saved, setSaved] = useState<Profile[]>(loadSaved);
   const [name, setName] = useState('');
   const [start, setStart] = useState('2007-01-01');
-  const [selected, setSelected] = useState<string[]>(['current', 'preset:conservative', 'preset:balanced', 'preset:aggressive']);
+  const [selected, setSelected] = useState<string[]>(['current', 'preset:growth', 'preset:balanced', 'preset:conservative']);
   const eqRef = useRef<ChartHandle>(null);
   const ddRef = useRef<ChartHandle>(null);
 
