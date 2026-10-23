@@ -64,6 +64,15 @@ def update(raw_dir: Path, cutoff: pd.Timestamp | None = None) -> SourceStatus:
     path = raw_dir / CACHE
     cached = read_cache(path)
     st.revisions = reconcile(cached, df, list(SYMBOLS))
+    if cached is not None:
+        # Cboe's CDN sometimes serves a version of the file with today's value blank
+        # (VIX for 2026-10-22 was 19.03 in one download and empty in the next): a
+        # blank never overwrites a stored value; a real new value always wins.
+        cols = [c for c in cached.columns if c in df.columns]
+        blanks = int((df.reindex(cached.index)[cols].isna() & cached[cols].notna()).sum().sum())
+        if blanks:
+            st.warnings.append(f"{blanks} stored value(s) blank in this download; kept")
+        df = df.combine_first(cached)[df.columns]
     st.reconciled_days = RECONCILE_BDAYS if cached is not None else 0
     safe_write(df, path, columns=list(SYMBOLS), rtol=1e-3)
     st.ok, st.rows, st.last_date = True, len(df), df.index[-1].date().isoformat()

@@ -175,7 +175,18 @@ def update(raw_dir: Path, workers: int = 8, cutoff: pd.Timestamp | None = None) 
     if cached is not None:
         refreshed = set(fresh["expiry"].dt.date) if len(fresh) else set()
         keep = cached[~cached["expiry"].dt.date.isin(refreshed)]
-        combined = pd.concat([keep, fresh])
+        # within re-downloaded contracts, keep stored days the new file lacks
+        old_live = cached[cached["expiry"].dt.date.isin(refreshed)]
+        have_new = set(zip(fresh["date"], fresh["expiry"], strict=True))
+        gap = old_live[
+            [
+                (d, e) not in have_new
+                for d, e in zip(old_live["date"], old_live["expiry"], strict=True)
+            ]
+        ]
+        if len(gap):
+            st.warnings.append(f"{len(gap)} stored settlement(s) missing from re-download; kept")
+        combined = pd.concat([keep, gap, fresh])
     else:
         combined = fresh
     combined = combined.sort_values(["date", "expiry"]).reset_index(drop=True)

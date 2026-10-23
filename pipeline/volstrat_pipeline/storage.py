@@ -148,6 +148,14 @@ def stabilise_adjusted(
     # a day already stored (end-of-day) but missing from this download is a
     # vendor gap, not a deletion: keep the stored value
     kept = old[(old.index > anchor) & ~old.index.isin(fresh.index)]
+    # where the refreshed value only differs by vendor re-rounding, keep the stored
+    # value byte-identical (otherwise every run would rewrite the tail)
+    same = fresh.index.intersection(old.index)
+    if len(same):
+        a = old.loc[same, [raw_col, adj_col]]
+        b = fresh.loc[same, [raw_col, adj_col]]
+        noise = ((b / a - 1).abs() < 1e-6).all(axis=1)
+        fresh.loc[noise[noise].index, [raw_col, adj_col]] = a.loc[noise[noise].index]
     return pd.concat([old[old.index <= anchor], fresh, kept]).sort_index()
 
 

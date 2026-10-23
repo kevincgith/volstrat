@@ -56,3 +56,22 @@ def test_eod_cutoff_excludes_live_and_provisional_days():
     assert eod_cutoff(pd.Timestamp("2026-10-21 23:30", tz="UTC")) == pd.Timestamp("2026-10-21")
     s = pd.Series([1.0, 2.0], index=pd.to_datetime(["2026-10-20", "2026-10-21"]))
     assert len(cut(s, pd.Timestamp("2026-10-20"))) == 1
+
+
+def test_cboe_blank_never_overwrites_stored_value(tmp_path, monkeypatch):
+    from volstrat_pipeline.sources import cboe_indices
+    from volstrat_pipeline.storage import read_cache, safe_write
+
+    idx = pd.bdate_range("2026-10-19", periods=4)
+    stored = pd.DataFrame({k: [20.0, 21.0, 22.0, 19.03] for k in cboe_indices.SYMBOLS}, index=idx)
+    safe_write(stored, tmp_path / cboe_indices.CACHE)
+    blank_today = stored.copy()
+    blank_today.loc[idx[-1], "VIX"] = float("nan")  # CDN served a stale version
+    monkeypatch.setattr(
+        cboe_indices, "parse", lambda text, col: blank_today["VIX" if col == "CLOSE" else col]
+    )
+    monkeypatch.setattr(cboe_indices, "get", lambda url: type("R", (), {"text": ""})())
+    monkeypatch.setattr(cboe_indices, "SYMBOLS", {"VIX": ("CLOSE", (5, 150))})
+    st = cboe_indices.update(tmp_path, cutoff=idx[-1])
+    assert read_cache(tmp_path / cboe_indices.CACHE).loc[idx[-1], "VIX"] == 19.03
+    assert any("blank" in w for w in st.warnings)

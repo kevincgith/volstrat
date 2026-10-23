@@ -136,3 +136,11 @@ def test_reconcile_reports_past_week_revisions_only():
     assert dates[str(old.index[-2].date())]["new"] == old["close"].iloc[-2] + 0.5
     assert dates[str(old.index[-1].date())]["new"] is None
     assert reconcile(old, old, ["close"]) == []
+
+
+def test_stabilise_ignores_rounding_noise_in_tail():
+    old = adj_frame("2024-01-01", 20)
+    new = old.copy()
+    new.iloc[-3:, 1] *= 1 + 4e-9  # vendor re-rounding of recent adjusted closes
+    out = stabilise_adjusted(old, new, refresh_tail=5)
+    pd.testing.assert_frame_equal(out, old)  # byte-identical: nothing to commit
