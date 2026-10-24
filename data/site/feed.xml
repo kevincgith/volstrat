@@ -4,7 +4,14 @@
   <title>VolStrat regime changes</title>
   <link>https://app.kevinlhc.com/volstrat/</link>
   <description>Regime changes of the VolStrat risk-appetite score (default parameters). Personal research project, not investment advice.</description>
-  <lastBuildDate>Sat, 24 Oct 2026 01:55:05 GMT</lastBuildDate>
+  <lastBuildDate>Sat, 24 Oct 2026 03:01:51 GMT</lastBuildDate>
+  <item>
+    <title>VolStrat regime: Neutral → Risk-Off (score 35.5)</title>
+    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
+    <guid isPermaLink="false">volstrat-2026-10-23-Risk-Off</guid>
+    <pubDate>Fri, 23 Oct 2026 21:00:00 GMT</pubDate>
+    <description>Signal at the close of 2026-10-23: Neutral → Risk-Off. Composite score 35.5. Default (Growth) profile; hypothetical research signal, not investment advice.</description>
+  </item>
   <item>
     <title>VolStrat regime: Risk-On → Neutral (score 56.8)</title>
     <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
@@ -207,13 +214,6 @@
     <guid isPermaLink="false">volstrat-2024-05-20-Risk-On</guid>
     <pubDate>Mon, 20 May 2024 21:00:00 GMT</pubDate>
     <description>Signal at the close of 2024-05-20: Neutral → Risk-On. Composite score 63.5. Default (Growth) profile; hypothetical research signal, not investment advice.</description>
-  </item>
-  <item>
-    <title>VolStrat regime: Risk-On → Neutral (score 56.8)</title>
-    <link>https://app.kevinlhc.com/volstrat/#/dashboard</link>
-    <guid isPermaLink="false">volstrat-2024-04-12-Neutral</guid>
-    <pubDate>Fri, 12 Apr 2024 21:00:00 GMT</pubDate>
-    <description>Signal at the close of 2024-04-12: Risk-On → Neutral. Composite score 56.8. Default (Growth) profile; hypothetical research signal, not investment advice.</description>
   </item>
 </channel>
 </rss>

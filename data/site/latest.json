@@ -1,69 +1,70 @@
 {
  "profile": "Growth (default parameters)",
- "date": "2026-10-22",
- "score": 37.7,
- "composite": 31.6,
- "regime": "Neutral",
- "regime_since": "2026-09-10",
+ "date": "2026-10-23",
+ "score": 35.5,
+ "composite": 31.2,
+ "regime": "Risk-Off",
+ "regime_since": "2026-10-23",
  "allocation": {
-  "SPX": 0.8,
-  "IEF": 0.2
+  "IEF": 0.5,
+  "GLD": 0.25,
+  "XLU": 0.25
  },
  "components": [
   {
    "id": "vix",
    "label": "VIX level",
-   "raw": 19.03,
-   "score": 23.1
+   "raw": 19.45,
+   "score": 20.1
   },
   {
    "id": "vix_term",
    "label": "VIX / VIX3M (term structure)",
-   "raw": 0.9458,
-   "score": 19.2
+   "raw": 0.9497,
+   "score": 17.9
   },
   {
    "id": "vx_slope",
    "label": "VIX futures slope (CM30 / CM60)",
-   "raw": 1.0012,
-   "score": 14.4
+   "raw": 0.999,
+   "score": 15.7
   },
   {
    "id": "vvix",
    "label": "VVIX (vol of vol)",
-   "raw": 107.94,
-   "score": 17.4
+   "raw": 109.7,
+   "score": 15
   },
   {
    "id": "skew",
    "label": "Cboe SKEW",
-   "raw": 152.39,
-   "score": 22.8
+   "raw": 151.8,
+   "score": 24.9
   },
   {
    "id": "pc_equity",
    "label": "Equity put/call ratio (10d avg)",
-   "raw": 0.592,
-   "score": 54.3
+   "raw": 0.603,
+   "score": 46.6
   },
   {
    "id": "vrp",
    "label": "Variance risk premium (VIX − realised)",
-   "raw": 9.3007,
-   "score": 90.9
+   "raw": 9.5717,
+   "score": 92.1
   },
   {
    "id": "credit_etf",
    "label": "Credit: HY vs Treasuries (3m relative return)",
-   "raw": -0.3094,
-   "score": 20.2
+   "raw": 0.0083,
+   "score": 25.7
   },
   {
    "id": "trend",
    "label": "S&P 500 vs 200-day average",
-   "raw": 5.1542,
-   "score": 19.6
+   "raw": 4.5584,
+   "score": 17.8
   }
  ],
- "generated_at": "2026-10-24T01:55:05Z"
+ "generated_at": "2026-10-24T03:01:51Z"
 }
