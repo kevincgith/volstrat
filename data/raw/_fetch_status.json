@@ -1,6 +1,6 @@
 {
  "cboe_indices": {
-  "checked_at": "2026-10-29T03:01:46.348894+00:00",
+  "checked_at": "2026-10-29T04:01:43.598033+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "cboe_indices",
@@ -12,7 +12,7 @@
   "warnings": []
  },
  "cboe_putcall": {
-  "checked_at": "2026-10-29T03:01:46.348957+00:00",
+  "checked_at": "2026-10-29T04:01:43.598103+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "cboe_putcall",
@@ -24,7 +24,7 @@
   "warnings": []
  },
  "cfe_vx": {
-  "checked_at": "2026-10-29T03:01:46.348939+00:00",
+  "checked_at": "2026-10-29T04:01:43.598085+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "cfe_vx",
@@ -39,7 +39,7 @@
   ]
  },
  "fred:BAA10Y": {
-  "checked_at": "2026-10-29T03:01:46.349588+00:00",
+  "checked_at": "2026-10-29T04:01:43.598718+00:00",
   "last_date": "2026-10-26",
   "message": "",
   "name": "fred:BAA10Y",
@@ -53,7 +53,7 @@
   ]
  },
  "fred:BAMLC0A0CM": {
-  "checked_at": "2026-10-29T03:01:46.349576+00:00",
+  "checked_at": "2026-10-29T04:01:43.598706+00:00",
   "last_date": "2026-10-27",
   "message": "",
   "name": "fred:BAMLC0A0CM",
@@ -67,7 +67,7 @@
   ]
  },
  "fred:BAMLH0A0HYM2": {
-  "checked_at": "2026-10-29T03:01:46.349565+00:00",
+  "checked_at": "2026-10-29T04:01:43.598695+00:00",
   "last_date": "2026-10-27",
   "message": "",
   "name": "fred:BAMLH0A0HYM2",
@@ -81,7 +81,7 @@
   ]
  },
  "fred:DFF": {
-  "checked_at": "2026-10-29T03:01:46.349622+00:00",
+  "checked_at": "2026-10-29T04:01:43.598788+00:00",
   "last_date": "2026-10-27",
   "message": "",
   "name": "fred:DFF",
@@ -95,7 +95,7 @@
   ]
  },
  "fred:NFCI": {
-  "checked_at": "2026-10-29T03:01:46.349599+00:00",
+  "checked_at": "2026-10-29T04:01:43.598761+00:00",
   "last_date": "2026-10-23",
   "message": "",
   "name": "fred:NFCI",
@@ -109,7 +109,7 @@
   ]
  },
  "fred:STLFSI4": {
-  "checked_at": "2026-10-29T03:01:46.349611+00:00",
+  "checked_at": "2026-10-29T04:01:43.598776+00:00",
   "last_date": "2026-10-23",
   "message": "",
   "name": "fred:STLFSI4",
@@ -123,7 +123,7 @@
   ]
  },
  "treasury_curve": {
-  "checked_at": "2026-10-29T03:01:46.348971+00:00",
+  "checked_at": "2026-10-29T04:01:43.598118+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "treasury_curve",
@@ -135,7 +135,7 @@
   "warnings": []
  },
  "yahoo:AGG": {
-  "checked_at": "2026-10-29T03:01:46.349114+00:00",
+  "checked_at": "2026-10-29T04:01:43.598239+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:AGG",
@@ -147,7 +147,7 @@
   "warnings": []
  },
  "yahoo:BIL": {
-  "checked_at": "2026-10-29T03:01:46.349138+00:00",
+  "checked_at": "2026-10-29T04:01:43.598263+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:BIL",
@@ -159,7 +159,7 @@
   "warnings": []
  },
  "yahoo:FSUTX": {
-  "checked_at": "2026-10-29T03:01:46.349220+00:00",
+  "checked_at": "2026-10-29T04:01:43.598343+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:FSUTX",
@@ -171,7 +171,7 @@
   "warnings": []
  },
  "yahoo:GC=F": {
-  "checked_at": "2026-10-29T03:01:46.349237+00:00",
+  "checked_at": "2026-10-29T04:01:43.598362+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:GC=F",
@@ -182,15 +182,15 @@
    {
     "column": "close",
     "date": "2026-10-28",
-    "new": 4059.199951171875,
-    "old": 4055.399902
+    "new": 4051.60009765625,
+    "old": 4059.199951
    }
   ],
   "rows": 6566,
   "warnings": []
  },
  "yahoo:GLD": {
-  "checked_at": "2026-10-29T03:01:46.349150+00:00",
+  "checked_at": "2026-10-29T04:01:43.598275+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:GLD",
@@ -202,7 +202,7 @@
   "warnings": []
  },
  "yahoo:HYG": {
-  "checked_at": "2026-10-29T03:01:46.349251+00:00",
+  "checked_at": "2026-10-29T04:01:43.598375+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:HYG",
@@ -214,7 +214,7 @@
   "warnings": []
  },
  "yahoo:IEF": {
-  "checked_at": "2026-10-29T03:01:46.349090+00:00",
+  "checked_at": "2026-10-29T04:01:43.598217+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:IEF",
@@ -226,7 +226,7 @@
   "warnings": []
  },
  "yahoo:IEI": {
-  "checked_at": "2026-10-29T03:01:46.349356+00:00",
+  "checked_at": "2026-10-29T04:01:43.598479+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:IEI",
@@ -238,7 +238,7 @@
   "warnings": []
  },
  "yahoo:LQD": {
-  "checked_at": "2026-10-29T03:01:46.349263+00:00",
+  "checked_at": "2026-10-29T04:01:43.598387+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:LQD",
@@ -250,7 +250,7 @@
   "warnings": []
  },
  "yahoo:MTUM": {
-  "checked_at": "2026-10-29T03:01:46.349321+00:00",
+  "checked_at": "2026-10-29T04:01:43.598444+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:MTUM",
@@ -262,7 +262,7 @@
   "warnings": []
  },
  "yahoo:QUAL": {
-  "checked_at": "2026-10-29T03:01:46.349310+00:00",
+  "checked_at": "2026-10-29T04:01:43.598432+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:QUAL",
@@ -274,7 +274,7 @@
   "warnings": []
  },
  "yahoo:SGOV": {
-  "checked_at": "2026-10-29T03:01:46.349390+00:00",
+  "checked_at": "2026-10-29T04:01:43.598513+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SGOV",
@@ -286,7 +286,7 @@
   "warnings": []
  },
  "yahoo:SHY": {
-  "checked_at": "2026-10-29T03:01:46.349126+00:00",
+  "checked_at": "2026-10-29T04:01:43.598251+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SHY",
@@ -298,7 +298,7 @@
   "warnings": []
  },
  "yahoo:SPHB": {
-  "checked_at": "2026-10-29T03:01:46.349344+00:00",
+  "checked_at": "2026-10-29T04:01:43.598467+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SPHB",
@@ -310,7 +310,7 @@
   "warnings": []
  },
  "yahoo:SPLV": {
-  "checked_at": "2026-10-29T03:01:46.349287+00:00",
+  "checked_at": "2026-10-29T04:01:43.598410+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SPLV",
@@ -322,7 +322,7 @@
   "warnings": []
  },
  "yahoo:SPY": {
-  "checked_at": "2026-10-29T03:01:46.349011+00:00",
+  "checked_at": "2026-10-29T04:01:43.598157+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SPY",
@@ -334,7 +334,7 @@
   "warnings": []
  },
  "yahoo:SSO": {
-  "checked_at": "2026-10-29T03:01:46.349023+00:00",
+  "checked_at": "2026-10-29T04:01:43.598169+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:SSO",
@@ -346,7 +346,7 @@
   "warnings": []
  },
  "yahoo:TIP": {
-  "checked_at": "2026-10-29T03:01:46.349379+00:00",
+  "checked_at": "2026-10-29T04:01:43.598502+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:TIP",
@@ -358,7 +358,7 @@
   "warnings": []
  },
  "yahoo:TLH": {
-  "checked_at": "2026-10-29T03:01:46.349367+00:00",
+  "checked_at": "2026-10-29T04:01:43.598491+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:TLH",
@@ -370,7 +370,7 @@
   "warnings": []
  },
  "yahoo:TLT": {
-  "checked_at": "2026-10-29T03:01:46.349103+00:00",
+  "checked_at": "2026-10-29T04:01:43.598228+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:TLT",
@@ -382,7 +382,7 @@
   "warnings": []
  },
  "yahoo:UPRO": {
-  "checked_at": "2026-10-29T03:01:46.349035+00:00",
+  "checked_at": "2026-10-29T04:01:43.598182+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:UPRO",
@@ -394,7 +394,7 @@
   "warnings": []
  },
  "yahoo:URTH": {
-  "checked_at": "2026-10-29T03:01:46.349055+00:00",
+  "checked_at": "2026-10-29T04:01:43.598193+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:URTH",
@@ -406,7 +406,7 @@
   "warnings": []
  },
  "yahoo:USFR": {
-  "checked_at": "2026-10-29T03:01:46.349401+00:00",
+  "checked_at": "2026-10-29T04:01:43.598524+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:USFR",
@@ -418,7 +418,7 @@
   "warnings": []
  },
  "yahoo:USMV": {
-  "checked_at": "2026-10-29T03:01:46.349299+00:00",
+  "checked_at": "2026-10-29T04:01:43.598421+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:USMV",
@@ -430,7 +430,7 @@
   "warnings": []
  },
  "yahoo:VBMFX": {
-  "checked_at": "2026-10-29T03:01:46.349196+00:00",
+  "checked_at": "2026-10-29T04:01:43.598321+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VBMFX",
@@ -442,7 +442,7 @@
   "warnings": []
  },
  "yahoo:VFISX": {
-  "checked_at": "2026-10-29T03:01:46.349207+00:00",
+  "checked_at": "2026-10-29T04:01:43.598332+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VFISX",
@@ -454,7 +454,7 @@
   "warnings": []
  },
  "yahoo:VFITX": {
-  "checked_at": "2026-10-29T03:01:46.349173+00:00",
+  "checked_at": "2026-10-29T04:01:43.598298+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VFITX",
@@ -466,7 +466,7 @@
   "warnings": []
  },
  "yahoo:VLUE": {
-  "checked_at": "2026-10-29T03:01:46.349333+00:00",
+  "checked_at": "2026-10-29T04:01:43.598455+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VLUE",
@@ -478,7 +478,7 @@
   "warnings": []
  },
  "yahoo:VUSTX": {
-  "checked_at": "2026-10-29T03:01:46.349184+00:00",
+  "checked_at": "2026-10-29T04:01:43.598309+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VUSTX",
@@ -490,7 +490,7 @@
   "warnings": []
  },
  "yahoo:VWEHX": {
-  "checked_at": "2026-10-29T03:01:46.349275+00:00",
+  "checked_at": "2026-10-29T04:01:43.598399+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:VWEHX",
@@ -502,7 +502,7 @@
   "warnings": []
  },
  "yahoo:XLB": {
-  "checked_at": "2026-10-29T03:01:46.349414+00:00",
+  "checked_at": "2026-10-29T04:01:43.598536+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLB",
@@ -514,7 +514,7 @@
   "warnings": []
  },
  "yahoo:XLE": {
-  "checked_at": "2026-10-29T03:01:46.349425+00:00",
+  "checked_at": "2026-10-29T04:01:43.598547+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLE",
@@ -526,7 +526,7 @@
   "warnings": []
  },
  "yahoo:XLF": {
-  "checked_at": "2026-10-29T03:01:46.349436+00:00",
+  "checked_at": "2026-10-29T04:01:43.598558+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLF",
@@ -538,7 +538,7 @@
   "warnings": []
  },
  "yahoo:XLI": {
-  "checked_at": "2026-10-29T03:01:46.349448+00:00",
+  "checked_at": "2026-10-29T04:01:43.598569+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLI",
@@ -550,7 +550,7 @@
   "warnings": []
  },
  "yahoo:XLK": {
-  "checked_at": "2026-10-29T03:01:46.349459+00:00",
+  "checked_at": "2026-10-29T04:01:43.598580+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLK",
@@ -562,7 +562,7 @@
   "warnings": []
  },
  "yahoo:XLP": {
-  "checked_at": "2026-10-29T03:01:46.349472+00:00",
+  "checked_at": "2026-10-29T04:01:43.598593+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLP",
@@ -574,7 +574,7 @@
   "warnings": []
  },
  "yahoo:XLU": {
-  "checked_at": "2026-10-29T03:01:46.349161+00:00",
+  "checked_at": "2026-10-29T04:01:43.598286+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLU",
@@ -586,7 +586,7 @@
   "warnings": []
  },
  "yahoo:XLV": {
-  "checked_at": "2026-10-29T03:01:46.349483+00:00",
+  "checked_at": "2026-10-29T04:01:43.598604+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLV",
@@ -598,7 +598,7 @@
   "warnings": []
  },
  "yahoo:XLY": {
-  "checked_at": "2026-10-29T03:01:46.349494+00:00",
+  "checked_at": "2026-10-29T04:01:43.598615+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:XLY",
@@ -610,26 +610,19 @@
   "warnings": []
  },
  "yahoo:^990100-USD-STRD": {
-  "checked_at": "2026-10-29T03:01:46.349076+00:00",
+  "checked_at": "2026-10-29T04:01:43.598205+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^990100-USD-STRD",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-10-28",
-    "new": 4937.0,
-    "old": 4940.029785
-   }
-  ],
+  "revisions": [],
   "rows": 14037,
   "warnings": []
  },
  "yahoo:^GSPC": {
-  "checked_at": "2026-10-29T03:01:46.348985+00:00",
+  "checked_at": "2026-10-29T04:01:43.598132+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^GSPC",
@@ -641,7 +634,7 @@
   "warnings": []
  },
  "yahoo:^IRX": {
-  "checked_at": "2026-10-29T03:01:46.349553+00:00",
+  "checked_at": "2026-10-29T04:01:43.598683+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^IRX",
@@ -653,19 +646,26 @@
   "warnings": []
  },
  "yahoo:^MOVE": {
-  "checked_at": "2026-10-29T03:01:46.349529+00:00",
+  "checked_at": "2026-10-29T04:01:43.598656+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^MOVE",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [],
+  "revisions": [
+   {
+    "column": "close",
+    "date": "2026-10-28",
+    "new": 94.55000305175781,
+    "old": 94.54989624
+   }
+  ],
   "rows": 5925,
   "warnings": []
  },
  "yahoo:^SP500TR": {
-  "checked_at": "2026-10-29T03:01:46.348998+00:00",
+  "checked_at": "2026-10-29T04:01:43.598145+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^SP500TR",
@@ -677,7 +677,7 @@
   "warnings": []
  },
  "yahoo:^VIX3M": {
-  "checked_at": "2026-10-29T03:01:46.349506+00:00",
+  "checked_at": "2026-10-29T04:01:43.598627+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^VIX3M",
@@ -689,19 +689,26 @@
   "warnings": []
  },
  "yahoo:^VOLI": {
-  "checked_at": "2026-10-29T03:01:46.349541+00:00",
+  "checked_at": "2026-10-29T04:01:43.598671+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^VOLI",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [],
+  "revisions": [
+   {
+    "column": "close",
+    "date": "2026-10-28",
+    "new": 13.350000381469727,
+    "old": 13.35219955
+   }
+  ],
   "rows": 3359,
   "warnings": []
  },
  "yahoo:^VVIX": {
-  "checked_at": "2026-10-29T03:01:46.349517+00:00",
+  "checked_at": "2026-10-29T04:01:43.598639+00:00",
   "last_date": "2026-10-28",
   "message": "",
   "name": "yahoo:^VVIX",
