@@ -24,6 +24,11 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+        with:
+          # The branch tip when the job starts, not the commit current when the run was
+          # triggered: a run queued behind another (concurrency group above) must build
+          # on that run's push, or the two commit the same data and the rebase conflicts.
+          ref: main
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -70,21 +75,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          # Files every run rewrites (timestamps, status). Changes confined to these are
-          # not news: with an hourly trigger they would otherwise commit and redeploy
-          # 24 times a day.
-          bookkeeping='^data/(raw/_fetch_status\.json|raw/_fetch_meta\.json|site/meta\.json|site/latest\.json|site/feed\.xml|site/track_record\.json)$'
-          real=$(git diff --cached --name-only | grep -Ev "$bookkeeping" || true)
-          if [ -z "$real" ]; then
-            echo "No new data (only bookkeeping files changed); nothing committed."
+          # Bookkeeping files and small revisions of existing values are not news: with an
+          # hourly trigger they would otherwise commit and redeploy ~24 times a day. See
+          # pipeline/volstrat_pipeline/changes.py. Anything but an explicit "skip" commits.
+          verdict=$(volstrat changes --signal-changed "${{ steps.signal.outputs.changed }}" | tee /dev/stderr | tail -n1)
+          if [ "$verdict" = "skip" ]; then
+            echo "Nothing worth a commit."
             git reset -q
             echo "committed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Changed: $real"
             git commit -m "data: update $(date -u +%Y-%m-%d)"
-            git pull --rebase origin main
-            git push
-            echo "committed=true" >> "$GITHUB_OUTPUT"
+            if git pull --rebase origin main && git push; then
+              echo "committed=true" >> "$GITHUB_OUTPUT"
+            else
+              # Someone pushed data while this run was fetching. The next hourly run
+              # fetches again on top of it, so drop this commit rather than fail.
+              git rebase --abort 2>/dev/null || true
+              echo "::warning::main moved during this run; changes left for the next run"
+              echo "committed=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Deploy site with the new data
