@@ -75,15 +75,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
-          # Bookkeeping files and small revisions of existing values are not news: with an
-          # hourly trigger they would otherwise commit and redeploy ~24 times a day. See
-          # pipeline/volstrat_pipeline/changes.py. Anything but an explicit "skip" commits.
-          verdict=$(volstrat changes --signal-changed "${{ steps.signal.outputs.changed }}" | tee /dev/stderr | tail -n1)
-          if [ "$verdict" = "skip" ]; then
-            echo "Nothing worth a commit."
+          # Files every run rewrites (timestamps, status). Changes confined to these are
+          # not news: with an hourly trigger they would otherwise commit and redeploy
+          # 24 times a day. Any other change, however small (a revised Yahoo bar), is
+          # new data and goes to the site.
+          bookkeeping='^data/(raw/_fetch_status\.json|raw/_fetch_meta\.json|site/meta\.json|site/latest\.json|site/feed\.xml|site/track_record\.json)$'
+          real=$(git diff --cached --name-only | grep -Ev "$bookkeeping" || true)
+          if [ -z "$real" ]; then
+            echo "No new data (only bookkeeping files changed); nothing committed."
             git reset -q
             echo "committed=false" >> "$GITHUB_OUTPUT"
           else
+            echo "Changed: $real"
             git commit -m "data: update $(date -u +%Y-%m-%d)"
             if git pull --rebase origin main && git push; then
               echo "committed=true" >> "$GITHUB_OUTPUT"

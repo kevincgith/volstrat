@@ -17,8 +17,6 @@ def main(argv: list[str] | None = None) -> int:
     f.add_argument("--only", nargs="*", help="subset of sources, e.g. cfe_vx yahoo")
     sub.add_parser("build", help="build features and export data/site JSON")
     sub.add_parser("update", help="fetch + build (what the daily Action runs)")
-    c = sub.add_parser("changes", help="say whether staged data changes deserve a commit")
-    c.add_argument("--signal-changed", default="", help="'true' when the regime changed")
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -26,14 +24,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     for noisy in ("yfinance", "urllib3", "peewee"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
-
-    if args.command == "changes":
-        from .changes import classify, staged_changes
-
-        commit, lines = classify(staged_changes(), args.signal_changed == "true")
-        print("\n".join(lines or ["no changes beyond bookkeeping files"]))
-        print("commit" if commit else "skip")  # last line: read by the data-update workflow
-        return 0
 
     failed_required: list[str] = []
     if args.command in ("fetch", "update"):
