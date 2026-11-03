@@ -1,6 +1,6 @@
 {
  "cboe_indices": {
-  "checked_at": "2026-11-03T02:01:41.333307+00:00",
+  "checked_at": "2026-11-03T03:01:44.611209+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "cboe_indices",
@@ -12,19 +12,19 @@
   "warnings": []
  },
  "cboe_putcall": {
-  "checked_at": "2026-11-03T02:01:41.333361+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611263+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "cboe_putcall",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 7822,
+  "rows": 7823,
   "warnings": []
  },
  "cfe_vx": {
-  "checked_at": "2026-11-03T02:01:41.333348+00:00",
+  "checked_at": "2026-11-03T03:01:44.611249+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "cfe_vx",
@@ -39,7 +39,7 @@
   ]
  },
  "fred:BAA10Y": {
-  "checked_at": "2026-11-03T02:01:41.333906+00:00",
+  "checked_at": "2026-11-03T03:01:44.611763+00:00",
   "last_date": "2026-10-30",
   "message": "",
   "name": "fred:BAA10Y",
@@ -53,7 +53,7 @@
   ]
  },
  "fred:BAMLC0A0CM": {
-  "checked_at": "2026-11-03T02:01:41.333898+00:00",
+  "checked_at": "2026-11-03T03:01:44.611755+00:00",
   "last_date": "2026-10-30",
   "message": "",
   "name": "fred:BAMLC0A0CM",
@@ -67,7 +67,7 @@
   ]
  },
  "fred:BAMLH0A0HYM2": {
-  "checked_at": "2026-11-03T02:01:41.333877+00:00",
+  "checked_at": "2026-11-03T03:01:44.611746+00:00",
   "last_date": "2026-10-30",
   "message": "",
   "name": "fred:BAMLH0A0HYM2",
@@ -81,7 +81,7 @@
   ]
  },
  "fred:DFF": {
-  "checked_at": "2026-11-03T02:01:41.333931+00:00",
+  "checked_at": "2026-11-03T03:01:44.611789+00:00",
   "last_date": "2026-10-30",
   "message": "",
   "name": "fred:DFF",
@@ -95,7 +95,7 @@
   ]
  },
  "fred:NFCI": {
-  "checked_at": "2026-11-03T02:01:41.333915+00:00",
+  "checked_at": "2026-11-03T03:01:44.611772+00:00",
   "last_date": "2026-10-23",
   "message": "",
   "name": "fred:NFCI",
@@ -109,7 +109,7 @@
   ]
  },
  "fred:STLFSI4": {
-  "checked_at": "2026-11-03T02:01:41.333923+00:00",
+  "checked_at": "2026-11-03T03:01:44.611781+00:00",
   "last_date": "2026-10-23",
   "message": "",
   "name": "fred:STLFSI4",
@@ -123,7 +123,7 @@
   ]
  },
  "treasury_curve": {
-  "checked_at": "2026-11-03T02:01:41.333372+00:00",
+  "checked_at": "2026-11-03T03:01:44.611273+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "treasury_curve",
@@ -135,61 +135,43 @@
   "warnings": []
  },
  "yahoo:AGG": {
-  "checked_at": "2026-11-03T02:01:41.333489+00:00",
+  "checked_at": "2026-11-03T03:01:44.611369+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:AGG",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 96.16000366
-   }
-  ],
+  "revisions": [],
   "rows": 5811,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:BIL": {
-  "checked_at": "2026-11-03T02:01:41.333511+00:00",
+  "checked_at": "2026-11-03T03:01:44.611386+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:BIL",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 91.41000366
-   }
-  ],
+  "revisions": [],
   "rows": 4889,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:FSUTX": {
-  "checked_at": "2026-11-03T02:01:41.333576+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611493+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:FSUTX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 11313,
+  "rows": 11314,
   "warnings": []
  },
  "yahoo:GC=F": {
-  "checked_at": "2026-11-03T02:01:41.333587+00:00",
+  "checked_at": "2026-11-03T03:01:44.611505+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:GC=F",
@@ -200,705 +182,442 @@
    {
     "column": "close",
     "date": "2026-11-02",
-    "new": 3963.0,
-    "old": 3965.0
+    "new": 3959.89990234375,
+    "old": 3963.0
    }
   ],
   "rows": 6569,
   "warnings": []
  },
  "yahoo:GLD": {
-  "checked_at": "2026-11-03T02:01:41.333522+00:00",
+  "checked_at": "2026-11-03T03:01:44.611420+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:GLD",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 361.6499939
-   }
-  ],
+  "revisions": [],
   "rows": 5523,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:HYG": {
-  "checked_at": "2026-11-03T02:01:41.333598+00:00",
+  "checked_at": "2026-11-03T03:01:44.611513+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:HYG",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 76.88999939
-   }
-  ],
+  "revisions": [],
   "rows": 4923,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:IEF": {
-  "checked_at": "2026-11-03T02:01:41.333466+00:00",
+  "checked_at": "2026-11-03T03:01:44.611351+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:IEF",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 91.5
-   }
-  ],
+  "revisions": [],
   "rows": 6105,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:IEI": {
-  "checked_at": "2026-11-03T02:01:41.333693+00:00",
+  "checked_at": "2026-11-03T03:01:44.611593+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:IEI",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 114.9800034
-   }
-  ],
+  "revisions": [],
   "rows": 4984,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:LQD": {
-  "checked_at": "2026-11-03T02:01:41.333609+00:00",
+  "checked_at": "2026-11-03T03:01:44.611522+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:LQD",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 103.7099991
-   }
-  ],
+  "revisions": [],
   "rows": 6105,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:MTUM": {
-  "checked_at": "2026-11-03T02:01:41.333662+00:00",
+  "checked_at": "2026-11-03T03:01:44.611567+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:MTUM",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 275.1400146
-   }
-  ],
+  "revisions": [],
   "rows": 3407,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:QUAL": {
-  "checked_at": "2026-11-03T02:01:41.333651+00:00",
+  "checked_at": "2026-11-03T03:01:44.611557+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:QUAL",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 222.0099945
-   }
-  ],
+  "revisions": [],
   "rows": 3344,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SGOV": {
-  "checked_at": "2026-11-03T02:01:41.333725+00:00",
+  "checked_at": "2026-11-03T03:01:44.611618+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SGOV",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 100.4300003
-   }
-  ],
+  "revisions": [],
   "rows": 1615,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SHY": {
-  "checked_at": "2026-11-03T02:01:41.333500+00:00",
+  "checked_at": "2026-11-03T03:01:44.611378+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SHY",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 81.45999908
-   }
-  ],
+  "revisions": [],
   "rows": 6105,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SPHB": {
-  "checked_at": "2026-11-03T02:01:41.333683+00:00",
+  "checked_at": "2026-11-03T03:01:44.611584+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SPHB",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 134.9900055
-   }
-  ],
+  "revisions": [],
   "rows": 3897,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SPLV": {
-  "checked_at": "2026-11-03T02:01:41.333628+00:00",
+  "checked_at": "2026-11-03T03:01:44.611540+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SPLV",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 77.44999695
-   }
-  ],
+  "revisions": [],
   "rows": 3897,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SPY": {
-  "checked_at": "2026-11-03T02:01:41.333406+00:00",
+  "checked_at": "2026-11-03T03:01:44.611301+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SPY",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 752.0999756
-   }
-  ],
+  "revisions": [],
   "rows": 8498,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:SSO": {
-  "checked_at": "2026-11-03T02:01:41.333419+00:00",
+  "checked_at": "2026-11-03T03:01:44.611309+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:SSO",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 67.01999664
-   }
-  ],
+  "revisions": [],
   "rows": 5124,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:TIP": {
-  "checked_at": "2026-11-03T02:01:41.333714+00:00",
+  "checked_at": "2026-11-03T03:01:44.611610+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:TIP",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 106.4000015
-   }
-  ],
+  "revisions": [],
   "rows": 5763,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:TLH": {
-  "checked_at": "2026-11-03T02:01:41.333704+00:00",
+  "checked_at": "2026-11-03T03:01:44.611602+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:TLH",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 95.83999634
-   }
-  ],
+  "revisions": [],
   "rows": 4984,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:TLT": {
-  "checked_at": "2026-11-03T02:01:41.333478+00:00",
+  "checked_at": "2026-11-03T03:01:44.611361+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:TLT",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 81.73000336
-   }
-  ],
+  "revisions": [],
   "rows": 6105,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:UPRO": {
-  "checked_at": "2026-11-03T02:01:41.333432+00:00",
+  "checked_at": "2026-11-03T03:01:44.611318+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:UPRO",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 139.1399994
-   }
-  ],
+  "revisions": [],
   "rows": 4366,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:URTH": {
-  "checked_at": "2026-11-03T02:01:41.333444+00:00",
+  "checked_at": "2026-11-03T03:01:44.611327+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:URTH",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 204.1499939
-   }
-  ],
+  "revisions": [],
   "rows": 3723,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:USFR": {
-  "checked_at": "2026-11-03T02:01:41.333736+00:00",
+  "checked_at": "2026-11-03T03:01:44.611626+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:USFR",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 50.41999817
-   }
-  ],
+  "revisions": [],
   "rows": 3206,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:USMV": {
-  "checked_at": "2026-11-03T02:01:41.333639+00:00",
+  "checked_at": "2026-11-03T03:01:44.611548+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:USMV",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 103.0599976
-   }
-  ],
+  "revisions": [],
   "rows": 3780,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:VBMFX": {
-  "checked_at": "2026-11-03T02:01:41.333559+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611474+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VBMFX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [],
-  "rows": 10048,
+  "revisions": [
+   {
+    "column": "close",
+    "date": "2026-10-30",
+    "new": 9.399999618530273,
+    "old": 9.380000114
+   }
+  ],
+  "rows": 10049,
   "warnings": []
  },
  "yahoo:VFISX": {
-  "checked_at": "2026-11-03T02:01:41.333567+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611484+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VFISX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 8815,
+  "rows": 8816,
   "warnings": []
  },
  "yahoo:VFITX": {
-  "checked_at": "2026-11-03T02:01:41.333542+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611449+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VFITX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 8815,
+  "rows": 8816,
   "warnings": []
  },
  "yahoo:VLUE": {
-  "checked_at": "2026-11-03T02:01:41.333672+00:00",
+  "checked_at": "2026-11-03T03:01:44.611575+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VLUE",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 192.4299927
-   }
-  ],
+  "revisions": [],
   "rows": 3407,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:VUSTX": {
-  "checked_at": "2026-11-03T02:01:41.333550+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611459+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VUSTX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 10192,
+  "rows": 10193,
   "warnings": []
  },
  "yahoo:VWEHX": {
-  "checked_at": "2026-11-03T02:01:41.333617+00:00",
-  "last_date": "2026-10-30",
+  "checked_at": "2026-11-03T03:01:44.611531+00:00",
+  "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:VWEHX",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
   "revisions": [],
-  "rows": 11804,
+  "rows": 11805,
   "warnings": []
  },
  "yahoo:XLB": {
-  "checked_at": "2026-11-03T02:01:41.333747+00:00",
+  "checked_at": "2026-11-03T03:01:44.611635+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLB",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 53.66999817
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLE": {
-  "checked_at": "2026-11-03T02:01:41.333759+00:00",
+  "checked_at": "2026-11-03T03:01:44.611644+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLE",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 67.25
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLF": {
-  "checked_at": "2026-11-03T02:01:41.333770+00:00",
+  "checked_at": "2026-11-03T03:01:44.611653+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLF",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 57.56000137
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLI": {
-  "checked_at": "2026-11-03T02:01:41.333781+00:00",
+  "checked_at": "2026-11-03T03:01:44.611661+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLI",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 169.7100067
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLK": {
-  "checked_at": "2026-11-03T02:01:41.333792+00:00",
+  "checked_at": "2026-11-03T03:01:44.611669+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLK",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 174.2200012
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLP": {
-  "checked_at": "2026-11-03T02:01:41.333803+00:00",
+  "checked_at": "2026-11-03T03:01:44.611679+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLP",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 90.83000183
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLU": {
-  "checked_at": "2026-11-03T02:01:41.333533+00:00",
+  "checked_at": "2026-11-03T03:01:44.611437+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLU",
   "ok": true,
   "reconciled_days": 5,
   "required": true,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 43.66999817
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLV": {
-  "checked_at": "2026-11-03T02:01:41.333814+00:00",
+  "checked_at": "2026-11-03T03:01:44.611688+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLV",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 184.6000061
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:XLY": {
-  "checked_at": "2026-11-03T02:01:41.333825+00:00",
+  "checked_at": "2026-11-03T03:01:44.611696+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:XLY",
   "ok": true,
   "reconciled_days": 5,
   "required": false,
-  "revisions": [
-   {
-    "column": "close",
-    "date": "2026-11-02",
-    "new": null,
-    "old": 118.1600037
-   }
-  ],
+  "revisions": [],
   "rows": 7008,
-  "warnings": [
-   "download missing stored day(s) 2026-11-02; kept stored values"
-  ]
+  "warnings": []
  },
  "yahoo:^990100-USD-STRD": {
-  "checked_at": "2026-11-03T02:01:41.333455+00:00",
+  "checked_at": "2026-11-03T03:01:44.611342+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^990100-USD-STRD",
@@ -909,15 +628,15 @@
    {
     "column": "close",
     "date": "2026-11-02",
-    "new": 4842.72998046875,
-    "old": 4843.22998
+    "new": 4844.2001953125,
+    "old": 4842.72998
    }
   ],
   "rows": 14040,
   "warnings": []
  },
  "yahoo:^GSPC": {
-  "checked_at": "2026-11-03T02:01:41.333381+00:00",
+  "checked_at": "2026-11-03T03:01:44.611282+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^GSPC",
@@ -929,7 +648,7 @@
   "warnings": []
  },
  "yahoo:^IRX": {
-  "checked_at": "2026-11-03T02:01:41.333869+00:00",
+  "checked_at": "2026-11-03T03:01:44.611738+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^IRX",
@@ -941,7 +660,7 @@
   "warnings": []
  },
  "yahoo:^MOVE": {
-  "checked_at": "2026-11-03T02:01:41.333851+00:00",
+  "checked_at": "2026-11-03T03:01:44.611721+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^MOVE",
@@ -953,7 +672,7 @@
   "warnings": []
  },
  "yahoo:^SP500TR": {
-  "checked_at": "2026-11-03T02:01:41.333390+00:00",
+  "checked_at": "2026-11-03T03:01:44.611292+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^SP500TR",
@@ -965,7 +684,7 @@
   "warnings": []
  },
  "yahoo:^VIX3M": {
-  "checked_at": "2026-11-03T02:01:41.333834+00:00",
+  "checked_at": "2026-11-03T03:01:44.611704+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^VIX3M",
@@ -977,7 +696,7 @@
   "warnings": []
  },
  "yahoo:^VOLI": {
-  "checked_at": "2026-11-03T02:01:41.333859+00:00",
+  "checked_at": "2026-11-03T03:01:44.611729+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^VOLI",
@@ -989,7 +708,7 @@
   "warnings": []
  },
  "yahoo:^VVIX": {
-  "checked_at": "2026-11-03T02:01:41.333842+00:00",
+  "checked_at": "2026-11-03T03:01:44.611713+00:00",
   "last_date": "2026-11-02",
   "message": "",
   "name": "yahoo:^VVIX",
