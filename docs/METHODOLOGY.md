@@ -1,6 +1,142 @@
 # VolStrat methodology
 
-This document is filled in phase by phase. Sections marked *(Pn)* are written in that phase.
+§0 explains what the tool does, how the pipeline runs and why it can deliver. §1–§14 are the
+reference: data, signals, engine and diagnostics. §15–§18 are the out-of-sample tests, failures
+included, in the order they were run.
+
+## 0. What the tool does and why it can deliver
+
+### 0.1 In one paragraph
+VolStrat measures how risky the US stock market is today, from public end-of-day data, and
+turns that into **how much of a portfolio to hold in stocks**. It does not try to forecast
+returns. Its central finding, checked on 1927–2026, is that **risk is predictable and the
+reward per unit of risk is not**. So the job is to keep the portfolio's risk roughly steady:
+hold more stock when markets are calm and less when they are turbulent or trending down, and
+publish the evidence, failures included.
+
+### 0.2 Philosophy
+1. **Forecast risk, not return.** After days in the score's Crisis regime the S&P 500's
+   annualised volatility was 37.2%; after Risk-On days, 12.4%. The Sharpe ratio was about the
+   same in every regime (0.66–0.70), and the score's rank correlation with next month's return
+   was −0.06 (§11). Volatility clusters, so today's volatility is a good forecast of the next
+   month's. Tomorrow's return is not forecastable in the same way.
+2. **Size, don't switch.** Switching between "in" and "out" removes whole periods, taking risk
+   and return away together. Getting back in late after a sell-off then costs a lot: Growth
+   captured a median of 29% of the S&P 500's 3-month rebound after ten major lows since
+   2007 (§15.4, §17). Sizing the position by forecast risk keeps a stake in every period.
+3. **Two failure modes, two signals.** Markets fall in two ways: sudden volatility shocks that
+   usually recover in a V (2008, 2020), and slow, grinding bear markets where volatility looks
+   normal (2000–2002). Volatility catches the first; price trend catches the second. Each
+   used alone fails the other case (§15.8, §17).
+4. **Simple beats clever when the data are few.** There are only about ten real sell-offs since
+   2007. Every extra setting is fitted to a handful of events. The v5 rule has five settings;
+   the composite score has about thirty.
+5. **Hedge only with what hedges.** Treasuries protect equities only while stock and bond
+   returns move in opposite directions. In an inflation shock such as 2022 they fall together.
+6. **No hindsight in the data.** End-of-day data only, each series lagged to when it was
+   actually published, every standardisation over trailing windows, a look-ahead test for every
+   engine feature, and every data revision shown on the site (§2.5a, §2.6, §4, §9).
+7. **Decide the test before seeing the result.** Designs are pre-registered (`docs/PREREG-v3.md`
+   to `PREREG-v5.md`), run once and reported whatever the outcome. The live track records are
+   the only results that are not backtests (§12.1).
+8. **Leverage is a dial, not an edge.** Holding more than 100% equity raises return and
+   drawdown together (§15.4). It is a choice of how much risk to take, not evidence of skill.
+
+### 0.3 Why sizing by risk can raise the Sharpe ratio
+This is the mechanism behind the tool, and it explains why cutting drawdowns by switching
+often fails to raise the Sharpe ratio while sizing by risk does.
+
+Suppose the market's expected excess return each period is proportional to its volatility,
+μ_t = S·σ_t, so the reward per unit of risk S is constant. That is roughly what §11 shows.
+- A **fixed** equity weight earns a Sharpe ratio of approximately S · E[σ] / √E[σ²]. Because volatility
+  varies over time, E[σ]² < E[σ²], so this is **below S**. Most of a static portfolio's risk
+  comes from a few turbulent months, which pay no more per unit of risk than calm ones.
+- A weight of c / σ_t (the v5 rule, before its 100% cap) earns c·S on average, with a
+  standard deviation of about c, so its Sharpe ratio is about **S**.
+- The gain is the factor √E[σ²] / E[σ]. It is large when volatility swings a lot (the 1930s:
+  +0.34 Sharpe, §18) and smaller when it is steadier (1959–1989: +0.09).
+
+Sizing by risk does not need to predict returns. It needs today's volatility to forecast near-
+term volatility, which it does, and the reward per unit of risk not to rise with volatility,
+which it hasn't. All-or-nothing regime switching is a crude version of the same idea. It
+wastes most of the gain through late re-entry and false alarms.
+
+The **trend brake** adds a different effect. Returns tend to persist over 3–12 months
+(time-series momentum; Hurst, Ooi & Pedersen 2017), which matters most in slow bear markets
+where volatility stays moderate. On 1927–1989 the brake alone added 0.14 to the Sharpe ratio
+and the volatility budget alone 0.12; together they added 0.23 (§18). Halving rather than
+exiting limits the damage when the trend turns back up quickly.
+
+### 0.4 The pipeline, end to end
+1. **Fetch** (hourly, triggered at :20 by a Cloudflare Worker, with GitHub's schedule as
+   fallback): Cboe volatility indices, CFE VIX futures settlements, Cboe put/call ratios,
+   Yahoo Finance ETFs and indices, the US Treasury yield curve, FRED (§2).
+2. **Validate**: range checks, history-stability checks, cross-source checks, and a
+   completeness gate. A date is published only once every input of the strategy exists for it
+   (§2.8, README).
+3. **Build** (`pipeline/`, Python): align every series to the date it was published (§2.6);
+   chain ETF total returns back with index or fund proxies before each ETF existed (§2.7);
+   compute the VIX futures curve features; write `data/site/*.json` (raw features only).
+4. **Score** (`web/src/engine/`, TypeScript, the same code in the browser and the daily
+   Action): components → trailing percentile ranks → weighted composite → 5-day smoothing →
+   five regimes with hysteresis (§3–§5).
+5. **Allocate**, in one of three modes (§6, §18):
+   - *Regime portfolios*: each regime has a portfolio; Growth is the default profile.
+   - *Continuous*: equity exposure moves linearly with the score.
+   - *Risk budget (v5)*: equity = min(100%, 12% ÷ 21-day realised volatility), halved below the
+     200-day average; the rest in Treasuries while they hedge, otherwise T-bills.
+6. **Simulate** (§7): decide at the close, trade at the next close, weights drift, costs per
+   side. Then metrics, benchmarks, bootstrap intervals, the equal-risk check, walk-forward and
+   the multiple-testing check (§8–§9).
+7. **Publish** (§12): Dashboard, `latest.json`, regime history, RSS feed, a GitHub issue on a
+   regime change, and the append-only live records v1 (Balanced), v2 (Growth) and v3 (Risk
+   budget) (§12.1).
+8. **Deploy**: GitHub Pages rebuilds whenever the data or the site changes.
+
+### 0.5 What it can deliver, and the evidence for it
+Evidence, from weakest to strongest:
+- **Backtests on the design period (2007–2026).** Growth: CAGR 9.6%, Sharpe 0.66, worst
+  drawdown −23.8%, against 10.8% / 0.54 / −55.2% for the S&P 500 (§15.4). Weak evidence: the
+  design was chosen on this data.
+- **Pre-registered tests on data already seen.** Growth failed on 1993–2006 (Sharpe 0.18 vs
+  0.51 for 60/40, §15.8); v3 tied 60/40 in Europe (§16); v4 failed (§17).
+- **A pre-registered test on data never used: v5 on 1927–1989 (§18).** Against a static mix
+  holding the same average equity: Sharpe 0.81 vs 0.47 (1927–1958) and 0.46 vs 0.37
+  (1959–1989); worst drawdown −42.8% vs −71.3% and −21.9% vs −39.1%; better in 100% of
+  bootstrap resamples. On 1993–2026: Sharpe 0.65 vs 0.54 for 60/40, worst drawdown −20.4%
+  vs −35.8%.
+- **Live records (§12.1).** The only true test. They are short so far.
+
+So what the tool can be expected to deliver is:
+- **Steadier risk and much smaller drawdowns** than a static portfolio with the same average
+  equity, in every period tested since 1927.
+- **A moderately better Sharpe ratio** than that static portfolio, coming from sizing by risk
+  (§0.3), not from predicting returns.
+
+### 0.6 What it cannot deliver, and when it will fail
+- **It will lag a rising market.** v5 holds about 75% equity on average and earned 9.2% a year
+  on 1993–2026 against 10.7% for the S&P 500.
+- **It misses V-shaped rebounds.** Three months after the 2020-03-23 low v5 was up 6.6%; the
+  S&P 500 was up 39.9%.
+- **It is late to a one-day crash.** Trades happen at the next close, so the latest signal
+  always arrives a day late. In October 1987 the rule had already cut to about 60% equity as
+  volatility rose. The cut to 24% signalled at the close on Friday 16 October could only trade
+  at Monday's close, after the 17% fall on 19 October.
+- **It can whipsaw** when volatility spikes and the market recovers at once. Trading costs
+  about 0.3–0.4% a year (§18).
+- **The bond switch is the least tested piece.** It lifts the 1993–2026 Sharpe from 0.57 to
+  0.65, but it was never tested before 1990 (no daily bond data) and 1993–2021 was a long bond
+  bull market.
+- **The past may not repeat.** Volatility targeting and trend following are widely known, and
+  well over thirty designs have been run on US 1993–2026 in this project.
+
+### 0.7 How to use it
+- **As a risk picture:** the Dashboard's score, components and regime describe how risky the
+  market is today and why. They describe risk, not expected return.
+- **As an allocation rule:** the *Risk budget (v5)* preset is the evidence-backed rule. Growth
+  stays the default until the live records v2 and v3 can be compared.
+- **As a research bench:** every parameter is editable and recomputed in the browser. Read
+  any backtest that was not pre-registered as a hypothesis, not as evidence.
 
 ## 1. Objective
 
@@ -10,10 +146,11 @@ credit/financial-conditions indicators, and to map it to a tactical allocation b
 gold, utilities). The aim is to cut drawdowns in stress regimes while keeping most of the upside in
 calm ones.
 
-> **Main caveat (§15.8).** On 2007–2026 the strategy cuts drawdowns well. On 1993–2006, an
+> **Main caveat (§15.8), for the regime profiles.** On 2007–2026 the strategy cuts drawdowns well. On 1993–2006, an
 > era never used to design it, it trailed a static 60/40 portfolio (Sharpe 0.18 against 0.51)
 > and lost more than the S&P 500 in 2001. It works on sharp volatility shocks, not on slow,
-> high-volatility bear markets or booms.
+> high-volatility bear markets or booms. The *Risk budget (v5)* rule (§0, §18) was designed to
+> fix this and passed a pre-registered test on 1927–1989.
 
 ## 2. Data sources
 
@@ -252,6 +389,7 @@ example to read put/call as a contrarian signal).
 | NFCI / STLFSI | index level | high | off | FRED |
 | Curve | 10y − 2y | low (inverted) | off | 1990 |
 | Absorption ratio shift | 15-day vs 1-year average of the sector-PCA absorption ratio, in σ (§15.6) | high | off | 2000-12 |
+| S&P 500 1-, 3-, 12-month return | 21-, 63-, 252-day price return (v4 trend pillar, §17) | low | off | 1990 |
 
 Notes:
 - The VRP uses past realised volatility, so it is known on the day. The academic definition
@@ -574,8 +712,10 @@ record. A test checks that v1 still resolves to exactly the parameters it was fr
 |---|---|---|---|
 | v1 | Balanced | 2026-10-22 | 2026-10-21 close |
 | v2 | Growth (§15.4) | 2026-10-23 | 2026-10-22 close |
+| v3 | Risk budget (v5, §18) | on its first scheduled run after the v5 code is deployed | the close before that run |
 
-Both versions continue side by side. Changing the defaults again would start v3.
+All versions continue side by side. v3 logs the equity weight in its regime column, since
+the rule has no regimes. Changing the defaults again would start v4.
 
 ## 13. Optimisation (allocation and signal weights)
 The **Optimise** tab (`web/src/engine/optimise.ts`) searches for better regime portfolios and
@@ -1166,3 +1306,150 @@ the strategy and the benchmark.
 - **Commitment (pre-registration §6).** This is the answer for v3. It is not the start of
   another search on the same data. Any new design needs data it hasn't seen: the live
   record, or a market not yet used.
+
+
+## 17. v4: a trend pillar and trend-filtered defensives (2026-11-04)
+
+Pre-registered in `docs/PREREG-v4.md` before any code or result. One run, no revision round.
+**Caveat up front:** §16 committed that a new design needs data it has not seen. v4 was
+tested on US data that earlier work had already used, so even a pass could not have proved
+it; at best it would have been a preset to watch on a live record.
+
+**Design (on top of Growth).**
+- Trend pillar at half the total weight: S&P 500 1-, 3- and 12-month returns plus the
+  200-day trend, each weighted 1.3125 (the other eight default components keep their weights,
+  sum 5.25).
+- Every component ranked against its whole history to date (expanding window).
+- Defensive trend filter: each bond, gold or utilities holding is kept only while its
+  trailing 252-day return beats T-bills; otherwise it moves to BIL.
+
+Engine: components `mom_1m`, `mom_3m`, `mom_12m`; `allocation.defensiveTrend`; the patch
+`V4_PATCH` in `params.ts`. All are off by default, so the frozen track records are unchanged;
+look-ahead tests cover them.
+
+| Period | Growth Sharpe / max DD | v4 Sharpe / max DD | 60/40 Sharpe | v4 vs Growth, bootstrap |
+|---|---|---|---|---|
+| 1993–2006 (Risk-Off without gold) | 0.18 / −50.1% | **0.39 / −25.0%** | 0.51 | 89% |
+| 2007–2026 | **0.66** / −23.8% | 0.58 / −23.2% | 0.57 | 18% |
+| 1993–2026 | 0.44 / −50.1% | 0.49 / −25.0% | 0.54 | 72% |
+
+| Criterion | Result |
+|---|---|
+| A Sharpe above 60/40 in both periods | **fails** (0.39 vs 0.51; 0.58 vs 0.57) |
+| B Sharpe above Growth in both periods | **fails** (2007–2026: 0.58 vs 0.66) |
+| C worst drawdown no deeper than Growth's | passes |
+| D bootstrap vs Growth ≥ 80%, 1993–2026 | **fails** (72%) |
+| E A and B hold at the median over cut-offs −5/0/+5 | **fails** (medians 0.40 and 0.61) |
+
+**Verdict: fail.** The options stay in the engine, off by default; the defaults are unchanged.
+
+**What it shows.**
+- **Trend fixes the slow bear market.** In 1993–2006 v4 doubled Growth's Sharpe and halved
+  its worst drawdown; 2008–09 fell from −18.8% to −11.0%. Either the trend pillar or the
+  whole-history ranks alone gives most of the gain (Sharpe 0.35 and 0.38).
+- **Trend breaks the V-shaped recovery.** In 2007–2026 the median 3-month rebound capture
+  after the ten major lows fell from 29% to 10%. The 12-month return stays negative long
+  after a V-shaped bottom, and the 1-month leg was not enough to offset it.
+- **The two eras want opposite things.** Volatility signals suit shocks with V-shaped
+  recoveries (2008–2026); trend suits slow, grinding bears (2000–2002). Each design so far wins
+  one era and loses the other, and none beats 60/40 on Sharpe in both.
+
+### 17.1 Volatility as an asset: two papers, tested with investable VIX futures
+Ideas from CFSGAM (2012, *Volatility as an Asset Class and Dynamic Asset Allocation*) and
+Brière, Burgues & Signori (Amundi WP-004, 2009/2011). Both used spot VIX or
+pre-2004 estimates, and the Amundi sample ends in August 2008, before the worst months for
+short volatility. Re-tested on a synthetic short-term VIX futures index (daily M1/M2 roll
+from CFE settlements, T-bills, 0.89% a year fee; short leg −0.5×, 0.95% fee), 2007–2026,
+monthly reset to target. Settings fixed before running.
+
+| Overlay | On S&P 500: CAGR / Sharpe / max DD | On Growth: CAGR / Sharpe / max DD |
+|---|---|---|
+| None | 10.8% / 0.54 / −55.2% | 9.6% / 0.66 / −23.8% |
+| O1: 10% long VX on the CFSGAM rule (buy after a ≥5-point VIX jump or VIX < 15; sell when VIX > 30 and stable) | 8.4% / 0.54 / −41.8% | 6.7% / 0.51 / −22.6% |
+| O2: long VX at 10% × 15/VIX (Amundi) | 7.5% / 0.45 / −48.5% | 6.2% / 0.50 / −19.9% |
+| O3: half of O2 + 5% short VX (Amundi pair) | 9.5% / 0.52 / −51.8% | 8.4% / 0.64 / −21.0% |
+
+- Long VX futures lost 44.9% a year on their own over 2007–2026; short VX (−0.5×) earned 11.4%.
+- **Long volatility is real insurance at a real price.** O1 cut the S&P's Sep–Nov 2008 loss
+  from −41.1% to −22.4% and Feb–Mar 2020 from −33.7% to −15.0%, but cost 2.4 points of CAGR
+  for an unchanged Sharpe (better in 50% of resamples): a risk dial, not an edge.
+- **On Growth it is double insurance.** Growth already de-risks in the same episodes, so
+  every overlay lowered its Sharpe.
+- **The Amundi pair does hedge itself**, but on investable instruments both legs cost more
+  than they earn together; neither paper's results survive the move from spot VIX or
+  variance swaps to VIX futures.
+
+## 18. v5: a simple risk budget, tested on 1927–1989 (2026-11-04)
+
+Pre-registered in `docs/PREREG-v5.md` before any code, before the pre-1990 data was
+downloaded, and before any result. One run, no revision round.
+
+**Why this design.** §11 shows the score sorts risk, not return: forward volatility was 37.2%
+after Crisis days against 12.4% after Risk-On days, with almost the same Sharpe ratio. If the
+reward per unit of risk is constant, the mean-variance optimal exposure is proportional to
+1 / forecast volatility. So volatility should size the position smoothly rather than switch it
+in or out. A trend brake covers the one gap, slow high-volatility bear markets, by halving
+rather than exiting (v4 showed that a full exit misses V-shaped rebounds).
+
+**The rule.** Equity weight = min(100%, 12% / 21-day realised volatility), halved while the
+equity total-return index is below its 200-day average. The rest is in 7–10y Treasuries while
+their trailing 252-day correlation with stocks is negative, otherwise T-bills (T-bills only
+before 1990). Trade at the next close when the equity weight is more than 10 points off
+target; 5 bp per side. No leverage, regimes or other inputs. Engine: allocation mode
+`riskBudget`, preset *Risk budget (v5)*, patch `V5_PATCH`.
+
+**Data.** Ken French daily market factor (Mkt-RF + RF) and T-bill rate, 1926-07 to 2026-09,
+from the Dartmouth data library. Checks before the run: two gaps, both real closures (March
+1933 bank holiday, September 2001); every daily move above 10% is a known event; from 1993
+its daily return correlates 0.979 with the engine's S&P 500 (10.95% vs 10.83% a year).
+
+**Decisive test: 1927–1989, never used by this project.** Benchmark: a static equity/T-bill
+mix at the rule's own average equity weight, rebalanced monthly, same costs.
+
+| Period | v5 CAGR / Sharpe / max DD | Static same-exposure mix | Sharpe difference |
+|---|---|---|---|
+| 1927–1958 | 8.3% / 0.81 / −42.8% | 6.4% / 0.47 / −71.3% | +0.34 |
+| 1959–1989 | 10.2% / 0.46 / −21.9% | 9.7% / 0.37 / −39.1% | +0.09 |
+| 1927–1989 | 9.2% / 0.65 / −42.8% | 8.0% / 0.42 / −73.5% | +0.23 |
+| *Volatility budget alone, 1927–1989* | 8.9% / 0.54 / −57.6% | 8.5% / 0.42 / −78.8% | +0.12 |
+| *Trend brake alone, 1927–1989* | 9.9% / 0.56 / −60.9% | 8.4% / 0.42 / −78.0% | +0.14 |
+
+- Worst drawdown inside 1929-09 to 1932-07: −38.0% against −73.5%; 1973–74: −21.5% against
+  −36.8%; autumn 1987: −21.8% against −25.4%.
+- Bootstrap (1,000 paired 21-day-block resamples, 1927–1989): v5's Sharpe higher in 100%.
+- Robustness: all nine combinations of target volatility {10, 12, 15%} × trend window
+  {150, 200, 250 days} beat the static mix in both halves (+0.26 to +0.38 and +0.07 to +0.11).
+
+**Check on 1993–2026 (already seen data).**
+
+| Period | v5 CAGR / Sharpe / max DD | 60/40 (S&P / AGG) | Static 75% S&P / T-bills | S&P 500 |
+|---|---|---|---|---|
+| 1993–2026 | 9.2% / **0.65** / **−20.4%** | 8.4% / 0.54 / −35.8% | 8.8% / 0.50 / −44.2% | 10.7% / 0.50 / −55.2% |
+| 1993–2006 | 10.0% / 0.59 / −12.8% | 9.0% / 0.51 / −25.7% | 9.0% / 0.44 / −35.8% | 10.6% / 0.45 / −47.5% |
+| 2007–2026 | 8.7% / 0.69 / −20.4% | 7.9% / 0.56 / −35.8% | 8.7% / 0.53 / −44.6% | 10.8% / 0.54 / −55.2% |
+
+- Episode drawdowns: 2000–02 −12.8% (60/40 −25.7%, S&P −47.5%); 2008–09 −15.2% (−35.8%,
+  −55.2%); 2020 −13.4% (−21.6%, −33.7%); 2022 −19.0% (−20.5%, −24.5%).
+- The engine implementation reproduces these numbers (1993–2026: 9.2% / 0.65 / −20.4%, cost
+  drag 0.36% a year).
+
+**Criteria:** A, B, C, D and E all pass. **Verdict: pass.** v5 becomes the preset *Risk budget
+(v5)* and live record v3 starts on its first scheduled run. The default stays Growth until the
+live records can be compared.
+
+**Caveats.**
+- **The bond switch is the least tested part.** Holding IEF while the stock-bond correlation is
+  negative lifts the 1993–2026 Sharpe from 0.57 (T-bills only) to 0.65, but 1927–1989 had no
+  daily bond data, so that piece was never tested on unseen data, and 1993–2021 was a long
+  bond bull market.
+- **It still misses V-shaped rebounds.** Three months after the 2020-03-23 low it was up 6.6%
+  against 39.9% for the S&P 500.
+- **Unseen by this project, not by the field.** Volatility targeting and trend following were
+  documented on US data that includes 1927–1989 (e.g. Moreira & Muir 2017; Hurst, Ooi &
+  Pedersen 2017); the idea was chosen knowing that. This project has now run well over 30
+  designs on US 1993–2026. A pass on a clean period is evidence, not proof; the live record
+  decides.
+- Pre-1952 data include Saturday sessions, so the 21-day window spans fewer calendar days and
+  √252 scaling slightly misstates volatility then; the result holds across target volatilities
+  10–15%.
+

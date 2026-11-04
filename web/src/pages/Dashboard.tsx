@@ -194,7 +194,7 @@ export default function Dashboard() {
             </span>
           </p>
           <p className="muted small">
-            {params.allocation.mode === 'regime' ? 'Regime portfolio' : 'Continuous mapping'} · rebalance{' '}
+            {params.allocation.mode === 'regime' ? 'Regime portfolio' : params.allocation.mode === 'riskBudget' ? 'Risk budget (v5)' : 'Continuous mapping'} · rebalance{' '}
             {params.backtest.rebalance === 'regime' ? 'on regime change' : params.backtest.rebalance}
           </p>
         </Card>

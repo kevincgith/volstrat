@@ -249,6 +249,36 @@ export const COMPONENTS: ComponentDef[] = [
       episodes: 'Below the average from Nov 2007 to Jun 2009 (95% of days in 2008–H1 2009). It barely touched it in Feb–Apr 2018 (2% of days), so the trend filter missed Volmageddon; the vol components caught it. Below on 71% of days in Mar–Jun 2020 and 85% of 2022.',
     },
   },
+  ...(
+    [
+      ['mom_1m', '1-month', 21, '−4.5% / +1.2% / +5.4%', 'Low −33.0% on 23 Mar 2020; high +25.1% on 22 Apr 2020.', 'Negative on 57% of days from Jan 2008 to Jun 2009, 59% of 2000–2002, 35% of Feb–Jun 2020 and 60% of 2022. The fast leg: it turned positive within weeks of the 2009 and 2020 lows, long before the volatility measures recovered.'],
+      ['mom_3m', '3-month', 63, '−6.8% / +3.2% / +10.1%', 'Low −41.8% on 20 Nov 2008; high +39.4% on 22 Jun 2020.', 'Negative on 74% of days from Jan 2008 to Jun 2009, 65% of 2000–2002, 62% of Feb–Jun 2020 and 80% of 2022.'],
+      ['mom_12m', '12-month', 252, '−11.9% / +11.9% / +27.7%', 'Low −48.8% on 5 Mar 2009; high +74.8% on 23 Mar 2021.', 'Negative on 99% of days from Jan 2008 to Jun 2009, 70% of 2000–2002 and 67% of 2022, but only 40% of Feb–Jun 2020: the slow leg catches grinding bear markets and misses V-shaped shocks.'],
+    ] as const
+  ).map(
+    ([id, span, k, pcts, extremes, episodes]): ComponentDef => ({
+      id,
+      label: `S&P 500 ${span} return`,
+      group: 'Trend',
+      inputs: ['SPX'],
+      riskOffWhenHigh: false,
+      defaultWeight: 1,
+      defaultEnabled: false,
+      unit: '%',
+      compute: (d) => {
+        const px = s(d, 'SPX');
+        const out = nan(px.length);
+        for (let t = k; t < px.length; t++) if (px[t]! > 0 && px[t - k]! > 0) out[t] = 100 * (px[t]! / px[t - k]! - 1);
+        return out;
+      },
+      doc: {
+        what: `S&P 500 price return over the last ${k} trading days (time-series momentum).`,
+        why: 'Trend is the timing signal with the longest out-of-sample record (over a century, across asset classes: Hurst, Ooi & Pedersen 2017). Unlike the volatility measures it detects slow, high-volatility bear markets, and blending fast and slow horizons helps at turning points (Goulding, Harvey & Mazzoleni 2023). Part of the v4 trend pillar (docs/PREREG-v4.md).',
+        range: `10th / 50th / 90th percentile ${pcts} since 1990. ${extremes}`,
+        episodes,
+      },
+    }),
+  ),
   {
     id: 'absorption',
     label: 'Absorption ratio shift (sector PCA)',

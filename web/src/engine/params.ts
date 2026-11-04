@@ -58,6 +58,20 @@ export const BASE_PARAMS: Params = {
   allocation: {
     mode: 'regime',
     adaptiveHedge: { enabled: false, lookback: 63, threshold: 0, replacement: 'BIL' },
+    // v4 (docs/PREREG-v4.md): off here so frozen track records are unchanged
+    defensiveTrend: { enabled: false, lookback: 252 },
+    // v5 (docs/PREREG-v5.md): used only when mode = 'riskBudget'
+    riskBudget: {
+      targetVol: 0.12,
+      volWindow: 21,
+      trendWindow: 200,
+      brake: 0.5,
+      maxEquity: 1,
+      equityAsset: 'SPX',
+      bondAsset: 'IEF',
+      cashAsset: 'BIL',
+      hedgeLookback: 252,
+    },
     regimePortfolios: [
       { BIL: 1 }, // Crisis
       { IEF: 0.5, GLD: 0.25, XLU: 0.25 }, // Risk-Off
@@ -121,6 +135,36 @@ export function merge<T>(base: T, patch: unknown): T {
 
 export const DEFAULT_PARAMS: Params = merge(BASE_PARAMS, GROWTH_PATCH);
 
+/**
+ * v4 candidate (docs/PREREG-v4.md), applied on top of the defaults (Growth):
+ * a trend pillar at half the weight (1-, 3- and 12-month S&P 500 returns plus
+ * the 200-day trend), whole-history ranks, and a trend filter on defensive
+ * holdings. Frozen before it was run; see METHODOLOGY §17 for the result.
+ */
+export const V4_PATCH = {
+  score: {
+    window: 0,
+    components: {
+      trend: { enabled: true, weight: 1.3125 },
+      mom_1m: { enabled: true, weight: 1.3125 },
+      mom_3m: { enabled: true, weight: 1.3125 },
+      mom_12m: { enabled: true, weight: 1.3125 },
+    },
+  },
+  allocation: { defensiveTrend: { enabled: true, lookback: 252 } },
+};
+
+/**
+ * v5 risk budget (docs/PREREG-v5.md): passed its pre-registered test on 1927-1989
+ * (METHODOLOGY §18). Equity sized by 12% / 21-day realised vol, halved below the
+ * 200-day average; the rest in IEF while the stock-bond correlation is negative, else
+ * T-bills; trades only when a weight is more than 10 points off target.
+ */
+export const V5_PATCH = {
+  allocation: { mode: 'riskBudget' as const },
+  backtest: { rebalance: 'daily' as const, band: 0.1 },
+};
+
 /** Minimal patch p such that merge(base, p) deep-equals `value`. */
 export function diff(base: unknown, value: unknown): unknown {
   if (JSON.stringify(base) === JSON.stringify(value)) return undefined;
@@ -149,6 +193,13 @@ export const PRESETS: Preset[] = [
     description:
       'Defaults: 80/20 in neutral, 125% equity in risk-on, 2x S&P in strong risk-on, T-bills in crisis, plus the panic-rebound re-entry (Methodology 15.4).',
     patch: GROWTH_PATCH,
+  },
+  {
+    id: 'riskbudget',
+    label: 'Risk budget (v5)',
+    description:
+      'Simple rule, passed its pre-registered test on 1927-1989: equity = 12% / recent volatility (max 100%), halved below the 200-day average; rest in Treasuries when they hedge, else T-bills (Methodology 18).',
+    patch: V5_PATCH,
   },
   {
     id: 'balanced',

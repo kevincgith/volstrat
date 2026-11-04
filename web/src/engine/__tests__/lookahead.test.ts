@@ -3,7 +3,7 @@
  * strictly after T are altered, the engine is using future information.
  */
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PARAMS, merge, type Params } from '../params';
+import { BASE_PARAMS, DEFAULT_PARAMS, merge, V4_PATCH, V5_PATCH, type Params } from '../params';
 import { run } from '../run';
 import { makeFixture, perturbAfter } from './fixture';
 
@@ -48,6 +48,8 @@ const configs: [string, Params][] = [
     'absorption ratio shift on',
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, score: { components: { absorption: { enabled: true, weight: 1 } } } }),
   ],
+  ['v5 risk budget (vol sizing, trend brake, stock-bond hedge switch)', merge(merge(BASE_PARAMS, V5_PATCH), { period: { start: '2010-01-01' } })],
+  ['v4 candidate (trend pillar, expanding ranks, defensive trend filter)', merge(merge(DEFAULT_PARAMS, V4_PATCH), { period: { start: '2010-01-01' } })],
   [
     'recovery re-entry on',
     merge(DEFAULT_PARAMS, { period: { start: '2010-01-01' }, regime: { reentry: { enabled: true, offPeak: 0.9, maDays: 10, lowDays: 10 } } }),

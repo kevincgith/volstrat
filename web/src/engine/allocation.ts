@@ -35,9 +35,54 @@ export function swapDuration(w: Weights, to: AssetKey): Weights {
   return out;
 }
 
+/**
+ * Defensive trend filter (v4, docs/PREREG-v4.md): a bond, gold or utilities
+ * holding is kept only while its trailing total return beats T-bills (BIL)
+ * over the same window; otherwise its weight moves to BIL.
+ */
+export interface DefensiveTrend {
+  enabled: boolean;
+  /** Trailing window in trading days. */
+  lookback: number;
+}
+
+export const TREND_FILTERED_ASSETS: AssetKey[] = ['IEI', 'IEF', 'TLH', 'TLT', 'TIP', 'AGG', 'GLD', 'XLU'];
+
+/** Move the weight of every holding for which `ok(key)` is false to BIL; returns `w` unchanged if none fails. */
+export function filterDefensive(w: Weights, ok: (k: AssetKey) => boolean): Weights {
+  const failing = TREND_FILTERED_ASSETS.filter((k) => (w[k] ?? 0) > 0 && !ok(k));
+  if (!failing.length) return w;
+  const out: Weights = { ...w };
+  for (const k of failing) {
+    out.BIL = (out.BIL ?? 0) + (out[k] ?? 0);
+    delete out[k];
+  }
+  return out;
+}
+
+/**
+ * Risk budget (v5, docs/PREREG-v5.md): equity weight = min(maxEquity, targetVol / 21-day
+ * realised vol), multiplied by `brake` while the equity index is below its `trendWindow`-day
+ * average. The rest is held in `bondAsset` while the trailing `hedgeLookback`-day stock-bond
+ * correlation is negative, otherwise in `cashAsset` (hedgeLookback 0 = always cash).
+ */
+export interface RiskBudgetParams {
+  targetVol: number;
+  volWindow: number;
+  trendWindow: number;
+  brake: number;
+  maxEquity: number;
+  equityAsset: AssetKey;
+  bondAsset: AssetKey;
+  cashAsset: AssetKey;
+  hedgeLookback: number;
+}
+
 export interface AllocationParams {
-  mode: 'regime' | 'continuous';
+  mode: 'regime' | 'continuous' | 'riskBudget';
+  riskBudget?: RiskBudgetParams;
   adaptiveHedge?: AdaptiveHedge;
+  defensiveTrend?: DefensiveTrend;
   /** Portfolios indexed by regime (0 = Crisis ... 4 = Strong Risk-On). */
   regimePortfolios: [Weights, Weights, Weights, Weights, Weights];
   continuous: {

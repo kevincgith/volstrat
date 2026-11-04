@@ -4,7 +4,7 @@
  * in a Web Worker or in tests.
  */
 
-import { continuousWeights, normalise, swapDuration, type Weights } from './allocation';
+import { continuousWeights, filterDefensive, normalise, swapDuration, type RiskBudgetParams, type Weights } from './allocation';
 import { buildAssets, type AssetSeries } from './assets';
 import { simulate, type BacktestResult } from './backtest';
 import type { MarketData } from './data';
@@ -107,6 +107,119 @@ export function strategyTargets(
   return out;
 }
 
+/**
+ * Risk-budget targets (docs/PREREG-v5.md §2). Uses equity and bond returns up to the
+ * close of t only: realised volatility over `volWindow` days, the equity total-return
+ * index against its `trendWindow`-day simple average, and the trailing stock-bond
+ * correlation. Null until every input is available.
+ */
+export function riskBudgetTargets(assets: Record<string, AssetSeries>, rb: RiskBudgetParams, n: number): (Weights | null)[] {
+  const eq = assets[rb.equityAsset]!.returns;
+  const idx = new Float64Array(n).fill(NaN);
+  let lvl = 1;
+  for (let t = 0; t < n; t++) {
+    if (Number.isFinite(eq[t]!)) {
+      lvl *= 1 + eq[t]!;
+      idx[t] = lvl;
+    }
+  }
+  const vw = Math.max(5, Math.round(rb.volWindow));
+  const tw = Math.max(20, Math.round(rb.trendWindow));
+  const corr = rb.hedgeLookback > 0 && assets[rb.bondAsset] ? rollingCorrelation(eq, assets[rb.bondAsset]!.returns, Math.max(20, Math.round(rb.hedgeLookback))) : null;
+  const out: (Weights | null)[] = new Array(n).fill(null);
+  let sum = 0;
+  let cnt = 0;
+  for (let t = 0; t < n; t++) {
+    if (Number.isFinite(idx[t]!)) {
+      sum += idx[t]!;
+      cnt++;
+    }
+    if (t >= tw && Number.isFinite(idx[t - tw]!)) {
+      sum -= idx[t - tw]!;
+      cnt--;
+    }
+    if (t < Math.max(vw, tw) || cnt < tw || !Number.isFinite(idx[t]!)) continue;
+    let m = 0;
+    let ok = true;
+    for (let i = t - vw + 1; i <= t; i++) {
+      if (!Number.isFinite(eq[i]!)) ok = false;
+      m += eq[i]!;
+    }
+    if (!ok) continue;
+    m /= vw;
+    let v = 0;
+    for (let i = t - vw + 1; i <= t; i++) v += (eq[i]! - m) ** 2;
+    const sd = Math.sqrt(v / (vw - 1)) * Math.sqrt(252);
+    if (!(sd > 0)) continue;
+    let w = Math.min(rb.maxEquity, rb.targetVol / sd);
+    if (idx[t]! < sum / cnt) w *= rb.brake;
+    const hedged = corr && Number.isFinite(corr[t]!) && corr[t]! < 0;
+    const def = hedged ? rb.bondAsset : rb.cashAsset;
+    out[t] = w >= 1 - 1e-12 ? { [rb.equityAsset]: w } : { [rb.equityAsset]: w, [def]: 1 - w };
+  }
+  return out;
+}
+
+/**
+ * Trailing compounded return over `n` days ending at t (inclusive); NaN unless
+ * all `n` daily returns are known. Uses returns up to the close of t only.
+ */
+export function trailingReturn(r: Float64Array, n: number): Float64Array {
+  const out = new Float64Array(r.length).fill(NaN);
+  let logSum = 0;
+  let finite = 0;
+  for (let t = 0; t < r.length; t++) {
+    const x = r[t]!;
+    if (Number.isFinite(x)) {
+      logSum += Math.log1p(x);
+      finite++;
+    }
+    if (t >= n) {
+      const old = r[t - n]!;
+      if (Number.isFinite(old)) {
+        logSum -= Math.log1p(old);
+        finite--;
+      }
+    }
+    if (t >= n - 1 && finite === n) out[t] = Math.expm1(logSum);
+  }
+  return out;
+}
+
+/**
+ * Defensive trend filter (docs/PREREG-v4.md §2.3): on day t, each bond, gold or
+ * utilities holding whose trailing `lookback`-day return is not above BIL's
+ * moves to BIL. Where either trailing return is unknown the holding is kept.
+ */
+export function applyDefensiveTrend(targets: (Weights | null)[], assets: Record<string, AssetSeries>, lookback: number): (Weights | null)[] {
+  const bil = trailingReturn(assets.BIL!.returns, lookback);
+  const tr = new Map<string, Float64Array>();
+  const trOf = (k: string) => {
+    let x = tr.get(k);
+    if (!x) tr.set(k, (x = assets[k] ? trailingReturn(assets[k]!.returns, lookback) : new Float64Array(targets.length).fill(NaN)));
+    return x;
+  };
+  // reuse one object per distinct filtered result so 'regime' rebalancing sees stable targets
+  const memo = new Map<Weights, Map<string, Weights>>();
+  return targets.map((w, t) => {
+    if (!w) return w;
+    const failing: string[] = [];
+    const f = filterDefensive(w, (k) => {
+      const a = trOf(k)[t]!;
+      const b = bil[t]!;
+      const ok = !Number.isFinite(a) || !Number.isFinite(b) || a > b;
+      if (!ok) failing.push(k);
+      return ok;
+    });
+    if (f === w) return w;
+    let m = memo.get(w);
+    if (!m) memo.set(w, (m = new Map()));
+    const key = failing.join(',');
+    if (!m.has(key)) m.set(key, f);
+    return m.get(key)!;
+  });
+}
+
 function usedAssets(targets: (Weights | null)[]): Set<string> {
   const s = new Set<string>();
   const seen = new Set<Weights>();
@@ -187,7 +300,12 @@ export function run(d: MarketData, p: Params): RunResult {
   const sbCorr = hedge?.enabled
     ? cached(d, `sbcorr${hedge.lookback}`, () => rollingCorrelation(assets.SPX!.returns, assets.IEF!.returns, Math.max(20, Math.round(hedge.lookback))))
     : undefined;
-  const targets = strategyTargets(score.score, reg, p, sbCorr);
+  const targets0 =
+    p.allocation.mode === 'riskBudget' && p.allocation.riskBudget
+      ? cached(d, 'rb' + JSON.stringify([p.assets, p.allocation.riskBudget]), () => riskBudgetTargets(assets, p.allocation.riskBudget!, n))
+      : strategyTargets(score.score, reg, p, sbCorr);
+  const dt = p.allocation.defensiveTrend;
+  const targets = dt?.enabled ? applyDefensiveTrend(targets0, assets, Math.max(21, Math.round(dt.lookback))) : targets0;
   const benches = cached(d, 'benchT' + JSON.stringify([p.assets, p.benchmarks]), () => benchmarkTargets(d, assets, p));
 
   // Common start: user start, first usable signal (+lag), and every asset used having returns.

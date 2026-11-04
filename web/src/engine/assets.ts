@@ -14,18 +14,21 @@ import { returnsFromIndex } from './stats';
 export const STRATEGY_ASSETS = [
   'SPX', 'SSO', 'UPRO', 'WORLD',
   'SPLV', 'USMV', 'QUAL', 'MTUM', 'VLUE', 'SPHB',
+  'QQQ', 'QLD', 'EFA', 'EEM', 'VNQ',
   'SHY', 'IEI', 'IEF', 'TLH', 'TLT', 'TIP', 'AGG',
   'BIL', 'SGOV', 'USFR', 'OVERNIGHT',
-  'GLD', 'XLU',
+  'GLD', 'XLU', 'DBC', 'UUP',
 ] as const; // prettier-ignore
 /** Unlevered US equity sleeves: the S&P 500, MSCI World and the factor ETFs. */
-export const EQUITY_ASSETS = new Set<string>(['SPX', 'WORLD', 'SPLV', 'USMV', 'QUAL', 'MTUM', 'VLUE', 'SPHB']);
+export const EQUITY_ASSETS = new Set<string>(['SPX', 'WORLD', 'SPLV', 'USMV', 'QUAL', 'MTUM', 'VLUE', 'SPHB', 'QQQ', 'EFA', 'EEM', 'VNQ']);
 export type AssetKey = (typeof STRATEGY_ASSETS)[number];
 
 /** Segments whose returns are gross of any fund fee. */
 const GROSS_SOURCES = new Set(['^SP500TR', '^990100-USD-STRD', 'cash', 'dff', 'GC=F']);
 
-export const LEVERAGE: Partial<Record<AssetKey, number>> = { SSO: 2, UPRO: 3 };
+export const LEVERAGE: Partial<Record<AssetKey, number>> = { SSO: 2, UPRO: 3, QLD: 2 };
+/** Leveraged ETFs on the S&P 500, extended before inception with a synthetic series. QLD (Nasdaq-100) is not. */
+const SPX_LEVERED = new Set<string>(['SSO', 'UPRO']);
 
 export interface AssetParams {
   /** Annual spread over T-bills paid on the borrowed (L-1) exposure. */
@@ -113,7 +116,7 @@ export function buildAssets(d: MarketData, p: AssetParams): Record<string, Asset
   for (const key of [...STRATEGY_ASSETS, 'CASH']) {
     const base = plainAsset(d, key);
     const lev = LEVERAGE[key as AssetKey];
-    if (lev && d.assets.SPX && d.assets.CASH) {
+    if (lev && SPX_LEVERED.has(key) && d.assets.SPX && d.assets.CASH) {
       const syn = syntheticLeveraged(d, lev, d.assets[key]?.expense_ratio ?? 0.009, p.financingSpread);
       const r = Float64Array.from(base.returns);
       const flag = new Uint8Array(base.synthetic);

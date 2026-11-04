@@ -188,6 +188,18 @@ ASSETS: list[AssetSpec] = [
     AssetSpec("MTUM", "MSCI USA Momentum (MTUM)", "risk", [_seg("MTUM", "MTUM ETF")], 0.0015),
     AssetSpec("VLUE", "MSCI USA Value (VLUE)", "risk", [_seg("VLUE", "VLUE ETF")], 0.0015),
     AssetSpec("SPHB", "S&P 500 High Beta (SPHB)", "risk", [_seg("SPHB", "SPHB ETF")], 0.0025),
+    # wider universe (2026-11-04). QQQ 1999-03, QLD 2006-06, EFA 2001-08, DBC 2006-02 and
+    # UUP 2007-03 have no pre-inception extension; EEM and VNQ extend with Vanguard index funds
+    AssetSpec("QQQ", "Nasdaq-100 (QQQ)", "risk", [_seg("QQQ", "QQQ ETF")]),
+    AssetSpec("QLD", "Nasdaq-100 2x (QLD)", "risk", [_seg("QLD", "QLD ETF")]),
+    AssetSpec("EFA", "Developed ex-US equities (EFA)", "risk", [_seg("EFA", "EFA ETF")]),
+    AssetSpec("EEM", "Emerging-market equities (EEM)", "risk",
+              [_seg("EEM", "EEM ETF"),
+               _seg("VEIEX", "Vanguard Emerging Markets Index fund", True)]),
+    AssetSpec("VNQ", "US REITs (VNQ)", "risk",
+              [_seg("VNQ", "VNQ ETF"), _seg("VGSIX", "Vanguard REIT Index fund", True)]),
+    AssetSpec("DBC", "Commodities (DBC)", "defensive", [_seg("DBC", "DBC ETF")]),
+    AssetSpec("UUP", "US dollar (UUP)", "defensive", [_seg("UUP", "UUP ETF")]),
     # durations (IEI/TLH 2007-01, TIP 2003-12) and cash
     AssetSpec("IEI", "US Treasuries 3-7y", "defensive", [_seg("IEI", "IEI ETF")], 0.0015),
     AssetSpec("TLH", "US Treasuries 10-20y", "defensive", [_seg("TLH", "TLH ETF")], 0.0015),

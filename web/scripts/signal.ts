@@ -8,7 +8,7 @@
  *   feed.xml             RSS feed of the last 30 regime changes
  *   track_record.json    the live, out-of-sample track records (see below)
  *
- * Live track records (data/track/v1/ Balanced, data/track/v2/ Growth): parameters
+ * Live track records (data/track/v1/ Balanced, v2/ Growth, v3/ Risk budget): parameters
  * are frozen in params.json on each version's first run; every run appends that close's decision to decisions.csv
  * (append-only: no backfill, existing rows are never rewritten).
  * and, when run in GitHub Actions, sets outputs `changed`, `title`, `body` if
@@ -18,7 +18,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { resolve } from 'node:path';
 import { COMPONENT_BY_ID } from '../src/engine/components';
 import { assemble } from '../src/engine/data';
-import { BASE_PARAMS, DEFAULT_PARAMS, merge, type Params } from '../src/engine/params';
+import { BASE_PARAMS, DEFAULT_PARAMS, merge, V5_PATCH, type Params } from '../src/engine/params';
 import { run } from '../src/engine/run';
 import { REGIMES } from '../src/engine/score';
 
@@ -163,12 +163,15 @@ function track(version: string, label: string, inception: Params) {
   // fields added to Params after freezing take their "off" value from BASE_PARAMS, never the current defaults
   const fp = merge(BASE_PARAMS, frozen.params);
   const tr = run(data, fp);
+  // the risk-budget rule (v5) has no regimes: its "regime" column records the equity weight
+  const state = (t: number) =>
+    fp.allocation.mode === 'riskBudget' ? `Equity ${Math.round((tr.targets[t]?.[fp.allocation.riskBudget!.equityAsset] ?? 0) * 100)}%` : REGIMES[tr.regimes[t]!]!;
   let TL = n - 1;
   while (TL > 0 && !Number.isFinite(tr.score.score[TL]!)) TL--;
   const rows = existsSync(logPath) ? readFileSync(logPath, 'utf8').trim().split('\n').slice(1).filter(Boolean) : [];
   const lastLogged = rows.length ? rows[rows.length - 1]!.split(',')[0]! : '';
   const todayDate = data.dates[TL]!;
-  const decision = [todayDate, round(tr.score.score[TL]!, 2), REGIMES[tr.regimes[TL]!], wstr(tr.targets[TL]), cutoff, new Date().toISOString().slice(0, 19) + 'Z'];
+  const decision = [todayDate, round(tr.score.score[TL]!, 2), state(TL), wstr(tr.targets[TL]), cutoff, new Date().toISOString().slice(0, 19) + 'Z'];
   if (!rows.length) {
     writeFileSync(logPath, HEADER + '\n' + decision.join(',') + '\n');
     console.log(`track ${version}: inception, first decision ${todayDate} ${decision[2]} (${decision[3]})`);
@@ -183,8 +186,8 @@ function track(version: string, label: string, inception: Params) {
   for (const row of loggedRows.slice(-5)) {
     const [d0, , reg0, w0] = row.split(',');
     const i = data.dates.indexOf(d0!);
-    if (i >= 0 && (REGIMES[tr.regimes[i]!] !== reg0 || wstr(tr.targets[i]) !== w0)) {
-      console.log(`track ${version}: NOTE ${d0} recomputed with current data as ${REGIMES[tr.regimes[i]!]} (${wstr(tr.targets[i])}); logged decision kept: ${reg0} (${w0})`);
+    if (i >= 0 && (state(i) !== reg0 || wstr(tr.targets[i]) !== w0)) {
+      console.log(`track ${version}: NOTE ${d0} recomputed with current data as ${state(i)} (${wstr(tr.targets[i])}); logged decision kept: ${reg0} (${w0})`);
     }
   }
   return {
@@ -206,6 +209,11 @@ function track(version: string, label: string, inception: Params) {
   };
 }
 
-// v1 already exists, so its inception parameters are never used again
-const tracks = [track('v2', 'Growth', DEFAULT_PARAMS), track('v1', 'Balanced', BASE_PARAMS)];
+// v1 and v2 already exist, so their inception parameters are never used again.
+// v3: the v5 risk-budget rule (docs/PREREG-v5.md), frozen on its first run.
+const tracks = [
+  track('v3', 'Risk budget (v5)', merge(BASE_PARAMS, V5_PATCH)),
+  track('v2', 'Growth', DEFAULT_PARAMS),
+  track('v1', 'Balanced', BASE_PARAMS),
+];
 writeFileSync(resolve(SITE, 'track_record.json'), JSON.stringify({ tracks }) + '\n');

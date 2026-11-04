@@ -70,6 +70,16 @@ TICKERS: list[Ticker] = [
     Ticker("VLUE", "MSCI USA Value ETF", False),
     Ticker("SPHB", "S&P 500 High Beta ETF", False),
     # more durations and cash
+    # wider universe (2026-11-04): Nasdaq-100, international, real assets, dollar
+    Ticker("QQQ", "Nasdaq-100 ETF", False),
+    Ticker("QLD", "2x Nasdaq-100 ETF", False),
+    Ticker("EFA", "MSCI EAFE (developed ex-US) ETF", False),
+    Ticker("EEM", "MSCI Emerging Markets ETF", False),
+    Ticker("VEIEX", "Vanguard Emerging Markets Index fund (EEM extension)", False),
+    Ticker("VNQ", "US REIT ETF", False),
+    Ticker("VGSIX", "Vanguard REIT Index fund (VNQ extension)", False),
+    Ticker("DBC", "Diversified commodities ETF", False),
+    Ticker("UUP", "US dollar index (bullish) ETF", False),
     Ticker("IEI", "3-7y Treasury ETF", False),
     Ticker("TLH", "10-20y Treasury ETF", False),
     Ticker("TIP", "TIPS (inflation-linked Treasuries) ETF", False),

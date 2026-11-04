@@ -218,10 +218,19 @@ export default function Methodology() {
       <Card title="The idea in one paragraph">
         <p>
           Volatility markets price fear in real time. When investors scramble for protection, implied volatility rises, near-dated options become more
-          expensive than longer-dated ones, credit spreads widen and prices break trend. These conditions tend to cluster and persist, and risk assets have
-          historically delivered poor risk-adjusted returns while they last. VolStrat measures several of these symptoms each day, converts each into a
-          0–100 score using <strong>only past data</strong>, averages them into a <strong>risk-appetite score</strong>, and holds more equity (even
-          leverage) when the score is high and more bonds, gold, utilities or cash when it is low.
+          expensive than longer-dated ones, credit spreads widen and prices break trend. These conditions cluster and persist, so{' '}
+          <strong>today&apos;s risk is a good forecast of next month&apos;s risk</strong>. Tomorrow&apos;s return is not: after stressed days the market
+          was about three times as volatile, but paid about the same per unit of risk. So VolStrat uses risk to decide <strong>how much</strong> to hold,
+          not to predict returns. It measures these symptoms each day using <strong>only past data</strong>, shows them as a 0–100{' '}
+          <strong>risk-appetite score</strong>, and sizes equity exposure to keep the portfolio&apos;s risk steady.
+        </p>
+        <p>
+          <strong>Why sizing can work.</strong> A fixed portfolio takes most of its risk in a few turbulent months that pay no more per unit of risk than
+          calm ones. Holding less when volatility is high and more when it is low spreads the risk evenly over time, which raises the return per unit of
+          risk without forecasting returns. A trend brake (halving exposure below the 200-day average) covers slow bear markets, where volatility looks
+          normal. The <strong>Risk budget (v5)</strong> preset is this rule; it passed a pre-registered test on 1927–1989 data the project had never used.
+          The regime profiles (Growth, Balanced) switch between fixed portfolios instead, and work well on the sharp shocks of 2007–2026 but not on
+          1993–2006.
         </p>
         <ol className="flow">
           <li>
@@ -238,7 +247,8 @@ export default function Methodology() {
             <strong>Classify</strong>: five regimes, with a hysteresis band to avoid flip-flopping around cut-offs.
           </li>
           <li>
-            <strong>Allocate &amp; simulate</strong>: the regime's portfolio, traded at the next close, with costs.
+            <strong>Allocate &amp; simulate</strong>: the regime&apos;s portfolio, or under the risk budget an equity weight of 12% ÷ recent volatility
+            (halved below trend), traded at the next close, with costs.
           </li>
         </ol>
       </Card>

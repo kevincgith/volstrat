@@ -53,11 +53,16 @@ GitHub Action).
 - **Default profile:** *Growth* since 2026-10-23: 80/20 in Neutral, 125% equity in Risk-On,
   and a re-entry rule after panics (METHODOLOGY §15.4). The earlier defaults remain as the
   *Balanced* preset.
-- **Holdings:** S&P 500 (1×/2×/3×), MSCI World, factor ETFs (low vol, min vol, quality,
-  momentum, value, high beta), Treasuries from 1–3y to 20y+, TIPS, aggregate bonds, T-bills
+- **Holdings:** S&P 500 (1×/2×/3×), Nasdaq-100 (1×/2×), MSCI World, developed ex-US and
+  emerging-market equities, US REITs, factor ETFs (low vol, min vol, quality,
+  momentum, value, high beta), commodities, the US dollar, Treasuries from 1–3y to 20y+, TIPS, aggregate bonds, T-bills
   (BIL, SGOV), floating-rate Treasuries, overnight cash, gold, utilities.
+- **Risk budget (v5) preset:** a simple rule that sizes equity by 12% ÷ recent volatility,
+  halves it below the 200-day average and holds Treasuries only while they hedge. It passed a
+  pre-registered test on 1927–1989 data the project had never used (METHODOLOGY §18).
 - **Live track records:** decisions logged daily with frozen parameters, append-only, in
-  `data/track/` (v1 Balanced, v2 Growth), replayed on the Dashboard (METHODOLOGY §12.1).
+  `data/track/` (v1 Balanced, v2 Growth, v3 Risk budget), replayed on the Dashboard
+  (METHODOLOGY §12.1).
 - **Alerts:** an RSS feed (`/data/feed.xml`) and a GitHub issue when the default profile's
   regime changes. Watch the repository to get these by email.
 

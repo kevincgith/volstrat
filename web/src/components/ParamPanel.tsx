@@ -21,6 +21,13 @@ const ASSET_LABEL: Record<AssetKey, string> = {
   MTUM: 'Momentum (MTUM)',
   VLUE: 'Value (VLUE)',
   SPHB: 'High beta (SPHB)',
+  QQQ: 'Nasdaq-100 (QQQ)',
+  QLD: 'Nasdaq-100 2x (QLD)',
+  EFA: 'Developed ex-US (EFA)',
+  EEM: 'Emerging markets (EEM)',
+  VNQ: 'US REITs (VNQ)',
+  DBC: 'Commodities (DBC)',
+  UUP: 'US dollar (UUP)',
   IEI: 'Treasuries 3-7y',
   TLH: 'Treasuries 10-20y',
   TIP: 'TIPS',
@@ -363,9 +370,22 @@ export function ParamPanel({
           options={[
             { value: 'regime', label: 'Regime portfolios' },
             { value: 'continuous', label: 'Continuous' },
+            { value: 'riskBudget', label: 'Risk budget' },
           ]}
         />
-        {al.mode === 'regime' ? (
+        {al.mode === 'riskBudget' ? (
+          <>
+            <p className="muted small" style={{ margin: '6px 0 0' }}>
+              Equity weight = target volatility ÷ the last {al.riskBudget?.volWindow ?? 21} days&apos; realised volatility, capped; multiplied by the
+              brake while the index is below its trend average. The score and regimes are shown but not used. Pre-registered v5 (Methodology §18).
+            </p>
+            <NumberInput label="Target volatility (%)" value={Math.round((al.riskBudget?.targetVol ?? 0.12) * 1000) / 10} min={2} max={40} step={1} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), targetVol: Math.min(0.4, Math.max(0.02, v / 100)) }))} />
+            <NumberInput label="Trend average (days)" value={al.riskBudget?.trendWindow ?? 200} min={20} step={10} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), trendWindow: Math.max(20, Math.round(v)) }))} />
+            <NumberInput label="Brake below trend (×)" value={al.riskBudget?.brake ?? 0.5} min={0} max={1} step={0.1} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), brake: Math.min(1, Math.max(0, v)) }))} />
+            <NumberInput label="Max equity (×)" value={al.riskBudget?.maxEquity ?? 1} min={0.1} max={1.5} step={0.1} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), maxEquity: Math.min(1.5, Math.max(0.1, v)) }))} />
+            <NumberInput label="Stock-bond corr. window (days, 0 = always T-bills)" value={al.riskBudget?.hedgeLookback ?? 252} min={0} step={21} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), hedgeLookback: Math.max(0, Math.round(v)) }))} />
+          </>
+        ) : al.mode === 'regime' ? (
           [...REGIMES]
             .map((r, i) => ({ r, i }))
             .reverse()
