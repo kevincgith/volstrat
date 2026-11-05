@@ -263,6 +263,14 @@ ratio (§15.6). On download (2026-10-23) all nine had 7,001 days with no gaps.
     component.
   - Fallback if FRED fails: HYG/LQD total return relative to IEF (credit ETF component).
 
+### 2.5b Unemployment rate (BLS)
+Monthly, seasonally adjusted (BLS LNS14000000, identical to FRED UNRATE), 1948-01 onward,
+cached in `data/raw/unrate.csv`. Fetched from FRED's keyless endpoint, with the BLS public API
+(latest three years, no key) as fallback. Each value is used from 41 days after the 1st of the
+month it describes. Seasonal factors are revised every January for five years; revisions
+update the cache and, under the site's rule, are shown. 2025-10 was never published (federal
+government shutdown). Used only by the recession-gate candidate (§25).
+
 ### 2.5a End-of-day only: no live or provisional prices
 Intraday and provisional values must never reach the signal or the backtest. During US
 trading hours Yahoo's bar for today is a live price, and right after the close vendors
@@ -713,9 +721,10 @@ record. A test checks that v1 still resolves to exactly the parameters it was fr
 | v1 | Balanced | 2026-10-22 | 2026-10-21 close |
 | v2 | Growth (§15.4) | 2026-10-23 | 2026-10-22 close |
 | v3 | Risk budget (v5, §18) | on its first scheduled run after the v5 code is deployed | the close before that run |
+| v4 | Risk budget + recession gate (candidate, §25.1) | on its first scheduled run after the gate is deployed | the close before that run |
 
-All versions continue side by side. v3 logs the equity weight in its regime column, since
-the rule has no regimes. Changing the defaults again would start v4.
+All versions continue side by side. v3 and v4 log the equity weight in their regime column,
+since those rules have no regimes. A new version number is used for any further change.
 
 ## 13. Optimisation (allocation and signal weights)
 The **Optimise** tab (`web/src/engine/optimise.ts`) searches for better regime portfolios and
@@ -1452,4 +1461,392 @@ live records can be compared.
 - Pre-1952 data include Saturday sessions, so the 21-day window spans fewer calendar days and
   √252 scaling slightly misstates volatility then; the result holds across target volatilities
   10–15%.
+
+## 19. Which asset behaves best in which regime (v6, 2026-11-05)
+
+Pre-registered in `docs/PREREG-v6.md` before any result. The regime portfolios (§6) were built
+by hand; §11 covered only the S&P 500 and §13.1 fitted per-regime portfolios on mean returns.
+This section asks the question across the whole universe and tests whether the answer can
+build the allocation.
+
+**Method.** Growth's regime path (with the panic-rebound override), label at the close of t,
+return on t + 2. Excess returns over T-bills. 18 assets with history from 2007 (proxy chains
+included); leveraged and factor ETFs left out.
+
+### 19.1 The answer, 2007–2026
+
+| Regime (days) | Best Sharpe | Worst | Pattern |
+|---|---|---|---|
+| Crisis (246) | SHY 2.10, IEI 1.78, IEF 1.58, GLD 1.51, TLT 1.46 | DBC −1.61, VNQ −0.65 | Only Treasuries and gold paid: Treasuries with correlation about −0.5 to stocks, gold uncorrelated (0.10). Utilities fell with stocks (correlation 0.86); commodities lost 53% a year. |
+| Risk-Off (877) | VNQ 0.77, SPX 0.65, QQQ 0.60, GLD 0.55 | SHY −0.52, TLT −0.39 | Risk assets still paid (S&P 500 +16.3% a year excess, at 24.9% volatility): Risk-Off is often the recovery phase. Bonds earned about nothing; gold paid with no correlation (−0.03). |
+| Neutral (2,142) | QQQ 0.82, XLU 0.81, SPX 0.64 | GLD 0.11, BIL | Equities and utilities. |
+| Risk-On (1,629) | QQQ 1.25, SPX 0.97, GLD 0.77, DBC 0.64 | UUP −0.32 | Equities, gold and commodities; Treasuries flat. |
+| Strong Risk-On (97) | IEI 1.86, SHY 1.85, AGG 1.78 | GLD −1.02, VNQ −0.94 | Only 97 days; too few to read. |
+
+### 19.2 What is stable enough to build on
+
+Spearman rank correlation of each property across assets between two periods, median over
+the regimes with enough data:
+
+| Periods compared | Excess return | Volatility | Sharpe | Correlation with S&P 500 |
+|---|---|---|---|---|
+| 2007–2016 vs 2017–2026 (18 assets) | 0.59 | **0.93** | 0.22 | **0.89** |
+| 1993–2006 vs 2007–2026 (11 assets) | 0.22 | **0.90** | −0.05 | **0.76** |
+
+The pre-registered hypothesis holds. **How volatile an asset is in a regime, and how it moves
+with stocks, are stable; how well it pays is not.** The Crisis-regime Sharpe ranking was
+consistent within 2007–2026 (0.81) but reversed against 1993–2006 (−0.44): Treasuries were not
+reliable hedges before 2000, when stocks and bonds moved together.
+
+### 19.3 Building the defensive mix from the evidence: fail
+
+Rule (frozen): each 1 January from 2007, using regime-days since 1993 up to that date, fill
+the defensive share of Crisis, Risk-Off and Neutral with the two candidates (SHY, IEI, IEF,
+TLH, TLT, TIP, AGG, GLD, XLU, DBC, UUP, BIL) that had the lowest correlation with stocks in
+that regime, weighted by inverse volatility. Equity exposure as Growth.
+
+| 2007–2026 | CAGR | Sharpe | Max DD | 2007–16 Sharpe | 2017–26 Sharpe | P(better than Growth) |
+|---|---|---|---|---|---|---|
+| Growth (hand-built) | 9.6% | 0.66 | −23.8% | 0.50 | 0.85 | — |
+| Risk-based (lowest correlation) | 9.1% | 0.62 | −27.4% | 0.54 | 0.71 | 23% |
+| *Return-based (highest Sharpe), reported only* | 9.0% | 0.61 | −23.6% | 0.48 | 0.76 | 23% |
+
+Criteria A, B and C fail. **Verdict: fail.** The hand-built portfolios stay.
+
+**Why.**
+- The rule always picked Treasuries (IEF and TLT in Crisis; IEI and TLH in Risk-Off).
+  Concentrating there helped in 2008–09 (−15.0% vs −18.6%) but hurt in 2022 (−26.8% vs
+  −23.6%), when stocks and bonds fell together.
+- A correlation averaged since 1993 adapts too slowly when the stock-bond relationship
+  changes. The v5 rule uses the **trailing one-year** correlation instead, which is why it
+  held IEF in 2008 and T-bills in 2022 (§18).
+- Growth's diversified Risk-Off mix (IEF, gold, utilities) beat the two best historical
+  hedgers. Diversifying across defensive assets mattered more than picking the best one.
+
+### 19.4 What this means for the allocation
+- **Regimes should decide how much risk to hold, not which asset will win.** Rankings by
+  return flip between decades; rankings by risk do not.
+- **Hedges should be judged on recent behaviour.** The one property that has to be checked
+  continuously is whether bonds still hedge stocks; v5's trailing-correlation switch does
+  that.
+- **In a crisis only Treasuries and gold have paid**, and only when Treasuries were hedging.
+  Utilities, REITs and commodities fell with stocks and do not belong in a crisis portfolio.
+- Adding new assets to a regime portfolio because they paid in that regime in the past (for
+  example Nasdaq-100 in Risk-On, Sharpe 1.25) is return-chasing. It would need its own
+  pre-registered test on data it has not seen.
+
+## 20. v7: the risk budget abroad, and four refinements (2026-11-05)
+
+Pre-registered in `docs/PREREG-v7.md` before the data were downloaded. One run.
+
+**Data.** Ken French daily regional market returns in US dollars (so including currency
+moves), with the US T-bill as cash, July 1990 to September 2026: Japan and Asia Pacific ex
+Japan, never used by this project, and Europe, partly seen in §16. Checks before the run: no
+gaps or missing values; every daily move above 8% is a known event (October 1998 yen surge,
+October 2008, March 2011, the June 2016 Brexit vote, March 2020, 5 August 2024, April 2025).
+No regional bond data, so the rest is always in T-bills. Evaluation starts on 1992-03-24, when
+every variant has enough history.
+
+### 20.1 Does the core idea travel?
+
+v5 (V0) against a static mix of the region's equity and T-bills at V0's own average equity
+weight, rebalanced monthly:
+
+| 1992–2026 | V0 CAGR / Sharpe / max DD | Static same-exposure mix | Buy and hold | V0 average equity |
+|---|---|---|---|---|
+| Asia Pacific ex Japan | 6.7% / **0.46** / **−28.0%** | 7.0% / 0.43 / −49.8% | 8.1% / 0.41 / −62.5% | 73% |
+| Europe | 6.4% / **0.42** / **−28.4%** | 6.7% / 0.38 / −48.9% | 8.0% / 0.39 / −62.1% | 72% |
+| Japan | 2.8% / 0.09 / **−25.6%** | 3.9% / 0.18 / −36.2% | 4.4% / 0.20 / −59.8% | 57% |
+
+**The core idea travels** (pre-registered test: two of three regions, including one never
+used). In every region the worst drawdown is roughly halved against buy-and-hold. The Sharpe
+gain is small outside the US (+0.03 and +0.04), and **Japan fails**: in 34 years of sideways
+markets with sharp rallies, the trend brake cut exposure repeatedly just before rebounds, and
+Japan's higher volatility kept the fixed 12% target at a low 57% average equity.
+
+### 20.2 Four refinements
+
+Each changes one element of v5 (PREREG-v7 §3). Sharpe change against V0, with the share of
+paired bootstrap resamples in which the variant beat V0:
+
+| Variant | Japan | Asia Pac ex JP | Europe | US 1928–1989 | US 1993–2026 | Verdict |
+|---|---|---|---|---|---|---|
+| V1 EWMA volatility (λ 0.94) | +0.01 (69%) | +0.01 (77%) | +0.03 (96%) | +0.00 | −0.02 | fail (R2) |
+| V2 HAR blend (5/21/63 days) | −0.02 (17%) | −0.00 (53%) | −0.00 (46%) | −0.00 | −0.02 | fail |
+| V3 adaptive target (median vol) | +0.02 (73%) | +0.01 (72%) | +0.00 (55%) | −0.02 | −0.02 | fail (R2) |
+| V4 two-speed trend brake | −0.01 (36%) | +0.04 (90%) | +0.01 (60%) | −0.01 | −0.01 | fail (R2) |
+
+**None passes.** v5 is unchanged. EWMA volatility is the most consistent, higher in all three
+regions, but by too little to clear the 90% bar in two of them. The adaptive target raised
+Japan's average equity to 72% but not its Sharpe. The two-speed brake helped Asia but not
+Japan, the market whose rebounds it was meant to catch.
+
+### 20.3 What it shows
+- **The robust part is drawdown control.** Halving the worst loss held in every market and
+  period tested (US 1927–2026, Europe, Asia, Japan). The Sharpe gain is real but varies by
+  market: large in the volatile 1930s, modest elsewhere, negative in Japan.
+- **v5's simple version is hard to beat.** Four standard refinements changed the Sharpe by
+  −0.02 to +0.04. The rule's value comes from its structure (size by volatility, brake on
+  trend), not from tuning how volatility is measured.
+- **Clean test data are now largely used up.** US 1927–2026, Europe, Japan and Asia Pacific
+  have each been used. Further refinements should be judged on the live record (§12.1), not on
+  more backtests.
+
+## 21. v8: sizing with the volatility complex instead of realised volatility (2026-11-05)
+
+Pre-registered in `docs/PREREG-v8.md` before any code or result. One run. **Limit:** VIX starts
+in 1990, every year since has been used by earlier tests, and Cboe no longer serves the VXO
+history that would add 1986–1989. A pass would have been weaker evidence than v5's.
+
+**Variants** (everything else as v5; implied volatility scaled by the expanding ratio of median
+realised volatility to median VIX, 0.75 at the end of the sample):
+- W1: size by bias-corrected VIX;
+- W2: size by the average of realised volatility and bias-corrected VIX;
+- W3: W1 plus the capitulation re-entry of §15.2 lifting the trend brake for 20 days.
+
+| 1991-01-30 to 2026-11-03 | CAGR | Sharpe | Max DD | 1991–2006 Sharpe | 2007–2026 Sharpe | P(better than v5) | Median 3-month rebound capture |
+|---|---|---|---|---|---|---|---|
+| **v5 (realised volatility)** | 9.5% | **0.66** | **−20.4%** | **0.64** | **0.69** | — | 25.9% |
+| W1 implied | 9.0% | 0.61 | −22.9% | 0.63 | 0.59 | 1% | 31.8% |
+| W2 blend | 9.2% | 0.63 | −21.7% | 0.63 | 0.63 | 2% | 28.7% |
+| W3 implied + capitulation re-entry | 9.1% | 0.62 | −22.9% | 0.63 | 0.61 | 6% | 21.8% |
+| 60/40 | 8.7% | 0.57 | −35.8% | 0.58 | 0.56 | — | 60.3% |
+
+**Verdict: all three fail every criterion.** v5 stands.
+
+**Why.**
+- **Implied volatility is a noisier sizing input than realised volatility.** VIX includes the
+  volatility risk premium, which varies on its own: it is high in uncertain but quiet markets
+  and moves with options demand. Realised volatility measures the risk the portfolio actually
+  bears.
+- **The volatility measure is not what limits re-entry.** Three months after the 2020-03-23 low
+  every variant was up 6.6–8.7% against 39.9% for the S&P 500, because the trend brake halves
+  exposure until the index regains its 200-day average. A 20-day capitulation lift (W3) was
+  too short to change that.
+- Before the shocks of 2018-02 and 2020-02 every variant held about 100% equity. Volatility was
+  low and the trend positive, so none of these signals could have seen the shocks coming.
+
+### 21.1 The return lever is the volatility target, not the signal
+
+*Reported, not a test: the settings below were chosen after looking at the data.* The same v5
+rule at higher targets, with exposure above 100% held through SSO (synthetic 2× S&P 500 before
+its 2006 launch: 2× the daily return less T-bills + 0.75% financing and a 0.89% fee):
+
+| 1991-03-11 to 2026-11-03 | CAGR | Sharpe | Max DD |
+|---|---|---|---|
+| 12% target, no leverage (preset) | 9.3% | 0.65 | −20.4% |
+| 15% target, no leverage | 9.9% | 0.64 | −22.8% |
+| 18% target, up to 1.5× | 11.4% | 0.60 | −27.0% |
+| 20% target, up to 2× | 12.0% | 0.56 | −32.8% |
+| S&P 500 | 10.8% | 0.51 | −55.2% |
+
+Raising the target buys return at a nearly constant Sharpe ratio; leverage costs (financing
+and the leveraged ETF fee) take a little of it. An 18% target with up to 1.5× equity earned
+more than the S&P 500 with half its worst drawdown. That is a choice of how much risk to take,
+in line with principle 8 (§0.2). The preset's *Target volatility* and *Max equity* inputs set
+it. On 2026-11-05 the engine was corrected so that exposure above 100% is held through SSO as
+a fully invested blend (as in continuous mode); before that a max equity above 1 held unfunded
+S&P 500 exposure. In the app, 2007–2026 with an 18% target and up to 1.5×: CAGR 11.1%, Sharpe
+0.65, max drawdown −25.7% (S&P 500: 10.8%, 0.54, −55.2%).
+
+## 22. Why "exit until calm" leaves money behind, and two attempts to fix it (2026-11-05)
+
+### 22.1 Where the best and worst days fall
+US 1993–2026, S&P 500 total return, volatility measured the evening before each day:
+
+| | Share of days | S&P 500, annualised | Volatility | Of the 20 best days | Of the 20 worst days |
+|---|---|---|---|---|---|
+| 21-day volatility above 25% | 11% | 7.1% | 36.4% | 19 | 15 |
+| Calmer days | 89% | 11.2% | 14.8% | 1 | 5 |
+
+- **Exiting stress is right:** calm days pay about three times as much per unit of risk, and
+  most of the worst days come in stress.
+- **Waiting for calm is the cost:** nearly all the best days come in stress too, and the
+  recovery comes before volatility settles. After the 2009-03-09 and 2020-03-23 lows, 21-day
+  volatility first fell back below 25% on 20 May, when the S&P 500 was already up 33.8% and
+  33.2%.
+
+### 22.2 v9: a multi-asset risk budget (`docs/PREREG-v9.md`): fail
+Six sleeves (US, developed ex-US and emerging equity, 7–10y Treasuries, gold, commodities),
+inverse 63-day-volatility weights, each halved below its 200-day average, monthly.
+
+| 2007–2026 | CAGR | Vol | Sharpe | Max DD | 2007–16 / 2017–26 Sharpe | 2008–09 / 2020 / 2022 DD | P(better than v5) |
+|---|---|---|---|---|---|---|---|
+| v5 | 8.7% | 10.5% | **0.69** | −20.4% | 0.68 / 0.70 | −15.2% / −13.4% / −19.0% | — |
+| v9 | 5.5% | 7.2% | 0.56 | **−15.8%** | 0.49 / 0.63 | −15.8% / −10.3% / −10.8% | 25% |
+| v9 without gold | 4.7% | 7.3% | 0.44 | −15.6% | 0.40 / 0.49 | | 6% |
+| v9 without trend brake | 5.9% | 9.1% | 0.50 | −25.9% | 0.43 / 0.58 | | 18% |
+| 60/40 | 7.9% | 11.7% | 0.57 | −35.6% | 0.50 / 0.65 | −35.6% / −21.5% / −20.5% | |
+
+C1, C2 and C4 fail. Average weights: IEF 30%, S&P 500 13%, gold 12%, developed ex-US 11%,
+commodities 10%, emerging 8%, T-bills 16%. Scaled to v5's volatility (1.47×) it would earn
+5.9% a year above T-bills against v5's 7.2%. Diversifying across asset classes lowered risk
+(2022: −10.8% against −19.0%) but commodities and emerging markets earned too little in
+2007–2026 for it to pay, and without gold the Sharpe ratio fell to 0.44.
+
+### 22.3 v10: v5 plus capitulation re-entry (`docs/PREREG-v10.md`): fail
+The panic-rebound override of §15.2 (VIX/VIX3M above 1.10 within 20 days, now below 1.00)
+sets a floor of 80% equity for 20 days. Active on 377 days of 2007–2026.
+
+| 2007–2026 | CAGR | Sharpe | Max DD | 2007–16 / 2017–26 Sharpe | Median 3-month rebound capture | 2008–09 DD | P(better than v5) |
+|---|---|---|---|---|---|---|---|
+| v5 | 8.7% | 0.69 | −20.4% | 0.68 / 0.70 | 27.1% | −15.2% | — |
+| v10 | 8.9% | 0.67 | −20.4% | 0.54 / **0.81** | 25.8% | −18.4% | 37% |
+| *Reported only: override held until the curve re-inverts, a 20-day low breaks or v5 reaches 80%* | 9.2% | 0.72 | −20.4% | 0.64 / 0.80 | 32.6% | −18.5% | 82% |
+
+C1, C2 and C4 fail. **Verdict: fail.** The capitulation signal helped in the sharp panics of
+2018-12, 2020 and 2025-04 (3-month returns after the low: 10.3%, 9.3% and 14.5% against v5's
+6.2%, 6.6% and 8.6%) but bought back too early in 2008, and it never fired near the 2009,
+2011 or 2022 lows. Three months after the ten major lows v5 was up 1–9% while the S&P 500 was
+up 6–40%; neither variant changed that much.
+
+**So the missing piece is still a re-entry signal for grinding bottoms**, which the volatility
+curve does not provide. Research on re-entry mechanisms continues in
+`research_notes/Re-entry after market sell-offs/`.
+
+## 23. v11: searching for a re-entry signal (2026-11-05)
+
+Pre-registered in `docs/PREREG-v11.md`: candidates fixed from the research in
+`research_notes/Re-entry after market sell-offs/`, selected on US 1928–1989 and validated on
+1993–2026. Breadth thrusts, which fire closest to bottoms in vendor studies, could not be
+tested: no free daily NYSE advance/decline history exists.
+
+**Stress days** = the S&P 500 below its 200-day average and v5 holding less than 50% equity.
+"False alarm" = a 63-day forward loss worse than −10%.
+
+| Candidate (active on stress days) | 1928–1989: mean forward 63-day return / false alarms | 1991–2026 (descriptive) |
+|---|---|---|
+| All stress days | 2.44% / 17.6% (3,284 days) | 1.7% / 13.4% (1,807 days) |
+| P1 rebound state (252-day return < 0, 42-day > 0) | −1.30% / 26.3% | −2.3% / 14.2% |
+| P2 above the 50-day average | 0.28% / 22.7% | 0.4% / 9.1% |
+| P3 momentum thrust (10-day return ≥ 95th percentile, then 20 days) | 2.57% / 26.0% | 2.3% / 7.8% |
+| **P4 follow-through day** (≥ 1.7% on day 4–10 after a 20-day low, then 20 days) | **4.96% / 16.9%** (selected) | 1.1% / 12.9% |
+| VIX capitulation (§15.2) | not available | 1.6% / 13.7% |
+
+**Validation, 1993–2026** (v5 with the trend brake lifted while P4 is active):
+
+| | CAGR | Sharpe | Max DD | 1993–2006 / 2007–2026 Sharpe | Median 3-month rebound capture | P(better than v5) |
+|---|---|---|---|---|---|---|
+| v5 | 9.2% | 0.65 | −20.4% | 0.60 / 0.69 | 25.9% | — |
+| v11 | 9.2% | 0.64 | −20.6% | 0.56 / 0.69 | 27.3% | 30% |
+
+C1 and C2 fail. **Verdict: fail.** On the discovery period itself (1928–1989, not evidence)
+v11 barely differed from v5 either: Sharpe 0.64 against 0.63, CAGR 9.2% against 8.9%.
+
+**What it shows.**
+- **No signal separates real bottoms from bear-market rallies consistently.** The best
+  candidate in 1928–1989 (P4) was below average in 1991–2026; the best in 1991–2026 (P3, half
+  the usual false alarms) had the most false alarms in 1928–1989. The fast/slow "rebound
+  state" was worse than average in both eras: it keeps buying rallies inside bear markets.
+- **The gap is structural, not a missing indicator.** The best and worst days arrive together
+  in high-volatility stress (§22.1), and a bottom is only recognisable afterwards. A rule that
+  steps aside in stress will miss the first leg of the rebound; a rule that buys in stress will
+  also buy 1930, 2001 and 2008. The re-entry signals tested here moved 3-month rebound capture
+  by 1–3 points.
+- **What can be chosen is the trade-off.** The trend brake (halve below the 200-day average) is
+  the part that pays in slow bear markets (+0.14 Sharpe on 1927–1989); a higher volatility
+  target buys back return in recoveries at the cost of deeper drawdowns (§21.1).
+
+## 24. v12: breadth-thrust re-entry from a century of industry data (2026-11-05)
+
+Pre-registered in `docs/PREREG-v12.md` before the data were downloaded. Breadth thrusts were the
+one re-entry family left untested (§23) because no free NYSE advance/decline history exists.
+**New data:** Ken French's daily value-weighted returns of 49 US industry portfolios, 1926–2026
+(40–49 industries with data every day; dates identical to the market file; 0.9% of returns
+exactly zero, counted as neither up nor down). Breadth = the share of industries that rose.
+Canonical thresholds were used as published; with 49 groups instead of ~3,000 stocks they fire
+much more often (B1: 96 times in 1928–1989).
+
+**Step 1, signal quality on stress days** (market below its 200-day average, v5 below 50%
+equity). A signal had to beat all stress days on both measures in **both** eras:
+
+| | 1928–1989: mean forward 63-day return / false alarms / firings | 1990–2026 |
+|---|---|---|
+| All stress days | 2.4% / 17.6% | 2.3% / 13.0% |
+| B1 Zweig-style thrust (10-day EMA of breadth from < 0.40 to > 0.615 within 10 days) | 1.9% / 17.0% / 96 | **4.9% / 6.0%** / 50 |
+| B2 Deemer-style breakaway (10-day advances ÷ declines > 1.97) | 0.9% / 17.5% / 75 | **4.5% / 6.7%** / 35 |
+| B3 breadth recovery (share above 50-day average crosses 50%) | −0.8% / 26.7% / 45 | 0.4% / 16.7% / 20 |
+
+**No signal qualifies. Verdict: fail.** B1 and B2 fired within days of the 1932, 1938, 1942,
+1962, 1982 and 1990 lows, but not within 63 days of the 1974, 1987, 2002, 2009 or 2022 lows,
+and B1 only on 2020-05-27, two months after the 2020 low.
+
+*Reported only (the pre-registration stops at step 1): v5 with the brake lifted while a signal
+is active, French market and T-bills:*
+
+| | 1928–1989 Sharpe / max DD | 1990–2026 Sharpe / CAGR / max DD | Median 3-month return after 14 lows | P(better than v5), 1928–2026 |
+|---|---|---|---|---|
+| v5 | 0.63 / −42.8% | 0.59 / 8.6% / −24.1% | 5.8% | — |
+| + B1 | 0.56 / −44.1% | 0.61 / 9.3% / −31.3% | 8.5% | 13% |
+| + B2 | 0.54 / −47.8% | 0.62 / 9.4% / −25.5% | 7.9% | 8% |
+
+### 24.1 What five re-entry families show together
+Volatility measures (v8), the VIX curve (v10), price patterns (v11) and breadth (v12) all show
+the same split. **After 1990, signals that buy strength inside a sell-off have worked; before
+1990 they did worse than doing nothing.** Post-1990 bear markets mostly ended in sharp V-shaped
+recoveries (1990, 1998, 2009, 2020, 2025); 1929–1932, 1937–1942 and 1973–1974 were long
+grinding declines with repeated failed rallies. A re-entry signal is therefore a bet that the
+next bear market looks like the recent ones. Even that bet is worth little: at best about
++0.8 points of CAGR and +0.03 Sharpe on 1990–2026, with deeper drawdowns and a clear loss on
+1928–1989. v5 is unchanged.
+
+## 25. v13: a recession-gated trend brake (2026-11-05)
+
+Pre-registered in `docs/PREREG-v13.md`. The five re-entry families of §21–§24 failed in recession
+bear markets and worked in sell-offs without a recession. v13 asks whether the economic cycle can
+tell the two apart in real time: keep v5's trend brake only while unemployment is rising
+(growth-trend timing, Philosophical Economics 2016).
+
+**Data.** BLS unemployment rate (LNS14000000, identical to FRED UNRATE; FRED's endpoint failed,
+see the pre-registration log), 1948-01 to 2026-09, used only from the day after the 10th of the
+following month; current-vintage values (revisions of about 0.1–0.2 points not corrected);
+2025-10 missing (not collected during the government shutdown). Market: Ken French daily US
+market, T-bills as cash (no bond switch), so V0 here differs slightly from the engine's v5.
+
+**Recession signal:** the latest unemployment rate above its average of the latest 12 months.
+It was on 37% of days and switched on 1–10 months before every NBER recession peak from 1953 to
+2007 (for example 2000-09 for the 2001-03 peak, 2007-07 for 2007-12); in 2020 only on 2020-04-13,
+after the crash.
+
+| 1950-01-03 to 2026-09-30 | 1950–1989 CAGR / Sharpe / max DD | 1990–2026 CAGR / Sharpe / max DD | P(better than V0) | Median 3-month return after 11 lows |
+|---|---|---|---|---|
+| V0 (v5) | 11.7% / 0.72 / −21.9% | 8.6% / 0.59 / −24.1% | — | 4.9% |
+| G1 brake only while unemployment is rising | 12.2% / 0.72 / −25.5% | 9.3% / 0.63 / −24.4% | 77% | 5.8% |
+| G2 breadth re-entry (B2) outside recessions | 12.0% / 0.72 / −22.8% | 9.1% / 0.61 / −24.1% | 67% | 5.8% |
+| Market | | | | 17.4% |
+
+**Verdict: fail.** G1 fails C1 (Sharpe tied in 1950–1989), C2 (77% against 90%) and C3 (1950–1989
+drawdown 3.6 points deeper); G2 fails C1 and C2.
+
+**What it shows.**
+- **The first re-entry idea that does not flip between eras.** Gating the brake by the economic
+  cycle added return in both eras (+0.5 and +0.7 points a year) and never lowered the Sharpe
+  ratio, where every earlier re-entry signal hurt badly in one era.
+- **It works where it should.** With unemployment not rising, lifting the brake helped in the
+  non-recession sell-offs: 3 months after the low, 1987-12 10.6% against 6.2%, 2011-10 6.8%
+  against 2.4%, 2022-10 4.7% against 2.8%. In recession bear markets (1974, 2002, 2009) it kept
+  the brake, as intended.
+- **The cost is the recessions it detects late.** It switched on only after the 1973–74 peak and
+  after the 2020 crash, and the deeper 1950–1989 drawdown comes from such late signals.
+- **The gain is too small to clear a pre-registered bar** with about ten recessions in the
+  sample. It is the strongest candidate so far for a forward test; it is not adopted.
+
+### 25.1 Added as a candidate, on forward test (2026-11-05)
+At the owner's request the gate was added as an option, **off by default**, with its own live
+record, so that data it has not seen will judge it:
+- **Pipeline:** `sources/unrate.py` fetches the BLS unemployment rate (FRED UNRATE first; the
+  BLS public API as fallback for the latest three years) into `data/raw/unrate.csv`. The build
+  publishes `UNRATE` and `UNRATE_GAP` (latest rate minus the average of the latest 12 available
+  months), each used from 41 days after the 1st of the month it describes (on or after the 11th
+  of the next month). It is not part of the daily completeness gate.
+- **Engine:** `allocation.riskBudget.recessionGate`; preset *Risk budget + recession gate
+  (candidate)* (`V13_PATCH`); live record **v4** (§12.1).
+- **Engine check, same period (not new evidence):** on the engine's data, with the IEF/T-bill
+  switch, the gate gives 1991–2006 Sharpe 0.69 against 0.62 and CAGR 11.2% against 10.2%;
+  2007–2026 Sharpe 0.73 against 0.69 and CAGR 9.5% against 8.6%; worst drawdown −19.5% against
+  −20.4% (1991–2006: −15.1% against −12.4%).
+- **Known real-time gap:** releases are assumed on the normal schedule. During the 2025
+  federal government shutdown the BLS published the September and November 2025 rates late
+  (on 2025-11-20 and 2025-12-16), so the rule here uses them up to five weeks earlier than was
+  possible at the time.
 

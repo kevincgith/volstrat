@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 from ..checks import crosscheck as cc
-from ..sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, yahoo
+from ..sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, unrate, yahoo
 from ..sources.fetch_status import load_status
 from .absorption import SECTORS, absorption_ratio
 from .align import as_of, master_calendar
@@ -83,6 +83,14 @@ SIGNAL_META: dict[str, dict] = {
                  max_stale_days=14),
     "STLFSI": dict(label="St. Louis Fed Financial Stress Index", unit="index",
                    source="FRED STLFSI4", lag_days=6, max_stale_days=14),
+    # monthly, dated the 1st of the month it describes; released about the first Friday of the
+    # next month, so used from 41 days after the 1st (on or after the 11th of the next month,
+    # PREREG-v13 §2); 70-day staleness bridges a month that was never published (2025-10)
+    "UNRATE": dict(label="US unemployment rate", unit="%", source="BLS LNS14000000 (FRED UNRATE)",
+                   lag_days=41, max_stale_days=70),
+    "UNRATE_GAP": dict(label="Unemployment rate minus its 12-month average (recession gate)",
+                       unit="pp", source="BLS LNS14000000 (FRED UNRATE)", lag_days=41,
+                       max_stale_days=70),
 }  # fmt: skip
 
 
@@ -128,6 +136,11 @@ def build_signals(raw: Path, cal: pd.DatetimeIndex) -> pd.DataFrame:
                      ("BAA10Y", "BAA10Y"), ("NFCI", "NFCI"), ("STLFSI", "STLFSI4")):  # fmt: skip
         if fr is not None and sid in fr:
             s[key] = fr[sid]
+
+    ur = unrate.load(raw)
+    if ur is not None and "UNRATE" in ur:
+        s["UNRATE"] = ur["UNRATE"]
+        s["UNRATE_GAP"] = unrate.gap(ur["UNRATE"])
 
     sectors = {k: _close(raw, k, "adj_close") for k in SECTORS}
     if all(len(v) for v in sectors.values()):

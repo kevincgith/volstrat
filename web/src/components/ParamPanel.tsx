@@ -383,6 +383,11 @@ export function ParamPanel({
             <NumberInput label="Trend average (days)" value={al.riskBudget?.trendWindow ?? 200} min={20} step={10} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), trendWindow: Math.max(20, Math.round(v)) }))} />
             <NumberInput label="Brake below trend (×)" value={al.riskBudget?.brake ?? 0.5} min={0} max={1} step={0.1} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), brake: Math.min(1, Math.max(0, v)) }))} />
             <NumberInput label="Max equity (×)" value={al.riskBudget?.maxEquity ?? 1} min={0.1} max={1.5} step={0.1} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), maxEquity: Math.min(1.5, Math.max(0.1, v)) }))} />
+            <Toggle
+              label="Recession gate (candidate): brake only while unemployment is rising"
+              checked={!!al.riskBudget?.recessionGate?.enabled}
+              onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), recessionGate: { enabled: v } }))}
+            />
             <NumberInput label="Stock-bond corr. window (days, 0 = always T-bills)" value={al.riskBudget?.hedgeLookback ?? 252} min={0} step={21} onChange={(v) => up((d) => void (d.allocation.riskBudget = { ...(d.allocation.riskBudget ?? DEFAULT_PARAMS.allocation.riskBudget!), hedgeLookback: Math.max(0, Math.round(v)) }))} />
           </>
         ) : al.mode === 'regime' ? (
