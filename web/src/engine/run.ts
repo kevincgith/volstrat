@@ -5,7 +5,7 @@
  */
 
 import { continuousWeights, filterDefensive, normalise, swapDuration, type RiskBudgetParams, type Weights } from './allocation';
-import { buildAssets, type AssetSeries } from './assets';
+import { buildAssets, LEVERAGE, type AssetSeries } from './assets';
 import { simulate, type BacktestResult } from './backtest';
 import type { MarketData } from './data';
 import { computeMetrics, type Metrics } from './metrics';
@@ -113,7 +113,7 @@ export function strategyTargets(
  * index against its `trendWindow`-day simple average, and the trailing stock-bond
  * correlation. Null until every input is available.
  */
-export function riskBudgetTargets(assets: Record<string, AssetSeries>, rb: RiskBudgetParams, n: number): (Weights | null)[] {
+export function riskBudgetTargets(assets: Record<string, AssetSeries>, rb: RiskBudgetParams, n: number, unemploymentGap?: Float64Array): (Weights | null)[] {
   const eq = assets[rb.equityAsset]!.returns;
   const idx = new Float64Array(n).fill(NaN);
   let lvl = 1;
@@ -152,10 +152,21 @@ export function riskBudgetTargets(assets: Record<string, AssetSeries>, rb: RiskB
     const sd = Math.sqrt(v / (vw - 1)) * Math.sqrt(252);
     if (!(sd > 0)) continue;
     let w = Math.min(rb.maxEquity, rb.targetVol / sd);
-    if (idx[t]! < sum / cnt) w *= rb.brake;
+    // with the recession gate on, the brake is skipped only when the gap is known and not positive
+    const gated = rb.recessionGate?.enabled && unemploymentGap && Number.isFinite(unemploymentGap[t]!) && unemploymentGap[t]! <= 0;
+    if (idx[t]! < sum / cnt && !gated) w *= rb.brake;
     const hedged = corr && Number.isFinite(corr[t]!) && corr[t]! < 0;
     const def = hedged ? rb.bondAsset : rb.cashAsset;
-    out[t] = w >= 1 - 1e-12 ? { [rb.equityAsset]: w } : { [rb.equityAsset]: w, [def]: 1 - w };
+    if (w > 1 + 1e-12) {
+      // exposure above 100%: a fully invested blend of the equity and its leveraged ETF,
+      // a + L·b = w with a + b = 1, as in continuous mode (financing and fees are in the ETF)
+      const lev = rb.leveragedAsset ?? 'SSO';
+      const L = LEVERAGE[lev] ?? 2;
+      const b = Math.min(1, (w - 1) / (L - 1));
+      out[t] = b >= 1 - 1e-12 ? { [lev]: 1 } : { [rb.equityAsset]: 1 - b, [lev]: b };
+    } else {
+      out[t] = w >= 1 - 1e-12 ? { [rb.equityAsset]: 1 } : { [rb.equityAsset]: w, [def]: 1 - w };
+    }
   }
   return out;
 }
@@ -302,7 +313,9 @@ export function run(d: MarketData, p: Params): RunResult {
     : undefined;
   const targets0 =
     p.allocation.mode === 'riskBudget' && p.allocation.riskBudget
-      ? cached(d, 'rb' + JSON.stringify([p.assets, p.allocation.riskBudget]), () => riskBudgetTargets(assets, p.allocation.riskBudget!, n))
+      ? cached(d, 'rb' + JSON.stringify([p.assets, p.allocation.riskBudget]), () =>
+          riskBudgetTargets(assets, p.allocation.riskBudget!, n, p.allocation.riskBudget!.recessionGate?.enabled ? d.series.UNRATE_GAP : undefined),
+        )
       : strategyTargets(score.score, reg, p, sbCorr);
   const dt = p.allocation.defensiveTrend;
   const targets = dt?.enabled ? applyDefensiveTrend(targets0, assets, Math.max(21, Math.round(dt.lookback))) : targets0;

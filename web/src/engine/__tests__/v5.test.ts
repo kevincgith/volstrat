@@ -46,4 +46,46 @@ describe('v5 risk budget', () => {
     expect(r.strategy.metrics.years).toBeGreaterThan(1);
     for (const w of r.targets) if (w) expect(w.SPX!).toBeLessThanOrEqual(1 + 1e-12);
   });
+
+  it('holds exposure above 100% through the leveraged ETF, never as unfunded equity', () => {
+    const q = merge(p, { allocation: { riskBudget: { maxEquity: 1.5, targetVol: 0.5 } } });
+    const r = run(d, q);
+    let lev = 0;
+    for (const w of r.targets) {
+      if (!w) continue;
+      const tot = Object.values(w).reduce((a, b) => a + (b ?? 0), 0);
+      expect(tot).toBeCloseTo(1, 9);
+      expect(w.SPX ?? 0).toBeLessThanOrEqual(1 + 1e-12);
+      if ((w.SSO ?? 0) > 0) lev++;
+    }
+    expect(lev).toBeGreaterThan(0);
+  });
+
+  it('recession gate: the brake is skipped only while the unemployment gap is known and not positive', () => {
+    const r = run(d, p);
+    const rb = p.allocation.riskBudget!;
+    const n = d.dates.length;
+    const gated = { ...rb, recessionGate: { enabled: true } };
+    const noBrake = riskBudgetTargets(r.assets, { ...rb, brake: 1 }, n);
+    const withBrake = riskBudgetTargets(r.assets, rb, n);
+    // gap <= 0 everywhere: same as no brake; gap > 0 everywhere or missing: same as v5
+    expect(riskBudgetTargets(r.assets, gated, n, new Float64Array(n).fill(-0.1))).toEqual(noBrake);
+    expect(riskBudgetTargets(r.assets, gated, n, new Float64Array(n).fill(0.1))).toEqual(withBrake);
+    expect(riskBudgetTargets(r.assets, gated, n, new Float64Array(n).fill(NaN))).toEqual(withBrake);
+    expect(riskBudgetTargets(r.assets, gated, n)).toEqual(withBrake);
+    // the gate is off in the defaults, so frozen records are unchanged
+    expect(BASE_PARAMS.allocation.riskBudget!.recessionGate?.enabled).toBe(false);
+  });
+});
+
+describe('v13 recession gate on the fixture', () => {
+  it('changes the allocation when the gap turns negative below trend', () => {
+    const d = makeFixture();
+    const base = merge(merge(BASE_PARAMS, V5_PATCH), { period: { start: '2010-01-01' } });
+    const gated = merge(base, { allocation: { riskBudget: { recessionGate: { enabled: true } } } });
+    const a = run(d, base).targets;
+    const b = run(d, gated).targets;
+    const differ = a.filter((w, i) => JSON.stringify(w) !== JSON.stringify(b[i])).length;
+    expect(differ).toBeGreaterThan(0);
+  });
 });

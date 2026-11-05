@@ -61,8 +61,8 @@ GitHub Action).
   halves it below the 200-day average and holds Treasuries only while they hedge. It passed a
   pre-registered test on 1927–1989 data the project had never used (METHODOLOGY §18).
 - **Live track records:** decisions logged daily with frozen parameters, append-only, in
-  `data/track/` (v1 Balanced, v2 Growth, v3 Risk budget), replayed on the Dashboard
-  (METHODOLOGY §12.1).
+  `data/track/` (v1 Balanced, v2 Growth, v3 Risk budget, v4 Risk budget + recession gate
+  candidate), replayed on the Dashboard (METHODOLOGY §12.1).
 - **Alerts:** an RSS feed (`/data/feed.xml`) and a GitHub issue when the default profile's
   regime changes. Watch the repository to get these by email.
 
@@ -161,8 +161,8 @@ already does this through `pyproject.toml`.
 ## Data sources
 
 The sources are Cboe (index history, CFE VIX futures, put/call ratios), Yahoo Finance (ETFs and
-indices), US Treasury (yield curve) and FRED (credit spreads and stress indices, fetched without an
-API key). Coverage, quirks and fallbacks are documented in
+indices), US Treasury (yield curve), FRED (credit spreads and stress indices, fetched without an
+API key) and the BLS (unemployment rate, via FRED or the BLS public API). Coverage, quirks and fallbacks are documented in
 [docs/METHODOLOGY.md](docs/METHODOLOGY.md#data-sources). The data is included for personal,
 non-commercial research and remains subject to each provider's terms.
 

@@ -38,6 +38,8 @@ export function makeFixture(n = 1500, seed = 7): MarketData {
   const keys = new Set(COMPONENTS.flatMap((c) => c.inputs).filter((k) => !k.startsWith('asset:')));
   for (const k of keys) series[k] = walk(r, n, k === 'SPX' ? 1000 : 20, 0.02);
   series.Y3M = new Float64Array(n).fill(2);
+  // monthly-stepped unemployment gap that changes sign, so the recession gate is exercised
+  series.UNRATE_GAP = Float64Array.from({ length: n }, (_, i) => Math.sin(Math.floor(i / 21) / 3) * 0.3);
   const seg = (src: string) => [{ from: dates[0]!, to: dates[n - 1]!, source: src, label: src, synthetic: false }];
   const asset = (label: string, vol: number, group: 'risk' | 'defensive' | 'proxy' = 'risk') => ({
     label,

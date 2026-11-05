@@ -71,6 +71,8 @@ export const BASE_PARAMS: Params = {
       bondAsset: 'IEF',
       cashAsset: 'BIL',
       hedgeLookback: 252,
+      // candidate (docs/PREREG-v13.md): failed its pre-registered bar; on forward test as v4
+      recessionGate: { enabled: false },
     },
     regimePortfolios: [
       { BIL: 1 }, // Crisis
@@ -165,6 +167,16 @@ export const V5_PATCH = {
   backtest: { rebalance: 'daily' as const, band: 0.1 },
 };
 
+/**
+ * Candidate: v5 with the recession gate (docs/PREREG-v13.md, METHODOLOGY §25). It added
+ * return in both 1950-1989 and 1990-2026 but failed its pre-registered bar (bootstrap 77%
+ * against 90%), so it is a forward test (live record v4), not a default.
+ */
+export const V13_PATCH = {
+  allocation: { mode: 'riskBudget' as const, riskBudget: { recessionGate: { enabled: true } } },
+  backtest: { rebalance: 'daily' as const, band: 0.1 },
+};
+
 /** Minimal patch p such that merge(base, p) deep-equals `value`. */
 export function diff(base: unknown, value: unknown): unknown {
   if (JSON.stringify(base) === JSON.stringify(value)) return undefined;
@@ -200,6 +212,13 @@ export const PRESETS: Preset[] = [
     description:
       'Simple rule, passed its pre-registered test on 1927-1989: equity = 12% / recent volatility (max 100%), halved below the 200-day average; rest in Treasuries when they hedge, else T-bills (Methodology 18).',
     patch: V5_PATCH,
+  },
+  {
+    id: 'recessiongate',
+    label: 'Risk budget + recession gate (candidate)',
+    description:
+      'Risk budget (v5), but the trend brake applies only while unemployment is above its 12-month average. Failed its pre-registered bar narrowly; on forward test as live record v4 (Methodology 25).',
+    patch: V13_PATCH,
   },
   {
     id: 'balanced',

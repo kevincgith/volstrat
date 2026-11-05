@@ -18,7 +18,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { resolve } from 'node:path';
 import { COMPONENT_BY_ID } from '../src/engine/components';
 import { assemble } from '../src/engine/data';
-import { BASE_PARAMS, DEFAULT_PARAMS, merge, V5_PATCH, type Params } from '../src/engine/params';
+import { BASE_PARAMS, DEFAULT_PARAMS, merge, V13_PATCH, V5_PATCH, type Params } from '../src/engine/params';
 import { run } from '../src/engine/run';
 import { REGIMES } from '../src/engine/score';
 
@@ -211,7 +211,9 @@ function track(version: string, label: string, inception: Params) {
 
 // v1 and v2 already exist, so their inception parameters are never used again.
 // v3: the v5 risk-budget rule (docs/PREREG-v5.md), frozen on its first run.
+// v4: the recession-gate candidate (docs/PREREG-v13.md), a forward test, frozen on its first run.
 const tracks = [
+  track('v4', 'Risk budget + recession gate (candidate)', merge(BASE_PARAMS, V13_PATCH)),
   track('v3', 'Risk budget (v5)', merge(BASE_PARAMS, V5_PATCH)),
   track('v2', 'Growth', DEFAULT_PARAMS),
   track('v1', 'Balanced', BASE_PARAMS),

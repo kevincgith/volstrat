@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, yahoo
+from .sources import cboe_indices, cboe_putcall, cfe_vx, fred, treasury, unrate, yahoo
 from .sources.base import SourceStatus, eod_cutoff
 from .sources.fetch_status import STATUS_FILE
 
@@ -37,6 +37,7 @@ def run(raw_dir: Path, only: list[str] | None = None) -> list[SourceStatus]:
         "treasury": (True, lambda: treasury.update(raw_dir, cutoff=cutoff)),
         "yahoo": (True, lambda: yahoo.update(raw_dir, cutoff=cutoff)),
         "fred": (False, lambda: fred.update(raw_dir, cutoff=cutoff)),
+        "unrate": (False, lambda: unrate.update(raw_dir, cutoff=cutoff)),
     }
     statuses: list[SourceStatus] = []
     for name, (required, fn) in steps.items():

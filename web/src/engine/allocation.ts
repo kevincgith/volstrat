@@ -73,9 +73,17 @@ export interface RiskBudgetParams {
   brake: number;
   maxEquity: number;
   equityAsset: AssetKey;
+  /** Holds exposure above 100% (blended with the equity asset); default SSO. */
+  leveragedAsset?: AssetKey;
   bondAsset: AssetKey;
   cashAsset: AssetKey;
   hedgeLookback: number;
+  /**
+   * Recession gate (candidate, docs/PREREG-v13.md, METHODOLOGY §25): apply the trend brake
+   * only while the unemployment rate is above its 12-month average (signal UNRATE_GAP > 0,
+   * lagged to its release date). With no unemployment data the brake applies as usual.
+   */
+  recessionGate?: { enabled: boolean };
 }
 
 export interface AllocationParams {
