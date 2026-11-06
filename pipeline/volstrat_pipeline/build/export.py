@@ -294,35 +294,77 @@ def _fetch_meta(raw: Path) -> dict:
     return json.loads(p.read_text()) if p.exists() else {}
 
 
-# Inputs the default strategy needs on every day it trades: a date is only
-# published (and a live decision logged) once all of them have that date.
-# Vendors publish at different times after the close (Yahoo's index bars come
-# before its ETF bars; Cboe's VIX row and CFE settlements can lag by hours).
-REQUIRED_YAHOO = ["^GSPC", "SPY", "SSO", "IEF", "AGG", "GLD", "XLU", "BIL", "HYG"]
-REQUIRED_CBOE = ["VIX", "VIX3M", "VVIX", "SKEW"]
+# Inputs the strategies need on every day they trade. Vendors publish at different times
+# after the close (Yahoo's index bars come before its ETF bars; Cboe's VIX row, CFE
+# settlements and the put/call file can lag by hours).
+# - HARD inputs are prices: a portfolio's return cannot be computed without them, so a date
+#   is never published before all of them have it.
+# - SOFT inputs only feed the score. A date waits for them until 12:00 New York time on the
+#   next business day (four hours before the close its decision trades at); after that it is
+#   published without them, and the score uses their latest known values (point in time,
+#   §2.6), so one late series cannot hold up the whole site and the live records.
+REQUIRED_YAHOO = ["^GSPC", "SPY", "SSO", "IEF", "AGG", "GLD", "XLU", "BIL"]
+SOFT_YAHOO = ["HYG"]
+REQUIRED_CBOE = ["VIX", "VIX3M", "VVIX", "SKEW"]  # soft
+SOFT_DEADLINE_HOUR = 12
 
 
-def completeness(raw: Path, cal_last: pd.Timestamp) -> tuple[pd.Timestamp, dict[str, str]]:
-    """Last date on which every required input exists, and the inputs lagging cal_last."""
-    last: dict[str, pd.Timestamp] = {}
-    for sym in REQUIRED_YAHOO:
+def soft_deadline(day: pd.Timestamp) -> pd.Timestamp:
+    """When a date stops waiting for soft inputs: noon New York time, next business day."""
+    d = (pd.Timestamp(day).normalize() + pd.tseries.offsets.BDay(1)).tz_localize("America/New_York")
+    return d + pd.Timedelta(hours=SOFT_DEADLINE_HOUR)
+
+
+def complete_date(
+    cal: pd.DatetimeIndex,
+    hard: dict[str, pd.Timestamp],
+    soft: dict[str, pd.Timestamp],
+    now: pd.Timestamp,
+) -> tuple[pd.Timestamp, dict[str, str], dict[str, str]]:
+    """Latest calendar date that may be published, given each input's last date.
+
+    Returns (date, pending, published_without): `pending` lists the inputs the latest date
+    is still waiting for; `published_without` lists soft inputs that were past the deadline
+    and are missing on the published date (with their last date)."""
+    cal_last = cal[-1]
+    for day in reversed(cal):
+        if any(v < day for v in hard.values()):
+            continue
+        late = {k: v for k, v in soft.items() if v < day}
+        if late and now < soft_deadline(day):
+            continue
+        pending = {k: v.date().isoformat() for k, v in {**hard, **soft}.items() if v < cal_last}
+        if day == cal_last:
+            pending = {k: v for k, v in pending.items() if k not in late}
+        without = {k: v.date().isoformat() for k, v in late.items()}
+        return day, pending, without
+    first = min([cal_last, *hard.values(), *soft.values()])
+    return first, {k: v.date().isoformat() for k, v in {**hard, **soft}.items() if v < cal_last}, {}
+
+
+def completeness(
+    raw: Path, cal: pd.DatetimeIndex, now: pd.Timestamp | None = None
+) -> tuple[pd.Timestamp, dict[str, str], dict[str, str]]:
+    """Latest publishable date, inputs still pending, and soft inputs published without."""
+    hard: dict[str, pd.Timestamp] = {}
+    soft: dict[str, pd.Timestamp] = {}
+    for sym in REQUIRED_YAHOO + SOFT_YAHOO:
         v = _close(raw, sym, "adj_close")
         if len(v):
-            last[f"Yahoo {sym}"] = v.index[-1]
+            (soft if sym in SOFT_YAHOO else hard)[f"Yahoo {sym}"] = v.index[-1]
     cb = cboe_indices.load(raw)
     for k in REQUIRED_CBOE:
         v = cb[k].dropna()
         if len(v):
-            last[f"Cboe {k}"] = v.index[-1]
+            soft[f"Cboe {k}"] = v.index[-1]
     vx = cfe_vx.load(raw)
     if vx is not None:
-        last["CFE VIX futures"] = vx["date"].max()
+        soft["CFE VIX futures"] = vx["date"].max()
     pc = cboe_putcall.load(raw)
     if pc is not None:
-        last["Cboe equity put/call"] = pc["equity"].dropna().index[-1]
-    complete = min([cal_last, *last.values()])
-    pending = {k: d.date().isoformat() for k, d in last.items() if d < cal_last}
-    return complete, pending
+        soft["Cboe equity put/call"] = pc["equity"].dropna().index[-1]
+    now = now if now is not None else pd.Timestamp.now(tz="America/New_York")
+    return complete_date(cal, hard, soft, now)
 
 
 def incomplete_alert(eod: str | None, complete_through: str, pending: dict, now=None) -> str | None:
@@ -348,9 +390,12 @@ def build_all(raw: Path, site: Path) -> None:
     if gspc is None:
         raise FileNotFoundError("S&P 500 history missing; run `volstrat fetch` first")
     cal = master_calendar(gspc)
-    complete_through, pending = completeness(raw, cal[-1])
+    complete_through, pending, published_without = completeness(raw, cal)
     if pending:
         log.info("complete through %s; waiting for %s", complete_through.date(), pending)
+    if published_without:
+        log.warning("published %s without %s (past the noon deadline)", complete_through.date(),
+                    published_without)  # fmt: skip
     full_last = cal[-1]  # latest end-of-day date the index calendar has
     cal = cal[cal <= complete_through]
     dates = [d.strftime("%Y-%m-%d") for d in cal]
@@ -426,6 +471,7 @@ def build_all(raw: Path, site: Path) -> None:
             "eod_cutoff": _fetch_meta(raw).get("eod_cutoff"),
             "complete_through": dates[-1],
             "pending": pending,
+            "published_without": published_without,
             "incomplete_alert": incomplete_alert(
                 _fetch_meta(raw).get("eod_cutoff"), dates[-1], pending
             ),
