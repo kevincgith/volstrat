@@ -341,23 +341,9 @@ export default function Dashboard() {
               Waiting for {data.meta.eod_cutoff}: {Object.keys(data.meta.pending).join(', ')}.
             </span>{' '}
             <span className="muted">
-              Prices are always waited for. Score inputs are waited for until 12:00 New York time on the next business day; until then everything stays
-              on {data.meta.complete_through}.
-            </span>
-          </p>
-        )}
-        {data.meta.published_without && Object.keys(data.meta.published_without).length > 0 && (
-          <p className="small">
-            <span className="warn">
-              {data.meta.complete_through} published without{' '}
-              {Object.entries(data.meta.published_without)
-                .map(([k, v]) => `${k} (last ${v})`)
-                .join(', ')}
-              .
-            </span>{' '}
-            <span className="muted">
-              They were still missing at the noon deadline, so the score uses their latest known values. If they arrive later, the date is recomputed
-              and the revision is shown.
+              A date becomes official, and is logged in the live records, only once every input has it; until then the official date stays{' '}
+              {data.meta.complete_through}. Prices in, score inputs late: switch on <em>Use latest available data</em> above to see the newest date
+              provisionally.
             </span>
           </p>
         )}

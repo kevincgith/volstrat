@@ -55,47 +55,10 @@ def test_completeness_gate(tmp_path):
     cb = pd.DataFrame({k: [20.0, 21, 22, 23] for k in export.REQUIRED_CBOE}, index=idx)
     cb.loc[idx[-1], "VIX"] = np.nan  # Cboe row exists but VIX not yet filled
     safe_write(cb, tmp_path / "cboe_indices.csv")
-    ny = "America/New_York"
-    before = pd.Timestamp("2026-10-23 11:00", tz=ny)  # Friday, before the noon deadline for Thu
-    complete, pending, without, prov = export.completeness(tmp_path, idx, now=before)
+    complete, pending, prov = export.completeness(tmp_path, idx)
     assert complete == idx[2]
     assert set(pending) == {"Yahoo SPY", "Cboe VIX"}
-    assert without == {}
     assert prov == idx[2]  # SPY (a price) is missing on the last day, so no provisional day either
-    # a missing price (hard) holds the date even after the deadline
-    complete, pending, without, prov = export.completeness(
-        tmp_path, idx, now=pd.Timestamp("2026-10-23 13:00", tz=ny)
-    )
-    assert complete == idx[2]
-
-
-def test_soft_inputs_stop_holding_the_date_at_noon_next_business_day():
-    from volstrat_pipeline.build.export import complete_date
-
-    ny = "America/New_York"
-    cal = pd.bdate_range("2026-11-02", "2026-11-05")  # Mon..Thu
-    hard = {"Yahoo SPY": cal[-1], "Yahoo IEF": cal[-1]}
-    soft = {"Cboe equity put/call": cal[-2], "Cboe VIX": cal[-1]}
-    # Thursday evening: wait for put/call
-    day, pending, without = complete_date(cal, hard, soft, pd.Timestamp("2026-11-05 22:00", tz=ny))
-    assert day == cal[-2] and pending == {"Cboe equity put/call": "2026-11-04"} and without == {}
-    # Friday 11:59: still waiting; 12:00: published without it
-    day, *_ = complete_date(cal, hard, soft, pd.Timestamp("2026-11-06 11:59", tz=ny))
-    assert day == cal[-2]
-    day, pending, without = complete_date(cal, hard, soft, pd.Timestamp("2026-11-06 12:00", tz=ny))
-    assert day == cal[-1] and pending == {} and without == {"Cboe equity put/call": "2026-11-04"}
-    # once the value arrives, nothing is published without it
-    soft["Cboe equity put/call"] = cal[-1]
-    day, pending, without = complete_date(cal, hard, soft, pd.Timestamp("2026-11-06 13:00", tz=ny))
-    assert day == cal[-1] and pending == {} and without == {}
-
-
-def test_soft_deadline_skips_the_weekend():
-    from volstrat_pipeline.build.export import soft_deadline
-
-    assert soft_deadline(pd.Timestamp("2026-11-06")) == pd.Timestamp(
-        "2026-11-09 12:00", tz="America/New_York"
-    )
 
 
 def test_incomplete_alert_deadline():
@@ -137,7 +100,7 @@ def test_provisional_date_runs_ahead_when_only_score_inputs_are_late(tmp_path):
     cb = pd.DataFrame({k: [20.0, 21, 22, 23] for k in export.REQUIRED_CBOE}, index=idx)
     cb.loc[idx[-1], "VIX"] = np.nan  # a score input is late on Thursday
     safe_write(cb, tmp_path / "cboe_indices.csv")
-    night = pd.Timestamp("2026-11-05 23:00", tz="America/New_York")
-    official, pending, without, prov = export.completeness(tmp_path, idx, now=night)
+    official, pending, prov = export.completeness(tmp_path, idx)
+    # the official date waits for the score input however late it is; the provisional runs ahead
     assert official == idx[2] and prov == idx[3]
-    assert pending == {"Cboe VIX": "2026-11-04"} and without == {}
+    assert pending == {"Cboe VIX": "2026-11-04"}

@@ -131,12 +131,12 @@ already does this through `pyproject.toml`.
   Cloudflare dashboard) dispatches the data-update workflow every hour at :20. A run commits
   and redeploys the site only when data actually changed. GitHub's own schedule is best effort
   and often late, so it's kept only as a fallback.
-- **Completeness gate:** vendors post at different times after the close. A date always waits
-  for every price; it waits for score inputs (Cboe volatility indices, VIX futures, put/call,
-  credit) only until 12:00 New York time on the next business day, then publishes with their
-  latest known values. Until then the site stays on the last complete date, and the Dashboard
-  lists what it is waiting for or published without. Viewers can switch on *Use latest available
-  data* to see the newest date provisionally; the live records and alerts never use it.
+- **Completeness gate:** vendors post at different times after the close. A date becomes
+  official, and is logged in the live records, only once every input of the strategy has been
+  published for it. Until then the site stays on the last complete date, and the Dashboard lists
+  what it is waiting for. Viewers can switch on *Use latest available data* to see the newest
+  date provisionally (prices in, late score inputs at their latest known values); the live
+  records and alerts never use it.
 - `ci.yml` runs lint, tests, typecheck and build on every PR and every push to `main`.
 - `deploy.yml` builds the site, bundles `data/site` and publishes it to GitHub Pages. It runs on
   pushes that touch `web/` or `data/site/`, and after each successful data update.

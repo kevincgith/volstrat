@@ -72,8 +72,8 @@ exiting limits the damage when the trend turns back up quickly.
    fallback): Cboe volatility indices, CFE VIX futures settlements, Cboe put/call ratios,
    Yahoo Finance ETFs and indices, the US Treasury yield curve, FRED (§2).
 2. **Validate**: range checks, history-stability checks, cross-source checks, and a
-   completeness gate. A date waits for every price; it waits for score inputs only until noon
-   New York time the next business day (§2.8, README).
+   completeness gate. A date becomes official only once every input exists for it; the newest
+   date with every price can be viewed provisionally (§2.8, README).
 3. **Build** (`pipeline/`, Python): align every series to the date it was published (§2.6);
    chain ETF total returns back with index or fund proxies before each ETF existed (§2.7);
    compute the VIX futures curve features; write `data/site/*.json` (raw features only).
@@ -290,21 +290,20 @@ still revise closing-auction prints and settlements. Rules (`sources/base.py`, `
 4. **Completeness gate.** Vendors publish at different times after the close. On
    2026-10-22 at 21:10 New York time, Yahoo had index bars but no ETF bars, Cboe's VIX field
    was blank, and CFE settlements were not out. So a date is published, and a live decision
-   logged, only once its inputs are in. Since 2026-11-06 there are two kinds:
-   - **Prices (hard):** Yahoo ^GSPC, SPY, SSO, IEF, AGG, GLD, XLU and BIL. A portfolio's return
-     cannot be computed without them, so a date always waits for them.
-   - **Score inputs (soft):** Cboe VIX, VIX3M, VVIX and SKEW; CFE VIX futures; Cboe equity
-     put/call; Yahoo HYG (credit). A date waits for them until **12:00 New York time on the
-     next business day**, four hours before the close its decision trades at. After that it is
-     published without them, and the score uses their latest known values (the point-in-time
-     rule of §2.6; a component more than 7 days stale drops out and the others are
-     reweighted). The Dashboard and `meta.json` (`published_without`) say which inputs were
-     missing; when they arrive later the date is recomputed and the revision is shown.
-   - *Why:* on 2026-11-05 Cboe's put/call file was still unpublished at 1 am New York time and
-     held the whole site, and the risk-budget records (v3, v4) that never use it, for a day.
+   logged, only once **every** input has it:
+   - prices: Yahoo ^GSPC, SPY, SSO, IEF, AGG, GLD, XLU and BIL;
+   - score inputs: Cboe VIX, VIX3M, VVIX and SKEW; CFE VIX futures; Cboe equity put/call;
+     Yahoo HYG (credit).
+
+   The official date never skips a missing input. (For a few hours on 2026-11-06 a rule let
+   score inputs lapse at noon the next business day; it was withdrawn the same day, before it
+   ever applied, so that no official date is computed without one of its inputs.) If the
+   latest date is still incomplete at 12:00 New York time on the next business day, the
+   daily job raises an alert.
    - **Provisional view.** Data are published through the latest date with every price
      (`meta.provisional_through`), even before the score inputs are in; `complete_through`
-     marks the official date. The site shows the official date by default. A viewer can switch
+     marks the official date. *Why:* on 2026-11-05 Cboe's put/call file was still unpublished
+     at 1 am New York time and held the whole site for a day. The site shows the official date by default. A viewer can switch
      on *Use latest available data* (Data status card; remembered in their browser) to compute
      the newest date with late score inputs at their latest known values, labelled provisional
      in the header and on the Dashboard. The live track records, `latest.json`, the RSS feed

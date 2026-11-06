@@ -297,56 +297,29 @@ def _fetch_meta(raw: Path) -> dict:
 # Inputs the strategies need on every day they trade. Vendors publish at different times
 # after the close (Yahoo's index bars come before its ETF bars; Cboe's VIX row, CFE
 # settlements and the put/call file can lag by hours).
-# - HARD inputs are prices: a portfolio's return cannot be computed without them, so a date
-#   is never published before all of them have it.
-# - SOFT inputs only feed the score. A date waits for them until 12:00 New York time on the
-#   next business day (four hours before the close its decision trades at); after that it is
-#   published without them, and the score uses their latest known values (point in time,
-#   §2.6), so one late series cannot hold up the whole site and the live records.
+# - The OFFICIAL date waits for every input, prices and score inputs alike: a date becomes
+#   official, and is logged in the live records, only when nothing is missing.
+# - The PROVISIONAL date waits only for prices (HARD inputs: a portfolio's return cannot be
+#   computed without them). Data are published through it so a viewer can opt into the
+#   newest date, with late score inputs at their latest known values (point in time, §2.6).
 REQUIRED_YAHOO = ["^GSPC", "SPY", "SSO", "IEF", "AGG", "GLD", "XLU", "BIL"]
 SOFT_YAHOO = ["HYG"]
-REQUIRED_CBOE = ["VIX", "VIX3M", "VVIX", "SKEW"]  # soft
-SOFT_DEADLINE_HOUR = 12
+REQUIRED_CBOE = ["VIX", "VIX3M", "VVIX", "SKEW"]  # score inputs
 
 
-def soft_deadline(day: pd.Timestamp) -> pd.Timestamp:
-    """When a date stops waiting for soft inputs: noon New York time, next business day."""
-    d = (pd.Timestamp(day).normalize() + pd.tseries.offsets.BDay(1)).tz_localize("America/New_York")
-    return d + pd.Timedelta(hours=SOFT_DEADLINE_HOUR)
-
-
-def complete_date(
-    cal: pd.DatetimeIndex,
-    hard: dict[str, pd.Timestamp],
-    soft: dict[str, pd.Timestamp],
-    now: pd.Timestamp,
-) -> tuple[pd.Timestamp, dict[str, str], dict[str, str]]:
-    """Latest calendar date that may be published, given each input's last date.
-
-    Returns (date, pending, published_without): `pending` lists the inputs the latest date
-    is still waiting for; `published_without` lists soft inputs that were past the deadline
-    and are missing on the published date (with their last date)."""
-    cal_last = cal[-1]
+def complete_date(cal: pd.DatetimeIndex, inputs: dict[str, pd.Timestamp]) -> pd.Timestamp:
+    """Latest calendar date on which every input in `inputs` has a value."""
     for day in reversed(cal):
-        if any(v < day for v in hard.values()):
-            continue
-        late = {k: v for k, v in soft.items() if v < day}
-        if late and now < soft_deadline(day):
-            continue
-        pending = {k: v.date().isoformat() for k, v in {**hard, **soft}.items() if v < cal_last}
-        if day == cal_last:
-            pending = {k: v for k, v in pending.items() if k not in late}
-        without = {k: v.date().isoformat() for k, v in late.items()}
-        return day, pending, without
-    first = min([cal_last, *hard.values(), *soft.values()])
-    return first, {k: v.date().isoformat() for k, v in {**hard, **soft}.items() if v < cal_last}, {}
+        if all(v >= day for v in inputs.values()):
+            return day
+    return min([cal[-1], *inputs.values()])
 
 
 def completeness(
-    raw: Path, cal: pd.DatetimeIndex, now: pd.Timestamp | None = None
-) -> tuple[pd.Timestamp, dict[str, str], dict[str, str], pd.Timestamp]:
-    """Official date, inputs still pending, soft inputs published without, and the
-    provisional date: the latest date with every price, whatever the score inputs."""
+    raw: Path, cal: pd.DatetimeIndex
+) -> tuple[pd.Timestamp, dict[str, str], pd.Timestamp]:
+    """Official date (every input), inputs the latest date is still waiting for, and the
+    provisional date (every price)."""
     hard: dict[str, pd.Timestamp] = {}
     soft: dict[str, pd.Timestamp] = {}
     for sym in REQUIRED_YAHOO + SOFT_YAHOO:
@@ -364,10 +337,11 @@ def completeness(
     pc = cboe_putcall.load(raw)
     if pc is not None:
         soft["Cboe equity put/call"] = pc["equity"].dropna().index[-1]
-    now = now if now is not None else pd.Timestamp.now(tz="America/New_York")
-    official, pending, without = complete_date(cal, hard, soft, now)
-    provisional = complete_date(cal, hard, {}, now)[0]
-    return official, pending, without, max(official, provisional)
+    everything = {**hard, **soft}
+    official = complete_date(cal, everything)
+    provisional = max(official, complete_date(cal, hard))
+    pending = {k: v.date().isoformat() for k, v in everything.items() if v < cal[-1]}
+    return official, pending, provisional
 
 
 def incomplete_alert(eod: str | None, complete_through: str, pending: dict, now=None) -> str | None:
@@ -393,12 +367,9 @@ def build_all(raw: Path, site: Path) -> None:
     if gspc is None:
         raise FileNotFoundError("S&P 500 history missing; run `volstrat fetch` first")
     cal = master_calendar(gspc)
-    complete_through, pending, published_without, provisional = completeness(raw, cal)
+    complete_through, pending, provisional = completeness(raw, cal)
     if pending:
         log.info("complete through %s; waiting for %s", complete_through.date(), pending)
-    if published_without:
-        log.warning("published %s without %s (past the noon deadline)", complete_through.date(),
-                    published_without)  # fmt: skip
     full_last = cal[-1]  # latest end-of-day date the index calendar has
     # Data are published through the provisional date (every price in, score inputs possibly
     # late); `complete_through` marks the official date. The site uses the official date
@@ -479,7 +450,6 @@ def build_all(raw: Path, site: Path) -> None:
             "complete_through": official,
             "provisional_through": dates[-1],
             "pending": pending,
-            "published_without": published_without,
             "incomplete_alert": incomplete_alert(
                 _fetch_meta(raw).get("eod_cutoff"), official, pending
             ),

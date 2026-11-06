@@ -52,12 +52,10 @@ export interface MarketData {
     checks?: { name: string; ok: boolean; detail: string }[];
     /** Latest date accepted as final end-of-day data at fetch time. */
     eod_cutoff?: string;
-    /** Latest published date: every price exists, and every score input exists or is past its deadline. */
+    /** Official date: the last date on which every input (prices and score inputs) was published. */
     complete_through?: string;
     /** Inputs not yet published for the latest end-of-day date, with their last date. */
     pending?: Record<string, string>;
-    /** Score inputs still missing at the noon deadline: the published date uses their latest known value. */
-    published_without?: Record<string, string>;
     /** Latest date with every price published; after complete_through, score inputs may be late (provisional). */
     provisional_through?: string;
   };
