@@ -57,12 +57,13 @@ def test_completeness_gate(tmp_path):
     safe_write(cb, tmp_path / "cboe_indices.csv")
     ny = "America/New_York"
     before = pd.Timestamp("2026-10-23 11:00", tz=ny)  # Friday, before the noon deadline for Thu
-    complete, pending, without = export.completeness(tmp_path, idx, now=before)
+    complete, pending, without, prov = export.completeness(tmp_path, idx, now=before)
     assert complete == idx[2]
     assert set(pending) == {"Yahoo SPY", "Cboe VIX"}
     assert without == {}
+    assert prov == idx[2]  # SPY (a price) is missing on the last day, so no provisional day either
     # a missing price (hard) holds the date even after the deadline
-    complete, pending, without = export.completeness(
+    complete, pending, without, prov = export.completeness(
         tmp_path, idx, now=pd.Timestamp("2026-10-23 13:00", tz=ny)
     )
     assert complete == idx[2]
@@ -122,3 +123,21 @@ def test_incomplete_alert_deadline():
         incomplete_alert("2026-10-23", "2026-10-22", pend, pd.Timestamp("2026-10-26 11:00", tz=ny))
         is None
     )
+
+
+def test_provisional_date_runs_ahead_when_only_score_inputs_are_late(tmp_path):
+    from volstrat_pipeline.build import export
+    from volstrat_pipeline.sources import yahoo
+    from volstrat_pipeline.storage import safe_write
+
+    idx = pd.bdate_range("2026-11-02", periods=4)  # Mon..Thu
+    full = pd.DataFrame({"close": [1.0, 2, 3, 4], "adj_close": [1.0, 2, 3, 4]}, index=idx)
+    for sym in export.REQUIRED_YAHOO + export.SOFT_YAHOO:
+        safe_write(full, tmp_path / yahoo.cache_name(sym))
+    cb = pd.DataFrame({k: [20.0, 21, 22, 23] for k in export.REQUIRED_CBOE}, index=idx)
+    cb.loc[idx[-1], "VIX"] = np.nan  # a score input is late on Thursday
+    safe_write(cb, tmp_path / "cboe_indices.csv")
+    night = pd.Timestamp("2026-11-05 23:00", tz="America/New_York")
+    official, pending, without, prov = export.completeness(tmp_path, idx, now=night)
+    assert official == idx[2] and prov == idx[3]
+    assert pending == {"Cboe VIX": "2026-11-04"} and without == {}

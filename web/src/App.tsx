@@ -11,6 +11,7 @@ const Optimise = lazy(() => import('./pages/Optimise'));
 const Compare = lazy(() => import('./pages/Compare'));
 const Methodology = lazy(() => import('./pages/Methodology'));
 import { ThemeToggle } from './components/ThemeToggle';
+import { useData } from './state/data';
 import { Disclaimer } from './components/Disclaimer';
 
 const TABS = [
@@ -26,6 +27,7 @@ const TABS = [
 export default function App() {
   // keep the parameter query (?p=...) when switching tabs
   const { search } = useLocation();
+  const { data, provisional } = useData();
   return (
     <div className="shell">
       <header className="topbar">
@@ -41,6 +43,11 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+        {provisional && data && (
+          <span className="warn small" title={`Scores for dates after ${data.meta.complete_through} use the latest known values of inputs not yet published`}>
+            Provisional data: {data.dates.at(-1)}
+          </span>
+        )}
         <ThemeToggle />
       </header>
       <main className="content">

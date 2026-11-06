@@ -17,7 +17,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { COMPONENT_BY_ID } from '../src/engine/components';
-import { assemble } from '../src/engine/data';
+import { assemble, officialData } from '../src/engine/data';
 import { BASE_PARAMS, DEFAULT_PARAMS, merge, V13_PATCH, V5_PATCH, type Params } from '../src/engine/params';
 import { run } from '../src/engine/run';
 import { REGIMES } from '../src/engine/score';
@@ -33,7 +33,7 @@ export interface RegimeChange {
   score: number;
 }
 
-const data = assemble(load('signals.json'), load('assets.json'), load('meta.json'));
+const data = officialData(assemble(load('signals.json'), load('assets.json'), load('meta.json')));
 const r = run(data, DEFAULT_PARAMS);
 const n = data.dates.length;
 let L = n - 1;

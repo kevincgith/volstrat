@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { loadMarketData, loadMeta, type MarketData } from '../engine/data';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { loadMarketData, loadMeta, officialData, type MarketData } from '../engine/data';
 
 const CHECK_EVERY_MS = 10 * 60 * 1000;
 
@@ -8,7 +8,24 @@ interface DataState {
   error: string | null;
 }
 
-const Ctx = createContext<DataState>({ data: null, error: null });
+interface DataView extends DataState {
+  /** True when the viewer chose to use dates whose score inputs are not all published yet. */
+  provisional: boolean;
+  setProvisional: (v: boolean) => void;
+  /** The latest published date is ahead of the official one. */
+  provisionalAvailable: boolean;
+}
+
+const PROVISIONAL_KEY = 'volstrat.provisional';
+const readFlag = () => {
+  try {
+    return localStorage.getItem(PROVISIONAL_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const Ctx = createContext<DataView>({ data: null, error: null, provisional: false, setProvisional: () => {}, provisionalAvailable: false });
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<DataState>({ data: null, error: null });
@@ -40,7 +57,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
       clearInterval(timer);
     };
   }, []);
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
+  const [provisional, setFlag] = useState<boolean>(readFlag);
+  const setProvisional = (v: boolean) => {
+    setFlag(v);
+    try {
+      localStorage.setItem(PROVISIONAL_KEY, v ? '1' : '0');
+    } catch {
+      /* per-viewer convenience only */
+    }
+  };
+  const value = useMemo<DataView>(() => {
+    const full = state.data;
+    const ahead = !!full && !!full.meta.complete_through && full.dates.at(-1)! > full.meta.complete_through;
+    // default: the official data, exactly what the live records and alerts use
+    const data = full && !(provisional && ahead) ? officialData(full) : full;
+    return { ...state, data, provisional: provisional && ahead, setProvisional, provisionalAvailable: ahead };
+  }, [state, provisional]);
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export const useData = () => useContext(Ctx);

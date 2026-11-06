@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Chart } from '../charts/Chart';
 import { baseOption, line, regimeAreas, timeAxis, valueAxis } from '../charts/options';
 import { assetColor, colors } from '../charts/palette';
-import { Card, ErrorBox, Loading } from '../components/ui';
+import { Card, ErrorBox, Loading, Toggle } from '../components/ui';
 import { COMPONENT_BY_ID } from '../engine/components';
 import { REGIMES } from '../engine/score';
 import { rollingCorrelation } from '../engine/run';
@@ -25,7 +25,7 @@ function fmtRaw(v: number, unit: string) {
 }
 
 export default function Dashboard() {
-  const { data, error } = useData();
+  const { data, error, provisional, setProvisional, provisionalAvailable } = useData();
   const [params] = useParams();
   const { result, error: runErr } = useRun(data, params);
   const { theme } = useTheme();
@@ -118,7 +118,8 @@ export default function Dashboard() {
       <div className="page-head">
         <h1>Dashboard</h1>
         <p className="muted">
-          Signal as of the close of <strong>{date}</strong>. To be traded at the next close.{' '}
+          Signal as of the close of <strong>{date}</strong>
+          {provisional && <span className="warn"> (provisional: some score inputs are not published yet and use their latest known values)</span>}. To be traded at the next close.{' '}
           {qs && (
             <>
               Using your custom parameters (<Link to={`/backtest${qs}`}>edit</Link>).
@@ -303,8 +304,22 @@ export default function Dashboard() {
       </Card>
 
       <Card title="Data status">
+        {provisionalAvailable && (
+          <div className="small" style={{ marginBottom: 8 }}>
+            <Toggle
+              label={`Use latest available data (${data.dates.at(-1) === data.meta.complete_through ? data.meta.provisional_through : data.dates.at(-1)}, provisional)`}
+              checked={provisional}
+              onChange={setProvisional}
+              title="Compute the score for the newest date even though some score inputs are not published yet: they use their latest known values"
+            />
+            <span className="muted">
+              {' '}
+              Official date: {data.meta.complete_through}. The live track records, the RSS feed and the alerts always use the official date.
+            </span>
+          </div>
+        )}
         <p className="small">
-          Data through <strong>{data.meta.last_date}</strong>
+          Data through <strong>{provisional ? `${data.dates.at(-1)} (provisional)` : data.meta.last_date}</strong>
           {data.meta.eod_cutoff && (
             <span title="Prices dated after 18:00 New York time on the same day are treated as provisional and excluded">
               {' '}

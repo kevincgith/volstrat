@@ -344,8 +344,9 @@ def complete_date(
 
 def completeness(
     raw: Path, cal: pd.DatetimeIndex, now: pd.Timestamp | None = None
-) -> tuple[pd.Timestamp, dict[str, str], dict[str, str]]:
-    """Latest publishable date, inputs still pending, and soft inputs published without."""
+) -> tuple[pd.Timestamp, dict[str, str], dict[str, str], pd.Timestamp]:
+    """Official date, inputs still pending, soft inputs published without, and the
+    provisional date: the latest date with every price, whatever the score inputs."""
     hard: dict[str, pd.Timestamp] = {}
     soft: dict[str, pd.Timestamp] = {}
     for sym in REQUIRED_YAHOO + SOFT_YAHOO:
@@ -364,7 +365,9 @@ def completeness(
     if pc is not None:
         soft["Cboe equity put/call"] = pc["equity"].dropna().index[-1]
     now = now if now is not None else pd.Timestamp.now(tz="America/New_York")
-    return complete_date(cal, hard, soft, now)
+    official, pending, without = complete_date(cal, hard, soft, now)
+    provisional = complete_date(cal, hard, {}, now)[0]
+    return official, pending, without, max(official, provisional)
 
 
 def incomplete_alert(eod: str | None, complete_through: str, pending: dict, now=None) -> str | None:
@@ -390,15 +393,19 @@ def build_all(raw: Path, site: Path) -> None:
     if gspc is None:
         raise FileNotFoundError("S&P 500 history missing; run `volstrat fetch` first")
     cal = master_calendar(gspc)
-    complete_through, pending, published_without = completeness(raw, cal)
+    complete_through, pending, published_without, provisional = completeness(raw, cal)
     if pending:
         log.info("complete through %s; waiting for %s", complete_through.date(), pending)
     if published_without:
         log.warning("published %s without %s (past the noon deadline)", complete_through.date(),
                     published_without)  # fmt: skip
     full_last = cal[-1]  # latest end-of-day date the index calendar has
-    cal = cal[cal <= complete_through]
+    # Data are published through the provisional date (every price in, score inputs possibly
+    # late); `complete_through` marks the official date. The site uses the official date
+    # unless the viewer opts into the latest data; the live records and alerts always do.
+    cal = cal[cal <= provisional]
     dates = [d.strftime("%Y-%m-%d") for d in cal]
+    official = complete_through.strftime("%Y-%m-%d")
 
     sig = build_signals(raw, cal)
     sig_series = {k: _round_list(sig[k], -2 if k == "SPX" else -4) for k in sig.columns}
@@ -465,15 +472,16 @@ def build_all(raw: Path, site: Path) -> None:
         {
             "schema": SCHEMA_VERSION,
             "generated_at": pd.Timestamp.now(tz="UTC").isoformat(timespec="seconds"),
-            "last_date": dates[-1],
+            "last_date": official,
             "sources": status,
             "checks": [c.to_dict() for c in checks],
             "eod_cutoff": _fetch_meta(raw).get("eod_cutoff"),
-            "complete_through": dates[-1],
+            "complete_through": official,
+            "provisional_through": dates[-1],
             "pending": pending,
             "published_without": published_without,
             "incomplete_alert": incomplete_alert(
-                _fetch_meta(raw).get("eod_cutoff"), dates[-1], pending
+                _fetch_meta(raw).get("eod_cutoff"), official, pending
             ),
         },
         site / "meta.json",

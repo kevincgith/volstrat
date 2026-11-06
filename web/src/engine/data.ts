@@ -58,6 +58,8 @@ export interface MarketData {
     pending?: Record<string, string>;
     /** Score inputs still missing at the noon deadline: the published date uses their latest known value. */
     published_without?: Record<string, string>;
+    /** Latest date with every price published; after complete_through, score inputs may be late (provisional). */
+    provisional_through?: string;
   };
 }
 
@@ -92,6 +94,22 @@ export function assemble(sig: RawSignals, ast: RawAssets, meta: MarketData['meta
   for (const [k, v] of Object.entries(ast.assets)) assets[k] = { ...v, tr: toFloat(v.tr) };
   return { dates: sig.dates, series, seriesMeta: sig.meta, assets, meta };
 }
+
+/** The same data cut at `last` (inclusive); unchanged if `last` is missing or already the last date. */
+export function truncateTo(d: MarketData, last: string | undefined): MarketData {
+  if (!last) return d;
+  const i = d.dates.indexOf(last);
+  if (i < 0 || i === d.dates.length - 1) return d;
+  const n = i + 1;
+  const series: Record<string, Float64Array> = {};
+  for (const [k, v] of Object.entries(d.series)) series[k] = v.slice(0, n);
+  const assets: Record<string, AssetData> = {};
+  for (const [k, v] of Object.entries(d.assets)) assets[k] = { ...v, tr: v.tr.slice(0, n) };
+  return { ...d, dates: d.dates.slice(0, n), series, assets };
+}
+
+/** Official data only: dates after `complete_through` (provisional) removed. The live records, alerts and the default site view use this. */
+export const officialData = (d: MarketData): MarketData => truncateTo(d, d.meta.complete_through);
 
 async function getJson<T>(base: string, name: string): Promise<T> {
   // 'no-cache' = always revalidate with the server (a cheap 304 when unchanged), so a

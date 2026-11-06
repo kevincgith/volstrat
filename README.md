@@ -135,7 +135,8 @@ already does this through `pyproject.toml`.
   for every price; it waits for score inputs (Cboe volatility indices, VIX futures, put/call,
   credit) only until 12:00 New York time on the next business day, then publishes with their
   latest known values. Until then the site stays on the last complete date, and the Dashboard
-  lists what it is waiting for or published without.
+  lists what it is waiting for or published without. Viewers can switch on *Use latest available
+  data* to see the newest date provisionally; the live records and alerts never use it.
 - `ci.yml` runs lint, tests, typecheck and build on every PR and every push to `main`.
 - `deploy.yml` builds the site, bundles `data/site` and publishes it to GitHub Pages. It runs on
   pushes that touch `web/` or `data/site/`, and after each successful data update.

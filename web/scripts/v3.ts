@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pairedBootstrap } from '../src/engine/bootstrap';
-import { assemble } from '../src/engine/data';
+import { assemble, officialData } from '../src/engine/data';
 import type { AssetSeries } from '../src/engine/assets';
 import { usV3Market, V3_PARAMS, v3Metrics, v3Run, type V3Market, type V3Params } from '../src/engine/v3';
 
@@ -70,7 +70,7 @@ export function report(m: V3Market, eras: [string, string, string][], p: V3Param
 
 const mode = process.argv[2] ?? 'us';
 if (mode === 'us') {
-  const d = assemble(load('signals.json'), load('assets.json'), load('meta.json'));
+  const d = officialData(assemble(load('signals.json'), load('assets.json'), load('meta.json')));
   const out = report(usV3Market(d), [
     ['US 1993-2006', '1993-01-04', '2006-12-29'],
     ['US 2007-latest', '2007-01-03', ''],

@@ -302,6 +302,13 @@ still revise closing-auction prints and settlements. Rules (`sources/base.py`, `
      missing; when they arrive later the date is recomputed and the revision is shown.
    - *Why:* on 2026-11-05 Cboe's put/call file was still unpublished at 1 am New York time and
      held the whole site, and the risk-budget records (v3, v4) that never use it, for a day.
+   - **Provisional view.** Data are published through the latest date with every price
+     (`meta.provisional_through`), even before the score inputs are in; `complete_through`
+     marks the official date. The site shows the official date by default. A viewer can switch
+     on *Use latest available data* (Data status card; remembered in their browser) to compute
+     the newest date with late score inputs at their latest known values, labelled provisional
+     in the header and on the Dashboard. The live track records, `latest.json`, the RSS feed
+     and the regime-change alerts always use the official date (`officialData` in the engine).
 
    Until then everything stays on the last complete date, and `meta.json` / the Dashboard
    list the pending inputs.
