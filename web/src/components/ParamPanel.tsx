@@ -4,7 +4,7 @@ import { STRATEGY_ASSETS, type AssetKey } from '../engine/assets';
 import { COMPONENTS, type ComponentGroup } from '../engine/components';
 import { DEFAULT_PARAMS, PRESETS, presetParams, type Params } from '../engine/params';
 import { REGIMES } from '../engine/score';
-import { DateInput, NumberInput, Section, Segmented, Select, Toggle } from './ui';
+import { DateInput, NumberInput, NumField, Section, Segmented, Select, Toggle } from './ui';
 
 const ASSET_LABEL: Record<AssetKey, string> = {
   SPX: 'S&P 500',
@@ -58,15 +58,14 @@ function WeightsEditor({ value, onChange, title }: { value: Weights; onChange: (
       {entries.map(([k, v]) => (
         <div className="we-row" key={k}>
           <span>{assetLabel(k)}</span>
-          <input
-            type="number"
+          <NumField
             aria-label={`${assetLabel(k)} weight %`}
-            value={+(v * 100).toFixed(4)}
+            value={v}
+            scale={100}
             min={0}
             step={5}
-            onChange={(e) => {
-              const x = parseFloat(e.target.value);
-              if (Number.isFinite(x)) onChange({ ...value, [k]: Math.max(0, x / 100) });
+            onCommit={(x) => {
+              if (x != null) onChange({ ...value, [k]: Math.max(0, x) });
             }}
           />
           <span className="muted">%</span>
@@ -164,8 +163,7 @@ export function ParamPanel({
                     onChange={(v) => up((d) => void (d.score.components[c.id]!.enabled = v))}
                     title={`${c.doc.what}${first ? ` Data from ${first}.` : ' No data available.'}`}
                   />
-                  <input
-                    type="number"
+                  <NumField
                     className="w-input"
                     aria-label={`${c.label} weight`}
                     value={s.weight}
@@ -173,9 +171,8 @@ export function ParamPanel({
                     max={5}
                     step={0.25}
                     disabled={!s.enabled}
-                    onChange={(e) => {
-                      const x = parseFloat(e.target.value);
-                      if (Number.isFinite(x)) up((d) => void (d.score.components[c.id]!.weight = Math.max(0, x)));
+                    onCommit={(x) => {
+                      if (x != null) up((d) => void (d.score.components[c.id]!.weight = Math.max(0, x)));
                     }}
                   />
                   <button
@@ -489,17 +486,16 @@ export function ParamPanel({
             {STRATEGY_ASSETS.map((k) => (
               <label key={k} className="small">
                 <span>{assetLabel(k)}</span>
-                <input
-                  type="number"
+                <NumField
                   min={0}
                   step={1}
+                  allowEmpty
                   placeholder={String(params.backtest.costBps)}
-                  value={params.backtest.assetCostBps?.[k] ?? ''}
-                  onChange={(e) =>
+                  value={params.backtest.assetCostBps?.[k] ?? null}
+                  onCommit={(x) =>
                     up((d) => {
                       const m = { ...(d.backtest.assetCostBps ?? {}) };
-                      const x = parseFloat(e.target.value);
-                      if (Number.isFinite(x) && x >= 0) m[k] = x;
+                      if (x != null && x >= 0) m[k] = x;
                       else delete m[k];
                       d.backtest.assetCostBps = m;
                     })
