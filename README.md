@@ -89,6 +89,9 @@ GitHub Pages only serves static files. So the pipeline ships **raw features** (V
 curve, spreads, asset total returns), and the browser does all the parameter-dependent work:
 standardisation windows, weights, thresholds, smoothing and the backtest itself.
 
+For a fuller overview (components, data cycle, hosting, security, CI), written for IT
+reviewers, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Repository layout
 
 ```
