@@ -6,7 +6,8 @@ import { assetColor, colors } from '../charts/palette';
 import { Card, ErrorBox, Loading, Toggle } from '../components/ui';
 import { COMPONENT_BY_ID } from '../engine/components';
 import { REGIMES } from '../engine/score';
-import { rollingCorrelation } from '../engine/run';
+import { addTradingDays } from '../engine/calendar';
+import { OVERRIDE_REBOUND, OVERRIDE_REENTRY, rollingCorrelation } from '../engine/run';
 import { TrackRecord } from '../components/TrackRecord';
 import { useData } from '../state/data';
 import { useParams } from '../state/params';
@@ -73,7 +74,33 @@ export default function Dashboard() {
         days: sp.end - sp.start + 1,
         spx: spx[sp.end]! / spx[sp.start]! - 1,
       }));
-    return { L, regime, comps, wsum, weights, from, sb, hedgeLb, history };
+    // an override (panic rebound / recovery re-entry) can set a regime the score alone would not
+    const ov = result.override[L]!;
+    let override: null | { kind: number; scoreRegime: number; since: string; peak?: { date: string; ratio: number }; until: string; byDate: boolean; thr: number; normal: number; hold: number } = null;
+    if (ov !== 0) {
+      let s = L;
+      while (s > 0 && result.override[s - 1] === ov) s--;
+      const rb = params.regime.rebound ?? { peak: 1.1, lookback: 20, normal: 1, hold: 20, exit: 'days' as const };
+      const vix = data.series.VIX!;
+      const v3 = data.series.VIX3M!;
+      let peak: { date: string; ratio: number } | undefined;
+      if (ov === OVERRIDE_REBOUND) {
+        for (let t = s; t >= Math.max(0, s - rb.lookback); t--) {
+          const r = vix[t]! / v3[t]!;
+          if (Number.isFinite(r) && r > rb.peak && (!peak || r > peak.ratio)) peak = { date: data.dates[t]!, ratio: r };
+        }
+      }
+      // fixed-length lift: last day = start + hold - 1 trading days (projected over weekdays past the data)
+      const byDate = ov === OVERRIDE_REBOUND && rb.exit !== 'signal';
+      let until = '';
+      if (byDate) {
+        const end = s + rb.hold - 1;
+        // past the data, count forward on the NYSE calendar
+        until = end < data.dates.length ? data.dates[end]! : addTradingDays(data.dates.at(-1)!, end - (data.dates.length - 1));
+      }
+      override = { kind: ov, scoreRegime: result.scoreRegimes[L]!, since: data.dates[s]!, peak, until, byDate, thr: rb.peak, normal: rb.normal, hold: rb.hold };
+    }
+    return { L, regime, comps, wsum, weights, from, sb, hedgeLb, history, override };
   }, [data, result, params]);
 
   const option = useMemo(() => {
@@ -153,6 +180,23 @@ export default function Dashboard() {
             <span className="dot" style={{ background: c.regime[view.regime] }} aria-hidden="true" />
             {REGIMES[view.regime]}
           </div>
+          {view.override && (
+            <p className="small" style={{ marginTop: 6 }}>
+              <span className="warn">
+                Set by the {view.override.kind === OVERRIDE_REENTRY ? 'recovery re-entry rule' : 'panic-rebound override'} since {view.override.since};
+                the score alone gives {REGIMES[view.override.scoreRegime]}.
+              </span>{' '}
+              <span className="muted">
+                {view.override.kind === OVERRIDE_REENTRY
+                  ? 'VIX is well off its recent peak, the VIX curve is back in contango and the S&P 500 is above its 20-day average (Methodology 15.5).'
+                  : `VIX/VIX3M rose above ${view.override.thr.toFixed(2)}${view.override.peak ? ` (${view.override.peak.ratio.toFixed(3)} on ${view.override.peak.date})` : ''} and fell back below ${view.override.normal.toFixed(2)}: the panic has passed, and the rule re-enters rather than waiting for the score to recover (Methodology 15.2). `}
+                {view.override.kind === OVERRIDE_REBOUND &&
+                  (view.override.byDate
+                    ? `It lasts ${view.override.hold} trading days, to ${view.override.until}, unless VIX/VIX3M goes back above ${view.override.thr.toFixed(2)}.`
+                    : `It lasts until VIX/VIX3M is back at ${view.override.normal.toFixed(2)} or above, the S&P 500 breaks its recent low, or the score itself reaches the regime.`)}
+              </span>
+            </p>
+          )}
           <ol className="regime-ladder">
             {[...REGIMES].reverse().map((r, i) => {
               const idx = REGIMES.length - 1 - i;

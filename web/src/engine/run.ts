@@ -23,9 +23,18 @@ export interface PortfolioRun {
   outOfSample?: Metrics;
 }
 
+/** Which override set the day's regime: 0 none (the score's own regime), 1 panic rebound (§15.2), 2 recovery re-entry (§15.5). */
+export const OVERRIDE_NONE = 0;
+export const OVERRIDE_REBOUND = 1;
+export const OVERRIDE_REENTRY = 2;
+
 export interface RunResult {
   score: ScoreResult;
   regimes: Int8Array;
+  /** Regime from the score alone (cut-offs and buffers), before any override. */
+  scoreRegimes: Int8Array;
+  /** Per day: which override, if any, changed the regime (OVERRIDE_*). */
+  override: Int8Array;
   targets: (Weights | null)[];
   assets: Record<string, AssetSeries>;
   strategy: PortfolioRun;
@@ -306,6 +315,11 @@ export function run(d: MarketData, p: Params): RunResult {
       )
     : baseReg;
   const reg = re?.enabled ? applyReentry(reg1, d.series.VIX!, d.series.VIX3M!, d.series.SPX!, re) : reg1;
+  const override = new Int8Array(n);
+  for (let t = 0; t < n; t++) {
+    if (reg1[t] !== baseReg[t]) override[t] = OVERRIDE_REBOUND;
+    else if (reg[t] !== reg1[t]) override[t] = OVERRIDE_REENTRY;
+  }
   const assets = cached(d, 'assets' + JSON.stringify(p.assets), () => buildAssets(d, p.assets));
   const hedge = p.allocation.adaptiveHedge;
   const sbCorr = hedge?.enabled
@@ -385,6 +399,8 @@ export function run(d: MarketData, p: Params): RunResult {
   return {
     score,
     regimes: reg,
+    scoreRegimes: baseReg,
+    override,
     targets,
     assets,
     strategy: mk('strategy', 'VolStrat', strategyRes, spxNav),
